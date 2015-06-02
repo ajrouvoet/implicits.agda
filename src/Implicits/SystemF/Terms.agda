@@ -1,6 +1,6 @@
 module Implicits.SystemF.Terms where
   
-open import Prelude hiding (lift; Fin′)
+open import Prelude hiding (lift; Fin′; subst)
 open import Data.Fin.Substitution
 open import Implicits.SystemF.Types
 

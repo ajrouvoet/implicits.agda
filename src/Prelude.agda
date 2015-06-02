@@ -10,5 +10,5 @@ open import Data.Sum public hiding (map)
 open import Data.Product public hiding (map; zip)
 open import Data.Vec public hiding ([_])
 open import Relation.Nullary public using (yes; no; ¬_)
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality public hiding ([_])
 open import Function public
