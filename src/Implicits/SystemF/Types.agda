@@ -32,4 +32,4 @@ module TypeSubst where
   _[/_] : ∀ {n} → Type (suc n) → Type n → Type n
   a [/ b ] = a / sub b
 
-open TypeSubst public using () renaming (_/_ to _tp-/_; _[/_] to _tp-[/_])
+open TypeSubst public using () renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_])

@@ -11,8 +11,11 @@ data _⊢_∈_ {ν n} (Γ : Ctx ν n) : Term ν n → Type ν → Set where
   var : (x : Fin n) → Γ ⊢ var x ∈ lookup x Γ
   Λ   : ∀ {t a} → (ctx-weaken Γ) ⊢ t ∈ a → Γ ⊢ Λ t ∈ ∀' a
   λ'  : ∀ {t b} → (a : Type ν) → a ∷ Γ ⊢ t ∈ b → Γ ⊢ λ' a t ∈ a →' b
-  _[_] : ∀ {t a} → Γ ⊢ t ∈ ∀' a → (b : Type ν) → Γ ⊢ t [ b ] ∈ a tp-[/ b ]
+  _[_] : ∀ {t a} → Γ ⊢ t ∈ ∀' a → (b : Type ν) → Γ ⊢ t [ b ] ∈ a tp[/tp b ]
   _·_  : ∀ {f t a b} → Γ ⊢ f ∈ (a →' b) → Γ ⊢ t ∈ a → Γ ⊢ f · t ∈ b
+  
+_⊢_∉_ : ∀ {ν n} → (Γ : Ctx ν n) → Term ν n → Type ν → Set
+_⊢_∉_ Γ t τ = ¬ Γ ⊢ t ∈ τ
   
 ⊢erase : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ t ∈ τ → Term ν n
 ⊢erase (var x) = var x
@@ -27,3 +30,13 @@ data _⊢_∈_ {ν n} (Γ : Ctx ν n) : Term ν n → Type ν → Set where
 
 ⊢tc[a]-inversion : ∀ {ν n tc a' b} {Γ : Ctx ν n} → Γ ⊢ tc [ b ] ∈ a' → ∃ λ a → Γ ⊢ tc ∈ ∀' a
 ⊢tc[a]-inversion (_[_] tc∈∀'a b) = , tc∈∀'a
+
+unique-type : ∀ {ν n} {Γ : Ctx ν n} {t τ τ'} → Γ ⊢ t ∈ τ → Γ ⊢ t ∈ τ' → τ ≡ τ'
+unique-type (var x) (var .x) = refl
+unique-type (Λ l) (Λ r) = cong ∀' (unique-type l r)
+unique-type (λ' a l) (λ' .a r) = cong (λ b → a →' b) (unique-type l r)
+unique-type (l [ b ]) (r [ .b ]) = cong (λ{ (∀' fa) → fa tp[/tp b ]; a → a}) (unique-type l r)
+unique-type (f · e) (f' · e') = cong (λ{ (a →' b) → b; a → a }) (unique-type f f')
+
+unique-type′ : ∀ {ν n} {Γ : Ctx ν n} {t τ τ'} → Γ ⊢ t ∈ τ → τ ≢ τ' → Γ ⊢ t ∉ τ'
+unique-type′ ⊢t∈τ neq ⊢t∈τ' = neq $ unique-type ⊢t∈τ ⊢t∈τ'
