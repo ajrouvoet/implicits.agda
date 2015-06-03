@@ -1,6 +1,7 @@
 module Implicits.SystemF.WellTyped where
 
 open import Prelude
+open import Data.Fin.Substitution
 open import Implicits.SystemF.Types public
 open import Implicits.SystemF.Terms public
 open import Implicits.SystemF.Contexts public
@@ -40,3 +41,8 @@ unique-type (f · e) (f' · e') = cong (λ{ (a →' b) → b; a → a }) (unique
 
 unique-type′ : ∀ {ν n} {Γ : Ctx ν n} {t τ τ'} → Γ ⊢ t ∈ τ → τ ≢ τ' → Γ ⊢ t ∉ τ'
 unique-type′ ⊢t∈τ neq ⊢t∈τ' = neq $ unique-type ⊢t∈τ ⊢t∈τ'
+  
+postulate tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → 
+                           Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
+postulate tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ u τ'} → 
+                           τ ∷ Γ ⊢ t ∈ τ' → Γ ⊢ u ∈ τ → Γ ⊢ (t tm[/tm u ]) ∈ τ'
