@@ -29,7 +29,7 @@ nil = [] , List.[]
 module CtxSubst where
   
   _/_ : ∀ {ν μ n} → Ctx ν n → Sub Type ν μ → Ctx μ n
-  Γ / σ = Γ TypeSubst.⊙ σ
+  Γ / σ = map (λ s → s TypeSubst./ σ) Γ
   
   ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
   ctx-weaken Γ = Γ / TypeSubst.wk

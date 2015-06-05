@@ -11,7 +11,10 @@ open import Data.Product public hiding (map; zip)
 open import Data.Vec public hiding ([_])
 open import Data.List as List' public using (List)
 open import Relation.Nullary public using (yes; no; ¬_)
-open import Relation.Binary.PropositionalEquality public hiding ([_])
+open import Relation.Binary.PropositionalEquality public renaming ([_] to reveal[_])
+open ≡-Reasoning public
 open import Function public
+
+open import Extensions.Vec public
 
 module List = List'

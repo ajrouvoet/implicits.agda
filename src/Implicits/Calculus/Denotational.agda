@@ -28,17 +28,24 @@ postulate ⟦⟧i-wt-lemma : ∀ {ν n} {K : Ktx ν n} {a} (i : K Δ↝ a) → �
 ⟦_⟧ (_⟨⟩ f e∈Δ) = ⟦ f ⟧ F.· ⟦ e∈Δ ⟧i
 ⟦_⟧ (implicit_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧tp ⟦ e ⟧) F.· ⟦ t ⟧
 
-
-lookup⋆map : ∀ {a b : Set} {n} (v : Vec a n) (f : a → b) x → 
-             f (lookup x v) ≡ lookup x (map f v)
-lookup⋆map [] f ()
-lookup⋆map (x ∷ xs) f zero = refl
-lookup⋆map (x ∷ xs) f (suc y) = lookup⋆map xs f y
-
 lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧tp
 lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧tp x
 
-postulate ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
+postulate weaken-tp⋆⟦⟧tp : ∀ {ν} (tp : Type ν) → ⟦ tp TypeSubst./ TypeSubst.wk ⟧tp ≡ ⟦ tp ⟧tp F.TypeSubst./ F.TypeSubst.wk
+
+ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
+ctx-weaken⋆⟦⟧ctx ([] , Δ) = refl
+ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
+ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) | ih = begin
+  ⟦ ktx-weaken (x ∷ Γ , Δ) ⟧ctx ≡⟨ refl ⟩ 
+  ⟦ x TypeSubst./ TypeSubst.wk ⟧tp ∷ xs ≡⟨ eq1 x ⟩ 
+  ⟦ x ⟧tp F.TypeSubst./ F.TypeSubst.wk ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx ≡⟨ eq2 ⟩
+  ⟦ x ⟧tp F.TypeSubst./ F.TypeSubst.wk ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx ≡⟨ refl ⟩
+  F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx ∎
+  where
+    xs = (map ⟦_⟧tp $ map (λ s → s TypeSubst./ TypeSubst.wk) Γ)
+    eq1 = λ x → cong (flip _∷_ xs) (weaken-tp⋆⟦⟧tp x)
+    eq2 = cong (_∷_ (⟦ x ⟧tp F.TypeSubst./ F.TypeSubst.wk)) ih
 
 postulate tp/tp⋆⟦⟧ctx : ∀ {ν} (a : Type (suc ν)) b → ⟦ a tp[/tp b ] ⟧tp ≡ ⟦ a ⟧tp F.tp[/tp ⟦ b ⟧tp ]
 
