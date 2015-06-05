@@ -1,4 +1,4 @@
-module Implicits.SystemF.Types where
+module Implicits.Calculus.Types where
 
 open import Prelude hiding (lift)
 open import Data.Fin.Substitution
@@ -7,6 +7,7 @@ data Type (ν : ℕ) : Set where
   tvar : (n : Fin ν) → Type ν
   _→'_ : Type ν → Type ν → Type ν
   ∀'   : Type (suc ν) → Type ν
+  _⇒_  : Type ν → Type ν → Type ν
 
 module TypeSubst where
   module TypeApp {T} (l : Lift T Type) where
@@ -18,6 +19,7 @@ module TypeSubst where
     tvar x   / σ = lift (lookup x σ)
     (a →' b) / σ = (a / σ) →' (b / σ)
     ∀' a     / σ = ∀' (a / σ ↑)
+    (a ⇒ b)  / σ = (a / σ) ⇒ (b / σ)
 
     open Application (record { _/_ = _/_ }) using (_/✶_)
 

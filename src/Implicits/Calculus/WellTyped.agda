@@ -1,23 +1,34 @@
-module Implicits.SystemF.WellTyped where
+module Implicits.Calculus.WellTyped where
 
 open import Prelude
 open import Data.Fin.Substitution
-open import Implicits.SystemF.Types public
-open import Implicits.SystemF.Terms public
-open import Implicits.SystemF.Contexts public
+open import Implicits.Calculus.Types public
+open import Implicits.Calculus.Terms public
+open import Implicits.Calculus.Contexts public
 
 infix 4 _⊢_∈_
 
-data _⊢_∈_ {ν n} (Γ : Ctx ν n) : Term ν n → Type ν → Set where
-  var : (x : Fin n) → Γ ⊢ var x ∈ lookup x Γ
-  Λ   : ∀ {t a} → (ctx-weaken Γ) ⊢ t ∈ a → Γ ⊢ Λ t ∈ ∀' a
-  λ'  : ∀ {t b} → (a : Type ν) → a ∷ Γ ⊢ t ∈ b → Γ ⊢ λ' a t ∈ a →' b
-  _[_] : ∀ {t a} → Γ ⊢ t ∈ ∀' a → (b : Type ν) → Γ ⊢ t [ b ] ∈ a tp[/tp b ]
-  _·_  : ∀ {f t a b} → Γ ⊢ f ∈ (a →' b) → Γ ⊢ t ∈ a → Γ ⊢ f · t ∈ b
+data _Δ↝_ {ν n} (K : Ktx ν n) : Type ν → Set where
   
-_⊢_∉_ : ∀ {ν n} → (Γ : Ctx ν n) → Term ν n → Type ν → Set
-_⊢_∉_ Γ t τ = ¬ Γ ⊢ t ∈ τ
+
+data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → Type ν → Set where
+  var : (x : Fin n) → K ⊢ var x ∈ lookup x (proj₁ K)
+  Λ : ∀ {t a} → (ktx-weaken K) ⊢ t ∈ a → K ⊢ Λ t ∈ ∀' a
+  λ' : ∀ {t b} a → a ∷Γ K ⊢ t ∈ b → K ⊢ λ' a t ∈ a →' b
+  _[_] : ∀ {t a} → K ⊢ t ∈ ∀' a → (b : Type ν) → K ⊢ t [ b ] ∈ a tp[/tp b ]
+  _·_  : ∀ {f t a b} → K ⊢ f ∈ (a →' b) → K ⊢ t ∈ a → K ⊢ f · t ∈ b
   
+  -- implicit abstract/application
+  ρ : ∀ {t b} a → a ∷Γ K ⊢ t ∈ b → K ⊢ ρ a t ∈ a ⇒ b
+  _⟨⟩ : ∀ {t a b} → K ⊢ t ∈ a ⇒ b → K Δ↝ a → K ⊢ t ⟨⟩ ∈ b
+
+  -- implicit binding
+  implicit_in'_ : ∀ {t u a b} → K ⊢ t ∈ a → a ∷K K ⊢ u ∈ b → K ⊢ (implicit t in' u) ∈ b
+  
+_⊢_∉_ : ∀ {ν n} → (K : Ktx ν n) → Term ν n → Type ν → Set
+_⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
+  
+{-
 ⊢erase : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ t ∈ τ → Term ν n
 ⊢erase (var x) = var x
 ⊢erase (Λ {t} x) = Λ t
@@ -46,3 +57,5 @@ postulate tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} →
                             Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
 postulate tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t u a b} → 
                             b ∷ Γ ⊢ t ∈ a → Γ ⊢ u ∈ b → Γ ⊢ (t tm[/tm u ]) ∈ a
+
+-}

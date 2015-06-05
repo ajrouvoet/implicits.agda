@@ -37,7 +37,7 @@ data _≻⋆_ {ν n} : Term ν n → Term ν n → Set where
 →'-value-lemma : ∀ {ν n} {Γ : Ctx ν n} {t a b} → Γ ⊢ t ∈ a →' b → Value t → 
                  ∃ λ e → (t ≡ λ' a e) × a ∷ Γ ⊢ e ∈ b
 →'-value-lemma () (Λ t)
-→'-value-lemma (λ' a t∈a→b) (λ' .a t) = t , refl , t∈a→b
+→'-value-lemma (λ' a ⊢t∈a→b) (λ' .a t) = t , refl , ⊢t∈a→b
 
 -- progress: welltyped terms are either values or can be reduced
 progress : ∀ {ν τ} {t : Term ν 0} → [] ⊢ t ∈ τ → Value t ⊎ ∃ (_≻_ t)
