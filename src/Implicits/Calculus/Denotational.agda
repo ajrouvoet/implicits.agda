@@ -14,6 +14,9 @@ open import Data.Vec.Properties
 ⟦ ∀' x ⟧tp = F.∀' ⟦ x ⟧tp
 ⟦ a ⇒ b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
 
+⟦_⟧tps : ∀ {ν n} → Vec (Type ν) n → Vec (F.Type ν) n
+⟦ v ⟧tps = map ⟦_⟧tp v
+
 ⟦_⟧ctx : ∀ {ν n} → Ktx ν n → F.Ctx ν n
 ⟦ Γ , Δ ⟧ctx = map ⟦_⟧tp Γ
 
@@ -54,8 +57,9 @@ module Lemmas where
 
   postulate weaken⋆⟦_⟧tp : ∀ {ν} → _≗_ {A = Type ν} (⟦_⟧tp ∘ tss.weaken) (ftss.weaken ∘ ⟦_⟧tp)
 
-  map-weaken⋆map-⟦⟧tp : ∀ {ν n} (xs : Vec (Type ν) n) → (map ⟦_⟧tp (map tss.weaken xs)) ≡ (map ftss.weaken (map ⟦_⟧tp xs))
-  map-weaken⋆map-⟦⟧tp xs = begin
+  -- helper lemma on mapping type-semantics over weakend substitutions
+  ⟦⟧tps⋆weaken : ∀ {ν n} (xs : Vec (Type ν) n) → ⟦ (map tss.weaken xs) ⟧tps ≡ (map ftss.weaken ⟦ xs ⟧tps)
+  ⟦⟧tps⋆weaken xs = begin
     (map ⟦_⟧tp ∘ map tss.weaken) xs
      ≡⟨ sym $ (map-∘ ⟦_⟧tp tss.weaken) xs ⟩
     map (⟦_⟧tp ∘ tss.weaken) xs
@@ -64,29 +68,33 @@ module Lemmas where
      ≡⟨ (map-∘ ftss.weaken ⟦_⟧tp) xs ⟩ 
     map ftss.weaken (map ⟦_⟧tp xs) ∎
      
-  map-⟦⟧tp-id≡fid : ∀ {n} → map ⟦_⟧tp (TS.id {n}) ≡ FTS.id
-  map-⟦⟧tp-id≡fid {zero} = refl
-  map-⟦⟧tp-id≡fid {suc n} = begin
+  -- the semantics of identity type-substitution is exactly 
+  -- system-f's identity type substitution
+  ⟦id⟧≡fid : ∀ {n} → map ⟦_⟧tp (TS.id {n}) ≡ FTS.id
+  ⟦id⟧≡fid {zero} = refl
+  ⟦id⟧≡fid {suc n} = begin
     map ⟦_⟧tp (tvar zero ∷ map tss.weaken (TS.id {n})) 
       ≡⟨ refl ⟩
     F.tvar zero ∷ (map ⟦_⟧tp (map tss.weaken (TS.id {n}))) 
-      ≡⟨ cong (_∷_ (F.tvar zero)) (map-weaken⋆map-⟦⟧tp (TS.id {n})) ⟩
+      ≡⟨ cong (_∷_ (F.tvar zero)) (⟦⟧tps⋆weaken (TS.id {n})) ⟩
     F.tvar zero ∷ (map ftss.weaken (map ⟦_⟧tp (TS.id {n}))) 
-      ≡⟨ cong (λ e → F.tvar zero ∷ (map ftss.weaken e)) map-⟦⟧tp-id≡fid ⟩
+      ≡⟨ cong (λ e → F.tvar zero ∷ (map ftss.weaken e)) ⟦id⟧≡fid ⟩
     F.tvar zero ∷ (map ftss.weaken (FTS.id {n})) 
       ≡⟨ refl ⟩
     FTS.id ∎
   
-  map-⟦⟧tp-wk≡fwk : ∀ {n} → map ⟦_⟧tp (TS.wk {n}) ≡ FTS.wk {n}
-  map-⟦⟧tp-wk≡fwk = begin
-    map ⟦_⟧tp TS.wk ≡⟨ map-weaken⋆map-⟦⟧tp TS.id ⟩
-    map ftss.weaken (map ⟦_⟧tp TS.id) ≡⟨ cong (map ftss.weaken) map-⟦⟧tp-id≡fid ⟩
+  -- the semantics of type weakening is exactly system-f's type weakening
+  ⟦wk⟧≡fwk : ∀ {n} → map ⟦_⟧tp (TS.wk {n}) ≡ FTS.wk {n}
+  ⟦wk⟧≡fwk = begin
+    map ⟦_⟧tp TS.wk ≡⟨ ⟦⟧tps⋆weaken TS.id ⟩
+    map ftss.weaken (map ⟦_⟧tp TS.id) ≡⟨ cong (map ftss.weaken) ⟦id⟧≡fid ⟩
     FTS.wk ∎
 
-  map-⟦⟧tp⋆↑ :  ∀ {ν n} (v : Vec (Type ν) n) → map ⟦_⟧tp (v TS.↑) ≡ (map ⟦_⟧tp  v) FTS.↑
-  map-⟦⟧tp⋆↑ xs = begin
+  -- interpretation of contexts 
+  ⟦⟧tps⋆↑ :  ∀ {ν n} (v : Vec (Type ν) n) → ⟦ v TS.↑ ⟧tps ≡ ⟦ v ⟧tps FTS.↑
+  ⟦⟧tps⋆↑ xs = begin
     F.tvar zero ∷ (map ⟦_⟧tp (map tss.weaken xs)) 
-      ≡⟨ cong (_∷_ (F.tvar zero)) (map-weaken⋆map-⟦⟧tp xs) ⟩
+      ≡⟨ cong (_∷_ (F.tvar zero)) (⟦⟧tps⋆weaken xs) ⟩
     F.tvar zero ∷ (map ftss.weaken (map ⟦_⟧tp xs)) 
       ≡⟨ refl ⟩
     (map ⟦_⟧tp xs) FTS.↑ ∎
@@ -98,9 +106,8 @@ module Lemmas where
     ⟦ tvar n ⟧tp FTS./ (map ⟦_⟧tp σ) ∎
   /⋆⟦⟧tp {ν} (∀' tp) σ = begin
     F.∀' (⟦ tp TS./ (σ TS.↑) ⟧tp) ≡⟨ cong F.∀' (/⋆⟦⟧tp tp (σ TS.↑)) ⟩
-    F.∀' (⟦ tp ⟧tp FTS./ (map ⟦_⟧tp (σ TS.↑)))  ≡⟨ cong (λ e → F.∀' (⟦ tp ⟧tp FTS./ e)) (map-⟦⟧tp⋆↑ σ) ⟩
+    F.∀' (⟦ tp ⟧tp FTS./ (map ⟦_⟧tp (σ TS.↑)))  ≡⟨ cong (λ e → F.∀' (⟦ tp ⟧tp FTS./ e)) (⟦⟧tps⋆↑ σ) ⟩
     ⟦ ∀' tp ⟧tp FTS./ (map ⟦_⟧tp σ) ∎
-
   /⋆⟦⟧tp (l →' r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
   /⋆⟦⟧tp (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
 
@@ -110,7 +117,7 @@ module Lemmas where
     ⟦ tp TS./ TS.wk ⟧tp 
       ≡⟨ /⋆⟦⟧tp tp TS.wk ⟩
     ⟦ tp ⟧tp FTS./ (map ⟦_⟧tp TS.wk) 
-      ≡⟨ cong (λ e → ⟦ tp ⟧tp FTS./ e) map-⟦⟧tp-wk≡fwk ⟩
+      ≡⟨ cong (λ e → ⟦ tp ⟧tp FTS./ e) ⟦wk⟧≡fwk ⟩
     ⟦ tp ⟧tp FTS./ FTS.wk ∎
 
   -- context weakening commutes with interpreting contexts
