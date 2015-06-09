@@ -1,7 +1,8 @@
 module Implicits.Calculus.Types where
 
-open import Prelude hiding (lift)
+open import Prelude hiding (lift; id)
 open import Data.Fin.Substitution
+import Data.Vec
   
 data Type (ν : ℕ) : Set where
   tvar : (n : Fin ν) → Type ν
@@ -33,13 +34,34 @@ module TypeSubst where
   -- Shorthand for single-variable type substitutions
   _[/_] : ∀ {n} → Type (suc n) → Type n → Type n
   a [/ b ] = a / sub b
-
-{-
+  
 module TypeLemmas where
   open import Data.Fin.Substitution.Lemmas
+  open TypeSubst
+  open import Data.Star using (Star; ε; _◅_)
   
   typeLemmas : TermLemmas Type
-  typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑✶ = {!!} }
--}
+  typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑✶ = Lemma./⋆-↑⋆ }
+    where
+      module Lemma {T₁ T₂} {lift₁ : Lift T₁ Type} {lift₂ : Lift T₂ Type} where
+      
+        open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
+        open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
+
+        postulate /⋆-↑⋆ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) → 
+                          (∀ k x → tvar x /✶₁ σs₁ ↑✶₁ k ≡ tvar x /✶₂ σs₂ ↑✶₂ k) → 
+                          ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
+
+  open TermLemmas typeLemmas public hiding (var)
+
+  -- The above lemma /✶-↑✶ specialized to single substitutions
+  /-↑⋆ : ∀ {T₁ T₂} {lift₁ : Lift T₁ Type} {lift₂ : Lift T₂ Type} →
+         let open Lifted lift₁ using () renaming (_↑⋆_ to _↑⋆₁_; _/_ to _/₁_)
+             open Lifted lift₂ using () renaming (_↑⋆_ to _↑⋆₂_; _/_ to _/₂_)
+         in
+         ∀ {n k} (ρ₁ : Sub T₁ n k) (ρ₂ : Sub T₂ n k) →
+         (∀ i x → tvar x /₁ ρ₁ ↑⋆₁ i ≡ tvar x /₂ ρ₂ ↑⋆₂ i) →
+          ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
+  /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
 open TypeSubst public using () renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_])
