@@ -86,8 +86,10 @@ module Lemmas where
   -- the semantics of type weakening is exactly system-f's type weakening
   ⟦wk⟧≡fwk : ∀ {n} → map ⟦_⟧tp (TS.wk {n}) ≡ FTS.wk {n}
   ⟦wk⟧≡fwk = begin
-    map ⟦_⟧tp TS.wk ≡⟨ ⟦⟧tps⋆weaken TS.id ⟩
-    map ftss.weaken (map ⟦_⟧tp TS.id) ≡⟨ cong (map ftss.weaken) ⟦id⟧≡fid ⟩
+    map ⟦_⟧tp TS.wk 
+      ≡⟨ ⟦⟧tps⋆weaken TS.id ⟩
+    map ftss.weaken (map ⟦_⟧tp TS.id) 
+      ≡⟨ cong (map ftss.weaken) ⟦id⟧≡fid ⟩
     FTS.wk ∎
 
   -- interpretation of contexts 
@@ -102,11 +104,14 @@ module Lemmas where
   -- type substitution commutes with interpreting types
   /⋆⟦⟧tp : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp TS./ σ ⟧tp ≡ ⟦ tp ⟧tp FTS./ (map ⟦_⟧tp σ)
   /⋆⟦⟧tp (tvar n) σ = begin
-    ⟦ lookup n σ ⟧tp ≡⟨ lookup⋆map σ ⟦_⟧tp n ⟩
+    ⟦ lookup n σ ⟧tp 
+      ≡⟨ lookup⋆map σ ⟦_⟧tp n ⟩
     ⟦ tvar n ⟧tp FTS./ (map ⟦_⟧tp σ) ∎
   /⋆⟦⟧tp {ν} (∀' tp) σ = begin
-    F.∀' (⟦ tp TS./ (σ TS.↑) ⟧tp) ≡⟨ cong F.∀' (/⋆⟦⟧tp tp (σ TS.↑)) ⟩
-    F.∀' (⟦ tp ⟧tp FTS./ (map ⟦_⟧tp (σ TS.↑)))  ≡⟨ cong (λ e → F.∀' (⟦ tp ⟧tp FTS./ e)) (⟦⟧tps⋆↑ σ) ⟩
+    F.∀' (⟦ tp TS./ (σ TS.↑) ⟧tp) 
+      ≡⟨ cong F.∀' (/⋆⟦⟧tp tp (σ TS.↑)) ⟩
+    F.∀' (⟦ tp ⟧tp FTS./ (map ⟦_⟧tp (σ TS.↑))) 
+      ≡⟨ cong (λ e → F.∀' (⟦ tp ⟧tp FTS./ e)) (⟦⟧tps⋆↑ σ) ⟩
     ⟦ ∀' tp ⟧tp FTS./ (map ⟦_⟧tp σ) ∎
   /⋆⟦⟧tp (l →' r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
   /⋆⟦⟧tp (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
