@@ -8,38 +8,39 @@ open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec.Properties
 
-⟦_⟧tp : ∀ {ν} → Type ν → F.Type ν
-⟦ tvar n ⟧tp = F.tvar n
-⟦ a →' b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
+⟦_⟧tp : ∀ {p ν} → PolyType p ν → F.Type ν
+⟦ mono (tvar n) ⟧tp = F.tvar n
+⟦ mono (a →' b) ⟧tp = ⟦ mono a ⟧tp F.→' ⟦ mono b ⟧tp
 ⟦ ∀' x ⟧tp = F.∀' ⟦ x ⟧tp
-⟦ a ⇒ b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
+⟦ mono (a ⇒ b) ⟧tp = ⟦ mono a ⟧tp F.→' ⟦ mono b ⟧tp
 
-⟦_⟧tps : ∀ {ν n} → Vec (Type ν) n → Vec (F.Type ν) n
+⟦_⟧tps : ∀ {p ν n} → Vec (PolyType p ν) n → Vec (F.Type ν) n
 ⟦ v ⟧tps = map ⟦_⟧tp v
 
 ⟦_⟧ctx : ∀ {ν n} → Ktx ν n → F.Ctx ν n
-⟦ Γ , Δ ⟧ctx = map ⟦_⟧tp Γ
+⟦ Γ , Δ ⟧ctx = map (⟦_⟧tp ∘ proj₂) Γ
 
 -- construct an System F term from an implicit resolution
 ⟦_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → F.Term ν n
 
-⟦_⟧ : ∀ {ν n} {K : Ktx ν n} {t a} → K ⊢ t ∈ a → F.Term ν n
+⟦_⟧ : ∀ {p ν n} {K : Ktx ν n} {t} {a : PolyType p ν} → K ⊢ t ∈ a → F.Term ν n
 ⟦_⟧ (var x) = F.var x
 ⟦_⟧ (Λ t) = F.Λ ⟦ t ⟧
-⟦_⟧ (λ' a x) = F.λ' ⟦ a ⟧tp ⟦ x ⟧
-⟦_⟧ (f [ b ]) = F._[_] ⟦ f ⟧ ⟦ b ⟧tp
+⟦_⟧ (λ' a x) = F.λ' ⟦ mono a ⟧tp ⟦ x ⟧
+⟦_⟧ (f [ b ]) = F._[_] ⟦ f ⟧ ⟦ mono b ⟧tp
 ⟦_⟧ (f · e) = ⟦ f ⟧ F.· ⟦ e ⟧
-⟦_⟧ (ρ a x) = F.λ' ⟦ a ⟧tp ⟦ x ⟧
+⟦_⟧ (ρ a x) = F.λ' ⟦ mono a ⟧tp ⟦ x ⟧
 ⟦_⟧ (_⟨⟩ f e∈Δ) = ⟦ f ⟧ F.· ⟦ e∈Δ ⟧i
+⟦_⟧ (let'_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧tp ⟦ e ⟧) F.· ⟦ t ⟧
 ⟦_⟧ (implicit_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧tp ⟦ e ⟧) F.· ⟦ t ⟧
 
-⟦_⟧i (r , p) with first⟶witness p
-⟦_⟧i {ν} {n} {proj₁ , proj₂} (a₁ , p) | by-value x = {!!}
-⟦_⟧i {ν} {n} {proj₁ , proj₂} (._ , p) | yields x x₁ = {!!}
+⟦_⟧i (_ , r , p) with first⟶witness p
+⟦_⟧i {ν} {n} {proj₁ , proj₂} (._ , a₁ , p) | by-value x = {!!}
+⟦_⟧i {ν} {n} {proj₁ , proj₂} (_ , ._ , p) | yields x x₁ = {!!}
 
 -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
-lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧tp
-lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧tp x
+lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ proj₂ $ lookup x $ proj₁ K ⟧tp
+lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) (⟦_⟧tp ∘ proj₂) x
 
 module Lemmas where
   module TS = TypeSubst
@@ -53,7 +54,7 @@ module Lemmas where
   postulate ⟦⟧i-wt-lemma : ∀ {ν n} {K : Ktx ν n} {a} (i : K Δ↝ a) → ⟦ K ⟧ctx F.⊢ ⟦ i ⟧i ∈ ⟦ a ⟧tp
 
   -- type in type substitution commutes with type interpretation
-  postulate tp/tp⋆⟦⟧ctx : ∀ {ν} (a : Type (suc ν)) b → ⟦ a tp[/tp b ] ⟧tp ≡ ⟦ a ⟧tp F.tp[/tp ⟦ b ⟧tp ]
+  postulate tp/tp⋆⟦⟧ctx : ∀ {p ν} (a : PolyType p (suc ν)) b → ⟦ a free[/tp b ] ⟧tp ≡ ⟦ a ⟧tp F.tp[/tp ⟦ mono b ⟧tp ]
 
   postulate weaken⋆⟦_⟧tp : ∀ {ν} → _≗_ {A = Type ν} (⟦_⟧tp ∘ tss.weaken) (ftss.weaken ∘ ⟦_⟧tp)
 

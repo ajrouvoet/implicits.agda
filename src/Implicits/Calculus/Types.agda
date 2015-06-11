@@ -7,8 +7,20 @@ import Data.Vec
 data Type (ν : ℕ) : Set where
   tvar : (n : Fin ν) → Type ν
   _→'_ : Type ν → Type ν → Type ν
-  ∀'   : Type (suc ν) → Type ν
   _⇒_  : Type ν → Type ν → Type ν
+
+data PolyType' (ν : ℕ) : (p : ℕ) → Set where
+  mono : Type ν → PolyType' ν 0
+  ∀'   : ∀ {p} → PolyType' (suc ν) p → PolyType' ν (suc p)
+
+PolyType : ℕ → ℕ → Set
+PolyType p ν = PolyType' ν p
+
+PType : ℕ → Set
+PType ν = ∃ λ p → PolyType p ν
+
+ptype : ∀ {p ν} → PolyType p ν → PType ν
+ptype x = , x
 
 module TypeSubst where
   module TypeApp {T} (l : Lift T Type) where
@@ -19,7 +31,6 @@ module TypeSubst where
     _/_ : ∀ {m n} → Type m → Sub T m n → Type n
     tvar x   / σ = lift (lookup x σ)
     (a →' b) / σ = (a / σ) →' (b / σ)
-    ∀' a     / σ = ∀' (a / σ ↑)
     (a ⇒ b)  / σ = (a / σ) ⇒ (b / σ)
 
     open Application (record { _/_ = _/_ }) using (_/✶_)
@@ -65,3 +76,8 @@ module TypeLemmas where
   /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
 open TypeSubst public using () renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_])
+
+-- substitute for the first bound variable
+-- postulate _poly[/tp_] : ∀ {p m} → PolyType (suc p) m → Type m → PolyType p m
+-- substitute for the first free variable
+postulate _free[/tp_] : ∀ {p m} → PolyType p (suc m) → Type m → PolyType p m

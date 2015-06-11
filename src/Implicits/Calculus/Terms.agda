@@ -17,6 +17,7 @@ data Term (ν n : ℕ) : Set where
   _⟨⟩  : Term ν n → Term ν n
 
   -- put value in implicit scope
+  let'_in'_ : Term ν n → Term ν (suc n) → Term ν n
   implicit_in'_ : Term ν n → Term ν (suc n) → Term ν n
 
 {-
