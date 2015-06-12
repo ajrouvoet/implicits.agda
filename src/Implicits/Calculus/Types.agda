@@ -2,6 +2,8 @@ module Implicits.Calculus.Types where
 
 open import Prelude hiding (lift; id)
 open import Data.Fin.Substitution
+open import Data.Nat.Properties as NatProps
+open import Extensions.Nat
 import Data.Vec
   
 data Type (ν : ℕ) : Set where
@@ -9,18 +11,9 @@ data Type (ν : ℕ) : Set where
   _→'_ : Type ν → Type ν → Type ν
   _⇒_  : Type ν → Type ν → Type ν
 
-data PolyType' (ν : ℕ) : (p : ℕ) → Set where
-  mono : Type ν → PolyType' ν 0
-  ∀'   : ∀ {p} → PolyType' (suc ν) p → PolyType' ν (suc p)
-
-PolyType : ℕ → ℕ → Set
-PolyType p ν = PolyType' ν p
-
-PType : ℕ → Set
-PType ν = ∃ λ p → PolyType p ν
-
-ptype : ∀ {p ν} → PolyType p ν → PType ν
-ptype x = , x
+data PolyType (ν : ℕ) : Set where
+  mono : Type ν → PolyType ν
+  ∀'   : PolyType (suc ν) → PolyType ν
 
 module TypeSubst where
   module TypeApp {T} (l : Lift T Type) where
@@ -45,7 +38,18 @@ module TypeSubst where
   -- Shorthand for single-variable type substitutions
   _[/_] : ∀ {n} → Type (suc n) → Type n → Type n
   a [/ b ] = a / sub b
+
+module PTypeSubst where
+  _/_ : ∀ {ν μ} → PolyType ν → Sub Type ν μ → PolyType μ
+  mono x / σ = mono $ x TypeSubst./ σ
+  ∀' x / σ = ∀' (x / (σ TypeSubst.↑))
   
+  _[/_] : ∀ {ν} → PolyType (suc ν) → Type ν → PolyType ν
+  _[/_] p t = p / TypeSubst.sub t
+
+  weaken : ∀ {ν} → PolyType ν → PolyType (suc ν)
+  weaken x = x / TypeSubst.wk
+
 module TypeLemmas where
   open import Data.Fin.Substitution.Lemmas
   open TypeSubst
@@ -77,7 +81,4 @@ module TypeLemmas where
 
 open TypeSubst public using () renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_])
 
--- substitute for the first bound variable
--- postulate _poly[/tp_] : ∀ {p m} → PolyType (suc p) m → Type m → PolyType p m
--- substitute for the first free variable
-postulate _free[/tp_] : ∀ {p m} → PolyType p (suc m) → Type m → PolyType p m
+open PTypeSubst public using () renaming (_/_ to _ptp/tp_; _[/_] to _ptp[/tp_]; weaken to pt-weaken)

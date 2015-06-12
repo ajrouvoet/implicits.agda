@@ -12,54 +12,59 @@ open TypeSubst
 infixl 4 _⊢_∈_
 
 infixl 4 _⊑_
-data _⊑_ {ν} : ∀ {p p'} → PolyType p ν → PolyType p' ν → Set where
+data _⊑_ {ν} : PolyType ν → PolyType ν → Set where
   mono : ∀ {a b : Type ν} → a ≡ b → mono a ⊑ mono b
-  poly-forall : ∀ {p p'} {a : PolyType p (suc ν)} {b : PolyType p' (suc ν)} → 
+  poly-forall : ∀ {a : PolyType (suc ν)} {b : PolyType (suc ν)} → 
               a ⊑ b → ∀' a ⊑ ∀' b
-  poly-instance : ∀ {p p'} {a : PolyType p (suc ν)} {b} {c : PolyType p' ν} → 
-                  a free[/tp b ] ⊑ c → ∀' a ⊑ c
+  poly-instance : ∀ {a : PolyType (suc ν)} {b} {c : PolyType ν} → 
+                  a ptp[/tp b ] ⊑ c → ∀' a ⊑ c
 
-_⋢_ : ∀ {p ν} → PolyType p ν → PolyType p ν → Set
+_⋢_ : ∀ {ν} → PolyType ν → PolyType ν → Set
 a ⋢ b = ¬ a ⊑ b
 
-_Δ↝_ : ∀ {p ν n} (K : Ktx ν n) → PolyType p ν → Set
+_Δ↝_ : ∀ {ν n} (K : Ktx ν n) → PolyType ν → Set
 
-data ρ⟨_,_⟩↝_ {p ν n} (K : Ktx ν n) : ∀ {p'} → PolyType p ν → PolyType p' ν → Set where
-  by-value : {a b : PolyType p ν} → a ⊑ b → ρ⟨ K , a ⟩↝ b
-  yields : {a b : Type ν} {c : PolyType p ν} → K Δ↝ mono a → c ⊑ mono (a ⇒ b) → ρ⟨ K , c ⟩↝ mono b -- todo: not strictly positive
+data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : PolyType ν → PolyType ν → Set where
+  by-value : {a b : PolyType ν} → a ⊑ b → ρ⟨ K , a ⟩↝ b
+  yields : {a b : Type ν} {c : PolyType ν} → K Δ↝ mono a → c ⊑ mono (a ⇒ b) → ρ⟨ K , c ⟩↝ mono b -- todo: not strictly positive
 
   -- it's easy to turn rules into functions
   -- as-func  : {a b c : Type ν} → (a →' b) ⊑ c → ρ⟨ K , a ⇒ b ⟩↝ c
 
 -- implicit resolution is simply the first rule in the implicit context
 -- that yields the queried type
-Δ⟨_,_⟩=_ : ∀ {p p' ν n} → (Ktx ν n) → (a : PolyType p ν) → PolyType p' ν → Set
-Δ⟨ (Γ , Δ) , a ⟩= r = first (ptype r) ∈ Δ ⇔ (λ r' → ρ⟨ (Γ , Δ) , proj₂ r' ⟩↝ a)
+Δ⟨_,_⟩=_ : ∀ {ν n} → (Ktx ν n) → (a : PolyType ν) → PolyType ν → Set
+Δ⟨ (Γ , Δ) , a ⟩= r = first r ∈ Δ ⇔ (λ r' → ρ⟨ (Γ , Δ) , r' ⟩↝ a)
 
-_Δ↝_ {ν = ν} K a = ∃₂ λ p (r : PolyType p ν) → Δ⟨ K , a ⟩= r
+_Δ↝_ {ν = ν} K a = ∃ λ (r : PolyType ν) → Δ⟨ K , a ⟩= r
 
-data _⊢_∈_ {ν n} (K : Ktx ν n) : ∀ {p} → Term ν n → PolyType p ν → Set where
-  var : (x : Fin n) → K ⊢ var x ∈ proj₂ (lookup x (proj₁ K))
-  λ' : ∀ {t b} a → (ptype $ mono a) ∷Γ K ⊢ t ∈ mono b → K ⊢ λ' a t ∈ mono (a →' b)
-  Λ : ∀ {p t} {a : PolyType p (suc ν)} → ktx-weaken K ⊢ t ∈ a → K ⊢ Λ t ∈ ∀' a
-  _[_] : ∀ {p t} {a : PolyType p (suc ν)} → 
-         K ⊢ t ∈ ∀' a → (b : Type ν) → K ⊢ t [ b ] ∈ a free[/tp b ]
+data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → PolyType ν → Set where
+  var : (x : Fin n) → K ⊢ var x ∈ (lookup x (proj₁ K))
+  λ' : ∀ {t b} a → (mono a) ∷Γ K ⊢ t ∈ mono b → K ⊢ λ' a t ∈ mono (a →' b)
+  Λ : ∀ {t} {a : PolyType (suc ν)} → ktx-weaken K ⊢ t ∈ a → K ⊢ Λ t ∈ ∀' a
+  _[_] : ∀ {t} {a : PolyType (suc ν)} → 
+         K ⊢ t ∈ ∀' a → (b : Type ν) → K ⊢ t [ b ] ∈ a ptp[/tp b ]
   _·_  : ∀ {f t a b} → K ⊢ f ∈ mono (a →' b) → K ⊢ t ∈ mono a → K ⊢ f · t ∈ mono b
   
   -- implicit abstract/application
-  ρ : ∀ {t b} a → (ptype $ mono a) ∷Γ K ⊢ t ∈ mono b → K ⊢ ρ a t ∈ mono (a ⇒ b)
+  ρ : ∀ {t b} a → (mono a) ∷Γ K ⊢ t ∈ mono b → K ⊢ ρ a t ∈ mono (a ⇒ b)
   _⟨⟩ : ∀ {t a b} → K ⊢ t ∈ mono (a ⇒ b) → K Δ↝ mono a → K ⊢ t ⟨⟩ ∈ mono b
 
   -- ML style let-polymorphism
-  let'_in'_ : ∀ {p t u b} {a : PolyType p ν} → K ⊢ t ∈ a → (ptype a) ∷Γ K ⊢ u ∈ mono b → 
+  let'_in'_ : ∀ {t u b} {a : PolyType ν} → K ⊢ t ∈ a → a ∷Γ K ⊢ u ∈ mono b → 
               K ⊢ (let' t in' u) ∈ mono b
 
   -- implicit binding
-  implicit_in'_ : ∀ {p t u b} {a : PolyType p ν} → K ⊢ t ∈ a → (ptype a) ∷K K ⊢ u ∈ mono b → 
+  implicit_in'_ : ∀ {t u b} {a : PolyType ν} → K ⊢ t ∈ a → a ∷K K ⊢ u ∈ mono b → 
                   K ⊢ (implicit t in' u) ∈ mono b
   
-_⊢_∉_ : ∀ {p ν n} → (K : Ktx ν n) → Term ν n → PolyType p ν → Set
+_⊢_∉_ : ∀ {ν n} → (K : Ktx ν n) → Term ν n → PolyType ν → Set
 _⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
+
+-- given a proof that type a is a specialization of type b
+-- we can generate a function that will take a term of type a and build a term of type b
+postulate mk-instancer : ∀ {ν} {a b : PolyType ν} → a ⊑ b → 
+                         (∀ {n} {K : Ktx ν n} {t} → (pt : K ⊢ t ∈ a) → ∃ λ t' → K ⊢ t' ∈ b)
   
 {-
 ⊢erase : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ t ∈ τ → Term ν n
