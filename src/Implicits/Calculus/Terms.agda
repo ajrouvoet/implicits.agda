@@ -20,7 +20,6 @@ data Term (ν n : ℕ) : Set where
   let'_in'_ : Term ν n → Term ν (suc n) → Term ν n
   implicit_in'_ : Term ν n → Term ν (suc n) → Term ν n
 
-{-
 module TermTypeSubst where
 
   module TermTypeApp {T} (l : Lift T Type) where
@@ -36,6 +35,10 @@ module TermTypeSubst where
     λ' a t     / σ = λ' (a /tp σ) (t / σ)
     t [ a ]    / σ = (t / σ) [ a /tp σ ]
     s · t      / σ = (s / σ) · (t / σ)
+    ρ a t      / σ = ρ (a /tp σ) (t / σ)
+    t ⟨⟩       / σ = (t / σ) ⟨⟩
+    implicit e in' e' / σ = implicit (e / σ) in' (e' / σ)
+    let' e in' e' / σ = let' (e / σ) in' (e' / σ)
 
   open TypeSubst using (varLift; termLift; sub)
 
@@ -61,7 +64,7 @@ module TermTypeSubst where
   _[/_] : ∀ {ν n} → Term (suc ν) n → Type ν → Term ν n
   t [/ b ] = t / sub b
 
-
+{-
 module TermTermSubst where
 
   -- Substitutions of terms in terms
@@ -135,6 +138,6 @@ module TermTermSubst where
   s [/ t ] = s / sub t
 
 open TermTermSubst public using () renaming (_/_ to _tm/tm_; _[/_] to _tm[/tm_])
-open TermTypeSubst public using () renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_])
 
 -}
+open TermTypeSubst public using () renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)

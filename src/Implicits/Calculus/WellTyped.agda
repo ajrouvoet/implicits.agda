@@ -61,19 +61,10 @@ data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → PolyType ν → Set where
 _⊢_∉_ : ∀ {ν n} → (K : Ktx ν n) → Term ν n → PolyType ν → Set
 _⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
 
--- given a proof that type a is a specialization of type b
--- we can generate a function that will take a term of type a and build a term of type b
-postulate mk-instancer : ∀ {ν} {a b : PolyType ν} → a ⊑ b → 
-                         (∀ {n} {K : Ktx ν n} {t} → (pt : K ⊢ t ∈ a) → ∃ λ t' → K ⊢ t' ∈ b)
-  
-{-
-⊢erase : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ t ∈ τ → Term ν n
-⊢erase (var x) = var x
-⊢erase (Λ {t} x) = Λ t
-⊢erase (λ' {t} a x) = λ' a t
-⊢erase (_[_] {t} x b) = t
-⊢erase (_·_ {f} x x₁) = f
+erase : ∀ {ν n} {K : Ktx ν n} {t a} → K ⊢ t ∈ a → Term ν n
+erase {t = t} _ = t
 
+{-
 ⊢f·a-inversion : ∀ {ν n f t b} {Γ : Ctx ν n} → Γ ⊢ f · t ∈ b → 
                  ∃ λ a → Γ ⊢ f ∈ a →' b × Γ ⊢ t ∈ a
 ⊢f·a-inversion (_·_ f∈a→b t∈a) = , (f∈a→b , t∈a)
