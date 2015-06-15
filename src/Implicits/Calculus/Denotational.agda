@@ -8,6 +8,18 @@ open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec.Properties
 
+private
+  module TS = TypeSubst
+  module FTS = F.TypeSubst
+  module PTS = PTypeSubst
+  
+  module tss = Simple TS.simple
+  module ftss = Simple FTS.simple
+
+-- this is provable (see Sandro's System-F implementation)
+postulate weaken-preserves-⊢ : ∀ {ν n} {K : F.Ctx ν n} {t a} → 
+                               K F.⊢ t ∈ a → F.ctx-weaken K F.⊢ F.tm-weaken t ∈ F.tp-weaken a
+
 ⟦_⟧tp : ∀ {ν} → Type ν → F.Type ν
 ⟦ tvar n ⟧tp = F.tvar n
 ⟦ a →' b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
@@ -37,25 +49,15 @@ open import Data.Vec.Properties
 ⟦_⟧ (let'_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧pt ⟦ e ⟧) F.· ⟦ t ⟧
 ⟦_⟧ (implicit_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧pt ⟦ e ⟧) F.· ⟦ t ⟧
 
-⟦_⟧i (r , p) with first⟶witness p
-⟦_⟧i {ν} {n} {proj₁ , proj₂} (a₁ , p) | by-value x = {!!}
-⟦_⟧i {ν} {n} {proj₁ , proj₂} (._ , p) | yields x x₁ = {!!}
-
--- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
-lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧pt
-lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧pt x
-
 module Lemmas where
-  module TS = TypeSubst
-  module FTS = F.TypeSubst
-  module PTS = PTypeSubst
-  
-  private
-    module tss = Simple TS.simple
-    module ftss = Simple FTS.simple
+
+  -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
+  lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧pt
+  lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧pt x
 
   -- implicitly constructed F-terms preserve type
-  postulate ⟦⟧i-wt-lemma : ∀ {ν n} {K : Ktx ν n} {a} (i : K Δ↝ a) → ⟦ K ⟧ctx F.⊢ ⟦ i ⟧i ∈ ⟦ a ⟧pt
+  ⟦⟧i-wt-lemma : ∀ {ν n} {K : Ktx ν n} {a} (i : K Δ↝ a) → ⟦ K ⟧ctx F.⊢ ⟦ i ⟧i ∈ ⟦ a ⟧pt
+  ⟦⟧i-wt-lemma i = {!!}
 
   -- type in type substitution commutes with type interpretation
   postulate tp/tp⋆⟦⟧ctx : ∀ {ν} (a : PolyType (suc ν)) b → ⟦ a ptp[/tp b ] ⟧pt ≡ ⟦ a ⟧pt F.tp[/tp ⟦ b ⟧tp ]
@@ -125,6 +127,15 @@ module Lemmas where
     F.∀' (⟦ tp ⟧pt FTS./ (map ⟦_⟧tp (σ TS.↑))) 
       ≡⟨ cong (λ e → F.∀' (⟦ tp ⟧pt FTS./ e)) (⟦⟧tps⋆↑ σ) ⟩
     ⟦ ∀' tp ⟧pt FTS./ (map ⟦_⟧tp σ) ∎
+  
+  -- forall' application commutes with interpreting types
+  ⟦sub⟧≡sub⟦⟧ : ∀ {ν} (a : PolyType (suc ν)) b → 
+                ⟦ a PTS./ (TS.sub b) ⟧pt ≡ ⟦ a ⟧pt FTS./ (FTS.sub ⟦ b ⟧tp)
+  ⟦sub⟧≡sub⟦⟧ a b = begin
+      ⟦ a PTS./ TS.sub b ⟧pt ≡⟨ /⋆⟦⟧pt a (b ∷ TS.id) ⟩
+      ⟦ a ⟧pt FTS./ (map ⟦_⟧tp (b ∷ TS.id)) ≡⟨ refl ⟩
+      ⟦ a ⟧pt FTS./ (⟦ b ⟧tp ∷ (map ⟦_⟧tp TS.id)) ≡⟨ cong (λ s → ⟦ a ⟧pt FTS./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
+      ⟦ a ⟧pt FTS./ (FTS.sub ⟦ b ⟧tp) ∎
 
   -- type weakening commutes with interpreting types
   {-
@@ -160,6 +171,56 @@ module Lemmas where
       xs = map ⟦_⟧pt $ map (λ s → s PTS./ TS.wk ) Γ
 
 open Lemmas
+
+{-
+-- given a proof that type a is a specialization of type b
+-- and a term of type a, we can build a term of type b
+inst : ∀ {ν n} {a b : PolyType ν} {K : Ktx ν n} → a ⊑ b → 
+               ∀ {t} → K ⊢ t ∈ a → ∃ λ t' → K ⊢ t' ∈ b
+inst {K = K} (mono x) {t = t} pt = , Prelude.subst (λ x → K ⊢ t ∈ mono x) x pt
+inst {ν} {n} {a = ∀' a'} {K = K} (poly-forall a'⊑b) {t} wt = 
+  let t'' , wt'' = inst a'⊑b wt' in , Λ wt''
+  where
+    t' = (tm-weaken t) [ tvar Fin.zero ]
+    eq : (a' ptp/tp (TS.wk TS.↑)) ptp/tp (TS.sub (tvar Fin.zero)) ≡ a'
+    eq = begin
+      (a' ptp/tp (TS.wk TS.↑)) ptp/tp (TS.sub (tvar zero)) ≡⟨ refl ⟩
+      (a' ptp/tp ((tvar zero) ∷ map tss.weaken TS.wk)) ptp/tp ((tvar zero) ∷ TS.id) ≡⟨ {!!} ⟩
+      a' ptp/tp (((tvar zero) ∷ map tss.weaken TS.wk) TS.⊙ ((tvar zero) ∷ TS.id)) ≡⟨ {!!} ⟩
+      (a' ptp/tp TS.id) ≡⟨ {!!} ⟩
+      a' ∎
+    wt' : ktx-weaken K ⊢ t' ∈ a'
+    wt' = subst (λ τ → ktx-weaken K ⊢ t' ∈ τ) eq ((weaken-preserves-⊢ wt) [ tvar Fin.zero ])
+inst (poly-instance {c = c} a[c]⊑b) wt-a = inst a[c]⊑b (wt-a [ c ])
+-}
+
+-- given a proof that some calculus type b is a specialization of a,
+-- and an F-instance of a, we can build an F-instance of b
+-- (it might seem more natural to first build a Calculus term and keep the interpretation out of this,
+--    but that gives termination checking problems, since we could put more implicit applications in the 
+--    constructed term)
+inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
+inst {t = t} {K = K} (mono a≡b) pt = , Prelude.subst (λ x → K F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
+inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt = 
+  let t'' , wt'' = inst a'⊑b wt' in , F.Λ wt''
+  where
+    t' = (F.tm-weaken t) F.[ F.tvar zero ]
+    wt' : F.ctx-weaken K F.⊢ t' ∈ ⟦ a' ⟧pt
+    wt' = subst (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) {!!} ((weaken-preserves-⊢ wt) F.[ F.tvar zero ])
+inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-at = 
+  inst a[c]⊑b wt-t[c]
+  where
+    t[c] : F.Term ν n
+    t[c] = t F.[ ⟦ c ⟧tp ]
+    wt-t[c] = subst (λ a′ → K F.⊢ t F.[ ⟦ c ⟧tp ] ∈ a′) (sym $ ⟦sub⟧≡sub⟦⟧ a' c) (wt-at F.[ ⟦ c ⟧tp ])
+
+⟦_⟧i {ν} {n} {K} (r , p) with first⟶witness p
+⟦_⟧i {ν} {n} {K} (r , p) | by-value r⊑a = proj₁ (inst r⊑a rt)
+  where
+    -- somehow we have to pick up this one from the explicit context
+    postulate t : F.Term ν n 
+    postulate rt : ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt
+⟦_⟧i {ν} {n} {K} (._ , p) | yields x x₁ = {!!}
 
 -- interpretation of well-typed terms in System F preserves type
 ⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → ⟦ K ⟧ctx F.⊢ ⟦ wt-t ⟧ ∈ ⟦ a ⟧pt

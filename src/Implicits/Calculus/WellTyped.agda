@@ -16,8 +16,8 @@ data _⊑_ {ν} : PolyType ν → PolyType ν → Set where
   mono : ∀ {a b : Type ν} → a ≡ b → mono a ⊑ mono b
   poly-forall : ∀ {a : PolyType (suc ν)} {b : PolyType (suc ν)} → 
               a ⊑ b → ∀' a ⊑ ∀' b
-  poly-instance : ∀ {a : PolyType (suc ν)} {b} {c : PolyType ν} → 
-                  a ptp[/tp b ] ⊑ c → ∀' a ⊑ c
+  poly-instance : ∀ {a : PolyType (suc ν)} {c} {b : PolyType ν} → 
+                  a ptp[/tp c ] ⊑ b → ∀' a ⊑ b
 
 _⋢_ : ∀ {ν} → PolyType ν → PolyType ν → Set
 a ⋢ b = ¬ a ⊑ b
@@ -36,7 +36,7 @@ data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : PolyType ν → PolyType ν → Set
 Δ⟨_,_⟩=_ : ∀ {ν n} → (Ktx ν n) → (a : PolyType ν) → PolyType ν → Set
 Δ⟨ (Γ , Δ) , a ⟩= r = first r ∈ Δ ⇔ (λ r' → ρ⟨ (Γ , Δ) , r' ⟩↝ a)
 
-_Δ↝_ {ν = ν} K a = ∃ λ (r : PolyType ν) → Δ⟨ K , a ⟩= r
+_Δ↝_ {ν = ν} K a = ∃ λ r → Δ⟨ K , a ⟩= r
 
 data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → PolyType ν → Set where
   var : (x : Fin n) → K ⊢ var x ∈ (lookup x (proj₁ K))

@@ -126,4 +126,4 @@ module TermTermSubst where
   s [/ t ] = s / sub t
 
 open TermTermSubst public using () renaming (_/_ to _tm/tm_; _[/_] to _tm[/tm_])
-open TermTypeSubst public using () renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_])
+open TermTypeSubst public using () renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
