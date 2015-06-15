@@ -35,8 +35,15 @@ postulate weaken-preserves-⊢ : ∀ {ν n} {K : F.Ctx ν n} {t a} →
 ⟦_⟧ctx : ∀ {ν n} → Ktx ν n → F.Ctx ν n
 ⟦ Γ , Δ ⟧ctx = map ⟦_⟧pt Γ
 
+-- given a proof that some calculus type b is a specialization of a,
+-- and an F-instance of a, we can build an F-instance of b
+-- (it might seem more natural to first build a Calculus term and keep the interpretation out of this,
+--    but that gives termination checking problems, since we could put more implicit applications in the 
+--    constructed term)
+inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
+
 -- construct an System F term from an implicit resolution
-⟦_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → F.Term ν n
+⟦_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
 
 ⟦_⟧ : ∀ {ν n} {K : Ktx ν n} {t} {a : PolyType ν} → K ⊢ t ∈ a → F.Term ν n
 ⟦_⟧ (var x) = F.var x
@@ -45,7 +52,7 @@ postulate weaken-preserves-⊢ : ∀ {ν n} {K : F.Ctx ν n} {t a} →
 ⟦_⟧ (f [ b ]) = F._[_] ⟦ f ⟧ ⟦ b ⟧tp
 ⟦_⟧ (f · e) = ⟦ f ⟧ F.· ⟦ e ⟧
 ⟦_⟧ (ρ a x) = F.λ' ⟦ a ⟧tp ⟦ x ⟧
-⟦_⟧ (_⟨⟩ f e∈Δ) = ⟦ f ⟧ F.· ⟦ e∈Δ ⟧i
+⟦_⟧ (_⟨⟩ f e∈Δ) = ⟦ f ⟧ F.· (proj₁ ⟦ e∈Δ ⟧i)
 ⟦_⟧ (let'_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧pt ⟦ e ⟧) F.· ⟦ t ⟧
 ⟦_⟧ (implicit_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧pt ⟦ e ⟧) F.· ⟦ t ⟧
 
@@ -54,9 +61,6 @@ module Lemmas where
   -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
   lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧pt
   lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧pt x
-
-  -- implicitly constructed F-terms preserve type
-  postulate ⟦⟧i-wt-lemma : ∀ {ν n} {K : Ktx ν n} {a} (i : K Δ↝ a) → ⟦ K ⟧ctx F.⊢ ⟦ i ⟧i ∈ ⟦ a ⟧pt
 
   -- type in type substitution commutes with type interpretation
   postulate tp/tp⋆⟦⟧ctx : ∀ {ν} (a : PolyType (suc ν)) b → ⟦ a ptp[/tp b ] ⟧pt ≡ ⟦ a ⟧pt F.tp[/tp ⟦ b ⟧tp ]
@@ -193,12 +197,6 @@ inst {ν} {n} {a = ∀' a'} {K = K} (poly-forall a'⊑b) {t} wt =
 inst (poly-instance {c = c} a[c]⊑b) wt-a = inst a[c]⊑b (wt-a [ c ])
 -}
 
--- given a proof that some calculus type b is a specialization of a,
--- and an F-instance of a, we can build an F-instance of b
--- (it might seem more natural to first build a Calculus term and keep the interpretation out of this,
---    but that gives termination checking problems, since we could put more implicit applications in the 
---    constructed term)
-inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
 inst {t = t} {K = K} (mono a≡b) pt = , Prelude.subst (λ x → K F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
 inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t = 
   , F.Λ (proj₂ $ inst a'⊑b wt-t')
@@ -217,18 +215,18 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-
     wt-t[c] = subst (λ a′ → K F.⊢ t F.[ ⟦ c ⟧tp ] ∈ a′) (sym $ ⟦sub⟧≡sub⟦⟧ a' c) (wt-at F.[ ⟦ c ⟧tp ])
 
 ⟦_⟧i {ν} {n} {K} (r , p) with first⟶witness p
-⟦_⟧i {ν} {n} {K} (r , p) | by-value r⊑a = proj₁ (inst r⊑a rt)
+⟦_⟧i {ν} {n} {K} (r , p) | by-value r⊑a = (inst r⊑a rt)
   where
     -- somehow we have to pick up this one from the explicit context
     postulate t : F.Term ν n 
     postulate rt : ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt
 ⟦_⟧i {ν} {n} {K} (r , p) | yields {a = a} K↝a r⊑a⇒b with ⟦ K↝a ⟧i
-⟦_⟧i {ν} {n} {K} (r , p) | yields {a = a} K↝a r⊑a⇒b | tm-a = tm-rule-inst F.· tm-a
+⟦_⟧i {ν} {n} {K} (r , p) | yields {a = a} K↝a r⊑a⇒b | _ , wt-a = , rule-inst F.· wt-a
   where
     -- somehow we have to pick up this one from the explicit context
     postulate t : F.Term ν n 
     postulate rt : ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt 
-    tm-rule-inst = proj₁ (inst r⊑a⇒b rt)
+    rule-inst = proj₂ (inst r⊑a⇒b rt)
 
 -- interpretation of well-typed terms in System F preserves type
 ⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → ⟦ K ⟧ctx F.⊢ ⟦ wt-t ⟧ ∈ ⟦ a ⟧pt
@@ -250,7 +248,7 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-
 ⟦⟧-preserves-tp (ρ a wt-e) with ⟦⟧-preserves-tp wt-e
 ⟦⟧-preserves-tp (ρ a wt-e) | x = F.λ' ⟦ a ⟧tp x
 ⟦⟧-preserves-tp (_⟨⟩ wt-r e) with ⟦⟧-preserves-tp wt-r 
-⟦⟧-preserves-tp (_⟨⟩ wt-r e) | f-wt-r = let wt-f-e = ⟦⟧i-wt-lemma e in f-wt-r F.· wt-f-e
+⟦⟧-preserves-tp (_⟨⟩ wt-r e) | f-wt-r = f-wt-r F.· (proj₂ ⟦ e ⟧i)
 ⟦⟧-preserves-tp (let' wt-e₁ in' wt-e₂) with ⟦⟧-preserves-tp wt-e₁ | ⟦⟧-preserves-tp wt-e₂
 ⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
 ⟦⟧-preserves-tp (implicit wt-e₁ in' wt-e₂) with ⟦⟧-preserves-tp wt-e₁ | ⟦⟧-preserves-tp wt-e₂
