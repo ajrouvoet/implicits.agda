@@ -26,7 +26,9 @@ _Δ↝_ : ∀ {ν n} (K : Ktx ν n) → PolyType ν → Set
 
 data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : PolyType ν → PolyType ν → Set where
   by-value : {a b : PolyType ν} → a ⊑ b → ρ⟨ K , a ⟩↝ b
-  yields : {a b : Type ν} {c : PolyType ν} → K Δ↝ mono a → c ⊑ mono (a ⇒ b) → ρ⟨ K , c ⟩↝ mono b -- todo: not strictly positive
+  -- todo: not strictly positive
+  yields : {a b : Type ν} {c : PolyType ν} → 
+           K Δ↝ mono a → c ⊑ mono (a ⇒ b) → ρ⟨ K , c ⟩↝ mono b
 
   -- it's easy to turn rules into functions
   -- as-func  : {a b c : Type ν} → (a →' b) ⊑ c → ρ⟨ K , a ⇒ b ⟩↝ c

@@ -49,7 +49,7 @@ module TypeLemmas where
                           (∀ k x → tvar x /✶₁ σs₁ ↑✶₁ k ≡ tvar x /✶₂ σs₂ ↑✶₂ k) → 
                           ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
 
-  open TermLemmas typeLemmas public hiding (var)
+  module tpl = TermLemmas typeLemmas
 
   -- The above lemma /✶-↑✶ specialized to single substitutions
   /-↑⋆ : ∀ {T₁ T₂} {lift₁ : Lift T₁ Type} {lift₂ : Lift T₂ Type} →
@@ -59,6 +59,15 @@ module TypeLemmas where
          ∀ {n k} (ρ₁ : Sub T₁ n k) (ρ₂ : Sub T₂ n k) →
          (∀ i x → tvar x /₁ ρ₁ ↑⋆₁ i ≡ tvar x /₂ ρ₂ ↑⋆₂ i) →
           ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
-  /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
+  /-↑⋆ ρ₁ ρ₂ hyp i a = tpl./✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
+
+  postulate a/var-wk-↑/sub-0≡a : ∀ {ν} (a : Type (suc ν)) → 
+               (a /Var (VarSubst.wk VarSubst.↑)) / (sub $ tvar zero) ≡ a
+  {-a/var-wk-↑/sub-0≡a a = begin
+    (a /Var (VarSubst.wk VarSubst.↑)) / (sub $ tvar zero) ≡⟨ {!!} ⟩
+    (a /Var (zero ∷ (map suc VarSubst.wk))) / ((tvar zero) ∷ TypeSubst.id) ≡⟨ {!!} ⟩
+    a ∎-}
+
+  open tpl public
 
 open TypeSubst public using () renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
