@@ -68,9 +68,9 @@ progress (_·_ {t = t} ⊢f ⊢t) | inj₂ (_ , f≻f') | _ = inj₂ (, step-·�
 ≻-preserves (Λ ⊢t) (step-Λ-body t≻t') = Λ (≻-preserves ⊢t t≻t')
 ≻-preserves (λ' a ⊢t) (step-λ-body t≻t') = λ' a (≻-preserves ⊢t t≻t')
 -- goal: (Λ t) [ a ] and t tm[/tp a ] have the same type
-≻-preserves (⊢t [ a ]) (reduce-[] t .a) = tm[/tp]-preserves ⊢t a
+≻-preserves (⊢t [ a ]) (reduce-[] t .a) = WellTypedLemmas.tm[/tp]-preserves ⊢t a
 ≻-preserves (⊢t [ a ]) (step-[] t≻t') = (≻-preserves ⊢t t≻t') [ a ]
 -- goal: (λ' a t) · u and t tm[/tm u ] have the same type
-≻-preserves (λ' a ⊢t · ⊢u) (reduce-· .a t₁) = tm[/tm]-preserves ⊢t ⊢u
+≻-preserves (λ' a ⊢t · ⊢u) (reduce-· .a t₁) = WellTypedLemmas.tm[/tm]-preserves ⊢t ⊢u
 ≻-preserves (⊢t · ⊢u) (step-·₁ t≻t') = (≻-preserves ⊢t t≻t') · ⊢u
 ≻-preserves (⊢t · ⊢u) (step-·₂ u≻u') = ⊢t · (≻-preserves ⊢u u≻u')

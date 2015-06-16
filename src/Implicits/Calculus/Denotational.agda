@@ -16,10 +16,6 @@ private
   module TSS = Simple TS.simple
   module FTSS = Simple F.simple
 
--- this is provable (see Sandro's System-F implementation)
-postulate weaken-preserves-⊢ : ∀ {ν n} {K : F.Ctx ν n} {t a} → 
-                               K F.⊢ t ∈ a → F.ctx-weaken K F.⊢ F.tm-weaken t ∈ F.tp-weaken a
-
 ⟦_⟧tp : ∀ {ν} → Type ν → F.Type ν
 ⟦ tvar n ⟧tp = F.tvar n
 ⟦ a →' b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
@@ -176,7 +172,7 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t =
     wt-t' = subst 
       (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) 
       (F.TypeLemmas.a/var-wk-↑/sub-0≡a ⟦ a' ⟧pt)
-      ((weaken-preserves-⊢ wt-t) F.[ F.tvar zero ])
+      ((F.WellTypedLemmas.⊢weaken-preserves wt-t) F.[ F.tvar zero ])
 inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-at = 
   inst a[c]⊑b wt-t[c]
   where

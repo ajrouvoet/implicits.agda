@@ -16,4 +16,4 @@ module CtxSubst where
   ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
   ctx-weaken Γ = Γ / TypeSubst.wk
 
-open CtxSubst public renaming (_/_ to _ctx-/_)
+open CtxSubst public renaming (_/_ to _ctx/_)

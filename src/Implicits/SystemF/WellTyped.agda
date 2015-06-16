@@ -5,6 +5,7 @@ open import Data.Fin.Substitution
 open import Implicits.SystemF.Types public
 open import Implicits.SystemF.Terms public
 open import Implicits.SystemF.Contexts public
+open import Data.Vec.Properties
 
 infix 4 _⊢_∈_
 
@@ -41,8 +42,27 @@ unique-type (f · e) (f' · e') = cong (λ{ (a →' b) → b; a → a }) (unique
 
 unique-type′ : ∀ {ν n} {Γ : Ctx ν n} {t τ τ'} → Γ ⊢ t ∈ τ → τ ≢ τ' → Γ ⊢ t ∉ τ'
 unique-type′ ⊢t∈τ neq ⊢t∈τ' = neq $ unique-type ⊢t∈τ ⊢t∈τ'
+
+module WellTypedLemmas where
+  postulate ⊢/-preserves : ∀ {ν μ n} {Γ : Ctx ν n} {t a} → Γ ⊢ t ∈ a → (s : Sub Type ν μ) → Γ ctx/ s ⊢ t tm/tp s ∈ a tp/tp s
   
-postulate tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → 
-                            Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
-postulate tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t u a b} → 
-                            b ∷ Γ ⊢ t ∈ a → Γ ⊢ u ∈ b → Γ ⊢ (t tm[/tm u ]) ∈ a
+  ctx-weaken-sub-vanishes : ∀ {ν n} {Γ : Ctx ν n} {a} → (ctx-weaken Γ) ctx/ (TypeSubst.sub a) ≡ Γ
+  ctx-weaken-sub-vanishes {Γ = Γ} {a} = begin
+    (Γ ctx/ TypeSubst.wk) ctx/ (TypeSubst.sub a) 
+      ≡⟨ sym $ map-∘ (λ s → s tp/tp TypeSubst.sub a) (λ s → s tp/tp TypeSubst.wk) Γ ⟩
+    (map (λ s → s tp/tp TypeSubst.wk tp/tp (TypeSubst.sub a)) Γ) 
+      ≡⟨ map-cong (TypeLemmas.wk-sub-vanishes) Γ ⟩
+    (map (λ s → s) Γ) ≡⟨ map-id Γ ⟩
+    Γ ∎
+
+  tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
+  tm[/tp]-preserves {Γ = Γ} {t} {τ} (Λ p) a = 
+    ctx-subst ctx-weaken-sub-vanishes (⊢/-preserves p (TypeSubst.sub a))
+    where
+      ctx-subst = subst (λ c → c ⊢ t tm[/tp a ] ∈ τ tp[/tp a ])
+
+  postulate tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t u a b} → 
+                      b ∷ Γ ⊢ t ∈ a → Γ ⊢ u ∈ b → Γ ⊢ (t tm[/tm u ]) ∈ a
+  -- tm[/tm]-preserves {Γ = Γ} {t} {u} {a} {b} t∈a u∈b = {!!}
+
+  postulate ⊢weaken-preserves : ∀ {ν n} {K : Ctx ν n} {t a} → K ⊢ t ∈ a → ctx-weaken K ⊢ tm-weaken t ∈ tp-weaken a
