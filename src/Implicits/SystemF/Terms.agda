@@ -1,7 +1,8 @@
 module Implicits.SystemF.Terms where
   
-open import Prelude hiding (lift; Fin′; subst)
+open import Prelude hiding (Fin′; subst) renaming (lift to finlift)
 open import Data.Fin.Substitution
+open import Data.Fin.Substitution.Lemmas
 open import Implicits.SystemF.Types
 
 infixl 9 _[_] _·_
@@ -52,6 +53,40 @@ module TermTypeSubst where
   _[/_] : ∀ {ν n} → Term (suc ν) n → Type ν → Term ν n
   t [/ b ] = t / sub b
 
+
+-- Lemmas about type substitutions in terms.
+module TermTypeLemmas where
+  open TermTypeSubst public
+
+  private module T = TypeLemmas
+  private module TS = TypeSubst
+  private module V = VarLemmas
+
+  /-↑⋆ :
+    ∀ {T₁ T₂} {lift₁ : Lift T₁ Type} {lift₂ : Lift T₂ Type} →
+    let open TS.Lifted lift₁ using () renaming (_↑⋆_ to _↑⋆₁_; _/_ to _/tp₁_)
+        open   Lifted lift₁ using () renaming (_/_  to _/₁_)
+        open TS.Lifted lift₂ using () renaming (_↑⋆_ to _↑⋆₂_; _/_ to _/tp₂_)
+        open   Lifted lift₂ using () renaming (_/_  to _/₂_)
+    in
+    ∀ {n k} (ρ₁ : Sub T₁ n k) (ρ₂ : Sub T₂ n k) →
+    (∀ i x → tvar x /tp₁ ρ₁ ↑⋆₁ i ≡ tvar x /tp₂ ρ₂ ↑⋆₂ i) →
+     ∀ i {m} (t : Term (i N+ n) m)  → t /₁ ρ₁ ↑⋆₁ i ≡ t /₂ ρ₂ ↑⋆₂ i
+  /-↑⋆ ρ₁ ρ₂ hyp i (var x)      = refl
+  /-↑⋆ ρ₁ ρ₂ hyp i (Λ t)        = cong Λ      (/-↑⋆ ρ₁ ρ₂ hyp (1 N+ i) t)
+  /-↑⋆ ρ₁ ρ₂ hyp i (λ' a t)     =
+    cong₂ λ'     (T./-↑⋆ ρ₁ ρ₂ hyp i a)       (/-↑⋆ ρ₁ ρ₂ hyp i t)
+  /-↑⋆ ρ₁ ρ₂ hyp i (t [ b ])    =
+    cong₂ _[_]     (/-↑⋆ ρ₁ ρ₂ hyp i t)     (T./-↑⋆ ρ₁ ρ₂ hyp i b)
+  /-↑⋆ ρ₁ ρ₂ hyp i (s · t)      =
+    cong₂ _·_      (/-↑⋆ ρ₁ ρ₂ hyp i s)       (/-↑⋆ ρ₁ ρ₂ hyp i t)
+
+  /-wk : ∀ {m n} (t : Term m n) → t / TypeSubst.wk ≡ weaken t
+  /-wk t = /-↑⋆ TypeSubst.wk VarSubst.wk (λ k x → begin
+    tvar x T./ T.wk T.↑⋆ k ≡⟨ T.var-/-wk-↑⋆ k x ⟩
+    tvar (finlift k suc x) ≡⟨ cong tvar (sym (V.var-/-wk-↑⋆ k x)) ⟩
+    tvar (lookup x (V.wk V.↑⋆ k)) ≡⟨ refl ⟩
+    tvar x TS./Var V.wk V.↑⋆ k ∎) 0 t
 
 module TermTermSubst where
 

@@ -3,6 +3,7 @@ module Implicits.Calculus.Types where
 open import Prelude hiding (lift; id)
 open import Data.Fin.Substitution
 open import Data.Nat.Properties as NatProps
+open import Data.Star using (Star; ε; _◅_)
 open import Extensions.Nat
 import Data.Vec
   
@@ -27,6 +28,16 @@ module TypeSubst where
     (a ⇒ b)  / σ = (a / σ) ⇒ (b / σ)
 
     open Application (record { _/_ = _/_ }) using (_/✶_)
+
+    →'-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs T m n) →
+               (a →' b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k)
+    →'-/✶-↑✶ k ε        = refl
+    →'-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
+
+    ⇒-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs T m n) →
+               (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
+    ⇒-/✶-↑✶ k ε        = refl
+    ⇒-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
 
   typeSubst : TermSubst Type
   typeSubst = record { var = tvar; app = TypeApp._/_ }
@@ -56,16 +67,35 @@ module TypeLemmas where
   open import Data.Star using (Star; ε; _◅_)
   
   typeLemmas : TermLemmas Type
-  typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑✶ = Lemma./⋆-↑⋆ }
+  typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑✶ = Lemma./✶-↑✶ }
     where
       module Lemma {T₁ T₂} {lift₁ : Lift T₁ Type} {lift₂ : Lift T₂ Type} where
       
         open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
         open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
 
-        postulate /⋆-↑⋆ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) → 
+        /✶-↑✶ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) → 
                           (∀ k x → tvar x /✶₁ σs₁ ↑✶₁ k ≡ tvar x /✶₂ σs₂ ↑✶₂ k) → 
                           ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
+        /✶-↑✶ ρs₁ ρs₂ hyp k (tvar x) = hyp k x
+        /✶-↑✶ ρs₁ ρs₂ hyp k (a →' b) = begin
+            (a →' b) /✶₁ ρs₁ ↑✶₁ k
+          ≡⟨ TypeApp.→'-/✶-↑✶ _ k ρs₁ ⟩
+            (a /✶₁ ρs₁ ↑✶₁ k) →' (b /✶₁ ρs₁ ↑✶₁ k)
+          ≡⟨ cong₂ _→'_ (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
+            (a /✶₂ ρs₂ ↑✶₂ k) →' (b /✶₂ ρs₂ ↑✶₂ k)
+          ≡⟨ sym (TypeApp.→'-/✶-↑✶ _ k ρs₂) ⟩
+            (a →' b) /✶₂ ρs₂ ↑✶₂ k
+          ∎
+        /✶-↑✶ ρs₁ ρs₂ hyp k (a ⇒ b) = begin
+            (a ⇒ b) /✶₁ ρs₁ ↑✶₁ k
+          ≡⟨ TypeApp.⇒-/✶-↑✶ _ k ρs₁ ⟩ -- 
+            (a /✶₁ ρs₁ ↑✶₁ k) ⇒ (b /✶₁ ρs₁ ↑✶₁ k)
+          ≡⟨ cong₂ _⇒_ (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
+            (a /✶₂ ρs₂ ↑✶₂ k) ⇒ (b /✶₂ ρs₂ ↑✶₂ k)
+          ≡⟨ sym (TypeApp.⇒-/✶-↑✶ _ k ρs₂) ⟩
+            (a ⇒ b) /✶₂ ρs₂ ↑✶₂ k
+          ∎
 
   open TermLemmas typeLemmas public hiding (var)
 

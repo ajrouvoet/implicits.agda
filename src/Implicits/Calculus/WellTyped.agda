@@ -65,28 +65,3 @@ _⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
 
 erase : ∀ {ν n} {K : Ktx ν n} {t a} → K ⊢ t ∈ a → Term ν n
 erase {t = t} _ = t
-
-{-
-⊢f·a-inversion : ∀ {ν n f t b} {Γ : Ctx ν n} → Γ ⊢ f · t ∈ b → 
-                 ∃ λ a → Γ ⊢ f ∈ a →' b × Γ ⊢ t ∈ a
-⊢f·a-inversion (_·_ f∈a→b t∈a) = , (f∈a→b , t∈a)
-
-⊢tc[a]-inversion : ∀ {ν n tc a' b} {Γ : Ctx ν n} → Γ ⊢ tc [ b ] ∈ a' → ∃ λ a → Γ ⊢ tc ∈ ∀' a
-⊢tc[a]-inversion (_[_] tc∈∀'a b) = , tc∈∀'a
-
-unique-type : ∀ {ν n} {Γ : Ctx ν n} {t τ τ'} → Γ ⊢ t ∈ τ → Γ ⊢ t ∈ τ' → τ ≡ τ'
-unique-type (var x) (var .x) = refl
-unique-type (Λ l) (Λ r) = cong ∀' (unique-type l r)
-unique-type (λ' a l) (λ' .a r) = cong (λ b → a →' b) (unique-type l r)
-unique-type (l [ b ]) (r [ .b ]) = cong (λ{ (∀' fa) → fa tp[/tp b ]; a → a}) (unique-type l r)
-unique-type (f · e) (f' · e') = cong (λ{ (a →' b) → b; a → a }) (unique-type f f')
-
-unique-type′ : ∀ {ν n} {Γ : Ctx ν n} {t τ τ'} → Γ ⊢ t ∈ τ → τ ≢ τ' → Γ ⊢ t ∉ τ'
-unique-type′ ⊢t∈τ neq ⊢t∈τ' = neq $ unique-type ⊢t∈τ ⊢t∈τ'
-  
-postulate tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → 
-                            Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
-postulate tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t u a b} → 
-                            b ∷ Γ ⊢ t ∈ a → Γ ⊢ u ∈ b → Γ ⊢ (t tm[/tm u ]) ∈ a
-
--}
