@@ -62,10 +62,10 @@ module Lemmas where
   lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧pt
   lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧pt x
 
-  -- type in type substitution commutes with type interpretation
-  postulate tp/tp⋆⟦⟧ctx : ∀ {ν} (a : PolyType (suc ν)) b → ⟦ a ptp[/tp b ] ⟧pt ≡ ⟦ a ⟧pt F.tp[/tp ⟦ b ⟧tp ]
-
-  postulate weaken⋆⟦_⟧tp : ∀ {ν} → _≗_ {A = Type ν} (⟦_⟧tp ∘ TSS.weaken) (FTSS.weaken ∘ ⟦_⟧tp)
+  weaken⋆⟦_⟧tp : ∀ {ν} → _≗_ {A = Type ν} (⟦_⟧tp ∘ TSS.weaken) (FTSS.weaken ∘ ⟦_⟧tp)
+  weaken⋆⟦ tvar n ⟧tp = refl
+  weaken⋆⟦ a →' b ⟧tp = cong₂ F._→'_ weaken⋆⟦ a ⟧tp weaken⋆⟦ b ⟧tp 
+  weaken⋆⟦ a ⇒ b ⟧tp = cong₂ F._→'_ weaken⋆⟦ a ⟧tp weaken⋆⟦ b ⟧tp 
 
   -- helper lemma on mapping type-semantics over weakend substitutions
   ⟦⟧tps⋆weaken : ∀ {ν n} (xs : Vec (Type ν) n) → 
@@ -135,21 +135,13 @@ module Lemmas where
   ⟦sub⟧≡sub⟦⟧ : ∀ {ν} (a : PolyType (suc ν)) b → 
                 ⟦ a / (TS.sub b) ⟧pt ≡ ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp)
   ⟦sub⟧≡sub⟦⟧ a b = begin
-      ⟦ a / TS.sub b ⟧pt ≡⟨ /⋆⟦⟧pt a (b ∷ TS.id) ⟩
-      ⟦ a ⟧pt F./ (map ⟦_⟧tp (b ∷ TS.id)) ≡⟨ refl ⟩
-      ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ (map ⟦_⟧tp TS.id)) ≡⟨ cong (λ s → ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
+      ⟦ a / TS.sub b ⟧pt 
+        ≡⟨ /⋆⟦⟧pt a (b ∷ TS.id) ⟩
+      ⟦ a ⟧pt F./ (map ⟦_⟧tp (b ∷ TS.id)) 
+        ≡⟨ refl ⟩
+      ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ (map ⟦_⟧tp TS.id)) 
+        ≡⟨ cong (λ s → ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
       ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp) ∎
-
-  -- type weakening commutes with interpreting types
-  {-
-  weaken-tp⋆⟦⟧tp : ∀ {ν} (tp : Type ν) → ⟦ tp TS./ TS.wk ⟧tp ≡ ⟦ tp ⟧tp F./ F.wk
-  weaken-tp⋆⟦⟧tp tp = begin
-    ⟦ tp TS./ TS.wk ⟧tp 
-      ≡⟨ /⋆⟦⟧tp tp TS.wk ⟩
-    ⟦ tp ⟧tp F./ (map ⟦_⟧tp TS.wk) 
-      ≡⟨ cong (λ e → ⟦ tp ⟧tp F./ e) ⟦wk⟧≡fwk ⟩
-    ⟦ tp ⟧tp F./ F.wk ∎
-  -}
 
   -- type weakening commutes with interpreting types
   weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp / TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
@@ -174,28 +166,6 @@ module Lemmas where
       xs = map ⟦_⟧pt $ map (λ s → s / TS.wk ) Γ
 
 open Lemmas
-
-{-
--- given a proof that type a is a specialization of type b
--- and a term of type a, we can build a term of type b
-inst : ∀ {ν n} {a b : PolyType ν} {K : Ktx ν n} → a ⊑ b → 
-               ∀ {t} → K ⊢ t ∈ a → ∃ λ t' → K ⊢ t' ∈ b
-inst {K = K} (mono x) {t = t} pt = , Prelude.subst (λ x → K ⊢ t ∈ mono x) x pt
-inst {ν} {n} {a = ∀' a'} {K = K} (poly-forall a'⊑b) {t} wt = 
-  let t'' , wt'' = inst a'⊑b wt' in , Λ wt''
-  where
-    t' = (tm-weaken t) [ tvar Fin.zero ]
-    eq : (a' ptp/tp (TS.wk TS.↑)) ptp/tp (TS.sub (tvar Fin.zero)) ≡ a'
-    eq = begin
-      (a' ptp/tp (TS.wk TS.↑)) ptp/tp (TS.sub (tvar zero)) ≡⟨ refl ⟩
-      (a' ptp/tp ((tvar zero) ∷ map TSS.weaken TS.wk)) ptp/tp ((tvar zero) ∷ TS.id) ≡⟨ {!!} ⟩
-      a' ptp/tp (((tvar zero) ∷ map TSS.weaken TS.wk) TS.⊙ ((tvar zero) ∷ TS.id)) ≡⟨ {!!} ⟩
-      (a' ptp/tp TS.id) ≡⟨ {!!} ⟩
-      a' ∎
-    wt' : ktx-weaken K ⊢ t' ∈ a'
-    wt' = subst (λ τ → ktx-weaken K ⊢ t' ∈ τ) eq ((weaken-preserves-⊢ wt) [ tvar Fin.zero ])
-inst (poly-instance {c = c} a[c]⊑b) wt-a = inst a[c]⊑b (wt-a [ c ])
--}
 
 inst {t = t} {K = K} (mono a≡b) pt = , Prelude.subst (λ x → K F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
 inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t = 
@@ -240,7 +210,7 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-
 ⟦⟧-preserves-tp (λ' a wt-e) with ⟦⟧-preserves-tp wt-e
 ⟦⟧-preserves-tp (λ' a wt-e) | x = F.λ' ⟦ a ⟧tp x
 ⟦⟧-preserves-tp {K = K} (_[_] {a = a} wt-tc b) with ⟦⟧-preserves-tp wt-tc
-... | x = subst-tp (sym $ tp/tp⋆⟦⟧ctx a b) (x F.[ ⟦ b ⟧tp ])
+... | x = subst-tp (sym $ ⟦sub⟧≡sub⟦⟧ a b) (x F.[ ⟦ b ⟧tp ])
   where
     subst-tp = subst (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] ⟧ ∈ c) 
 ⟦⟧-preserves-tp (wt-f · wt-e) with ⟦⟧-preserves-tp wt-f | ⟦⟧-preserves-tp wt-e
