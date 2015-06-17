@@ -45,8 +45,8 @@ module TypeSubst where
   a [/ b ] = a / sub b
 
 module TypeLemmas where
-  open import Data.Fin.Substitution.Lemmas
   open TypeSubst
+  open import Data.Fin.Substitution.Lemmas
   open import Data.Star using (Star; ε; _◅_)
   
   typeLemmas : TermLemmas Type
