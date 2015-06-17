@@ -29,4 +29,4 @@ clean-all:
 	find . -iname "*.agdai" -exec rm {} \;
 
 push-doc:
-	scp doc legolas:/srv/http/arjen.inkworks.nl/thesis/ -r
+	scp -r doc legolas:/srv/http/arjen.inkworks.nl/thesis/

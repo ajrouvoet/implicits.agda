@@ -217,20 +217,6 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-
         ≡⟨ cong ⟦_⟧pt lookup-i≡r ⟩
       ⟦ r ⟧pt ∎ 
     rule-inst = proj₂ (inst r⊑b⇒a (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i)))
-{-
-⟦_,_⟧i {ν} {n} {K} (r , p) m | by-value r⊑a = (inst r⊑a rt)
-  where
-    -- we can find in the explicit context Γ with the same type 
-    -- using the #K context mapping
-    rt = let a , i∈Δ , ρ⟨K,a⟩↝a = first⟶∈ p in 
-⟦_,_⟧i {ν} {n} {K} (r , p) m | yields {a = a} K↝a r⊑a⇒b with ⟦ K↝a , m ⟧i
-⟦_,_⟧i {ν} {n} {K} (r , p) m | yields {a = a} K↝a r⊑a⇒b | _ , wt-a = , rule-inst F.· wt-a
-  where
-    -- somehow we have to pick up this one from the explicit context
-    postulate t : F.Term ν n 
-    postulate rt : ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt 
-    rule-inst = proj₂ (inst r⊑a⇒b rt)
-    -}
 
 -- interpretation of well-typed terms in System F preserves type
 ⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → (m : K# K) →
