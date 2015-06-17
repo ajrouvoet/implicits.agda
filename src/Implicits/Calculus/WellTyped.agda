@@ -49,7 +49,7 @@ data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → PolyType ν → Set where
   _·_  : ∀ {f t a b} → K ⊢ f ∈ mono (a →' b) → K ⊢ t ∈ mono a → K ⊢ f · t ∈ mono b
   
   -- implicit abstract/application
-  ρ : ∀ {t b} a → (mono a) ∷Γ K ⊢ t ∈ mono b → K ⊢ ρ a t ∈ mono (a ⇒ b)
+  ρ : ∀ {t b} a → (mono a) ∷K K ⊢ t ∈ mono b → K ⊢ ρ a t ∈ mono (a ⇒ b)
   _⟨⟩ : ∀ {t a b} → K ⊢ t ∈ mono (a ⇒ b) → K Δ↝ mono a → K ⊢ t ⟨⟩ ∈ mono b
 
   -- ML style let-polymorphism

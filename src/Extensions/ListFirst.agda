@@ -15,6 +15,11 @@ first⟶witness : ∀ {A : Set} {B : A → Set} {x l} → First B x l → B x
 first⟶witness (here p v) = p
 first⟶witness (there x' x f) = first⟶witness f
 
+first⟶∈ : ∀ {A : Set} {B : A → Set} {x l} → First B x l → (x List.∈ l × B x)
+first⟶∈ (here {x = x} p v) = here refl , p
+first⟶∈ (there x' ¬x' f) with (first⟶∈ f)
+first⟶∈ (there x' ¬x' f) | x∈l , p = there x∈l , p
+
 -- more likable syntax for the above structure
 first_∈_⇔_ : {A : Set} → A → List A → (B : A → Set) → Set 
 first_∈_⇔_ x v p = First p x v

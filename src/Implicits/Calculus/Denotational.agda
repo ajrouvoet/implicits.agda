@@ -9,9 +9,23 @@ open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec.Properties
 
+module RewriteContext where
+
+  -- rewrite context (relation between implicit and explicit context)
+  _#_ : ∀ {ν n} (Γ : Ctx ν n) (Δ : ICtx ν) → Set
+  Γ # Δ = All (λ i → i ∈ Γ) Δ
+
+  K# : ∀ {ν n} (K : Ktx ν n) → Set
+  K# (Γ , Δ) = Γ # Δ
+  
+  postulate #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
+  postulate #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
+  postulate #ivar : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷K K)
+
 private
   module TS = TypeSubst
   open PTypeSubst
+  open RewriteContext
   
   module TSS = Simple TS.simple
   module FTSS = Simple F.simple
@@ -39,18 +53,19 @@ private
 inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
 
 -- construct an System F term from an implicit resolution
-⟦_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
+⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
 
-⟦_⟧ : ∀ {ν n} {K : Ktx ν n} {t} {a : PolyType ν} → K ⊢ t ∈ a → F.Term ν n
-⟦_⟧ (var x) = F.var x
-⟦_⟧ (Λ t) = F.Λ ⟦ t ⟧
-⟦_⟧ (λ' a x) = F.λ' ⟦ a ⟧tp ⟦ x ⟧
-⟦_⟧ (f [ b ]) = F._[_] ⟦ f ⟧ ⟦ b ⟧tp
-⟦_⟧ (f · e) = ⟦ f ⟧ F.· ⟦ e ⟧
-⟦_⟧ (ρ a x) = F.λ' ⟦ a ⟧tp ⟦ x ⟧
-⟦_⟧ (_⟨⟩ f e∈Δ) = ⟦ f ⟧ F.· (proj₁ ⟦ e∈Δ ⟧i)
-⟦_⟧ (let'_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧pt ⟦ e ⟧) F.· ⟦ t ⟧
-⟦_⟧ (implicit_in'_ {a = a} t e) = (F.λ' ⟦ a ⟧pt ⟦ e ⟧) F.· ⟦ t ⟧
+-- denotational semantics of well-typed terms
+⟦_,_⟧ : ∀ {ν n} {K : Ktx ν n} {t} {a : PolyType ν} → K ⊢ t ∈ a → K# K → F.Term ν n
+⟦_,_⟧ (var x) m = F.var x
+⟦_,_⟧ (Λ t) m = F.Λ ⟦ t , #tvar m ⟧
+⟦_,_⟧ (λ' a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #var (mono a) m ⟧
+⟦_,_⟧ (f [ b ]) m = F._[_] ⟦ f , m ⟧ ⟦ b ⟧tp
+⟦_,_⟧ (f · e) m = ⟦ f , m ⟧ F.· ⟦ e , m ⟧
+⟦_,_⟧ (ρ a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #ivar (mono a) m ⟧
+⟦_,_⟧ (_⟨⟩ f e∈Δ) m = ⟦ f , m ⟧ F.· (proj₁ ⟦ e∈Δ , m ⟧i)
+⟦_,_⟧ (let'_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧pt ⟦ e , #var a m ⟧) F.· ⟦ t , m ⟧
+⟦_,_⟧ (implicit_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧pt ⟦ e , #ivar a m ⟧) F.· ⟦ t , m ⟧
 
 module Lemmas where
 
@@ -180,42 +195,54 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-
     t[c] = t F.[ ⟦ c ⟧tp ]
     wt-t[c] = subst (λ a′ → K F.⊢ t F.[ ⟦ c ⟧tp ] ∈ a′) (sym $ ⟦sub⟧≡sub⟦⟧ a' c) (wt-at F.[ ⟦ c ⟧tp ])
 
-⟦_⟧i {ν} {n} {K} (r , p) with first⟶witness p
-⟦_⟧i {ν} {n} {K} (r , p) | by-value r⊑a = (inst r⊑a rt)
+⟦_,_⟧i {ν} {n} {K} (r , p) m with first⟶∈ p 
+⟦_,_⟧i {ν} {n} {K} (r , p) m | r∈Δ , by-value {a = .r} r⊑a with ∈⟶index (All.lookup m r∈Δ)
+⟦_,_⟧i {ν} {n} {K} {a = a} (r , p) m | r∈Δ , by-value {a = .r} r⊑a | i , lookup-i≡r = 
+  (inst r⊑a (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i)))
   where
-    -- somehow we have to pick up this one from the explicit context
-    postulate t : F.Term ν n 
-    postulate rt : ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt
-⟦_⟧i {ν} {n} {K} (r , p) | yields {a = a} K↝a r⊑a⇒b with ⟦ K↝a ⟧i
-⟦_⟧i {ν} {n} {K} (r , p) | yields {a = a} K↝a r⊑a⇒b | _ , wt-a = , rule-inst F.· wt-a
+    eq = begin 
+      lookup i ⟦ K ⟧ctx ≡⟨ lookup⋆⟦⟧ctx K i ⟩
+      ⟦ lookup i (proj₁ K) ⟧pt ≡⟨ cong ⟦_⟧pt lookup-i≡r ⟩
+      ⟦ r ⟧pt ∎ 
+⟦_,_⟧i {ν} {n} {K} (r , p) m | r∈Δ , yields x x₁ = {!!}
+{-
+⟦_,_⟧i {ν} {n} {K} (r , p) m | by-value r⊑a = (inst r⊑a rt)
+  where
+    -- we can find in the explicit context Γ with the same type 
+    -- using the #K context mapping
+    rt = let a , i∈Δ , ρ⟨K,a⟩↝a = first⟶∈ p in 
+⟦_,_⟧i {ν} {n} {K} (r , p) m | yields {a = a} K↝a r⊑a⇒b with ⟦ K↝a , m ⟧i
+⟦_,_⟧i {ν} {n} {K} (r , p) m | yields {a = a} K↝a r⊑a⇒b | _ , wt-a = , rule-inst F.· wt-a
   where
     -- somehow we have to pick up this one from the explicit context
     postulate t : F.Term ν n 
     postulate rt : ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt 
     rule-inst = proj₂ (inst r⊑a⇒b rt)
+    -}
 
 -- interpretation of well-typed terms in System F preserves type
-⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → ⟦ K ⟧ctx F.⊢ ⟦ wt-t ⟧ ∈ ⟦ a ⟧pt
-⟦⟧-preserves-tp {K = K} (var x) = subst-wt-var (lookup⋆⟦⟧ctx K x) (F.var x)
+⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → (m : K# K) →
+                  ⟦ K ⟧ctx F.⊢ ⟦ wt-t , m ⟧ ∈ ⟦ a ⟧pt
+⟦⟧-preserves-tp {K = K} (var x) m = subst-wt-var (lookup⋆⟦⟧ctx K x) (F.var x)
   where
     subst-wt-var = subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a)
-⟦⟧-preserves-tp {K = K} {a = ∀' a} (Λ wt-e) with ⟦⟧-preserves-tp wt-e 
+⟦⟧-preserves-tp {K = K} {a = ∀' a} (Λ wt-e) m with ⟦⟧-preserves-tp wt-e {!!}
 ... | f-wt-e = F.Λ (subst-wt-ctx (ctx-weaken⋆⟦⟧ctx K) f-wt-e)
   where
-    subst-wt-ctx = subst (λ c → c F.⊢ ⟦ wt-e ⟧ ∈ ⟦ a ⟧pt)
-⟦⟧-preserves-tp (λ' a wt-e) with ⟦⟧-preserves-tp wt-e
-⟦⟧-preserves-tp (λ' a wt-e) | x = F.λ' ⟦ a ⟧tp x
-⟦⟧-preserves-tp {K = K} (_[_] {a = a} wt-tc b) with ⟦⟧-preserves-tp wt-tc
+    subst-wt-ctx = subst (λ c → c F.⊢ ⟦ wt-e , {!!} ⟧ ∈ ⟦ a ⟧pt)
+⟦⟧-preserves-tp (λ' a wt-e) m with ⟦⟧-preserves-tp wt-e {!!}
+⟦⟧-preserves-tp (λ' a wt-e) m | x = F.λ' ⟦ a ⟧tp x
+⟦⟧-preserves-tp {K = K} (_[_] {a = a} wt-tc b) m with ⟦⟧-preserves-tp wt-tc {!!}
 ... | x = subst-tp (sym $ ⟦sub⟧≡sub⟦⟧ a b) (x F.[ ⟦ b ⟧tp ])
   where
-    subst-tp = subst (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] ⟧ ∈ c) 
-⟦⟧-preserves-tp (wt-f · wt-e) with ⟦⟧-preserves-tp wt-f | ⟦⟧-preserves-tp wt-e
-⟦⟧-preserves-tp (wt-f · wt-e) | x | y = x F.· y
-⟦⟧-preserves-tp (ρ a wt-e) with ⟦⟧-preserves-tp wt-e
-⟦⟧-preserves-tp (ρ a wt-e) | x = F.λ' ⟦ a ⟧tp x
-⟦⟧-preserves-tp (_⟨⟩ wt-r e) with ⟦⟧-preserves-tp wt-r 
-⟦⟧-preserves-tp (_⟨⟩ wt-r e) | f-wt-r = f-wt-r F.· (proj₂ ⟦ e ⟧i)
-⟦⟧-preserves-tp (let' wt-e₁ in' wt-e₂) with ⟦⟧-preserves-tp wt-e₁ | ⟦⟧-preserves-tp wt-e₂
-⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
-⟦⟧-preserves-tp (implicit wt-e₁ in' wt-e₂) with ⟦⟧-preserves-tp wt-e₁ | ⟦⟧-preserves-tp wt-e₂
-⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
+    subst-tp = subst (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] , m ⟧ ∈ c) 
+⟦⟧-preserves-tp (wt-f · wt-e) m with ⟦⟧-preserves-tp wt-f {!!} | ⟦⟧-preserves-tp wt-e {!!}
+⟦⟧-preserves-tp (wt-f · wt-e) m | x | y = x F.· y
+⟦⟧-preserves-tp (ρ a wt-e) m with ⟦⟧-preserves-tp wt-e {!!}
+⟦⟧-preserves-tp (ρ a wt-e) m | x = F.λ' ⟦ a ⟧tp x
+⟦⟧-preserves-tp (_⟨⟩ wt-r e) m with ⟦⟧-preserves-tp wt-r {!!}
+⟦⟧-preserves-tp (_⟨⟩ wt-r e) m | f-wt-r = f-wt-r F.· (proj₂ ⟦ e , m ⟧i)
+⟦⟧-preserves-tp (let' wt-e₁ in' wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ {!!} | ⟦⟧-preserves-tp wt-e₂ {!!}
+⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
+⟦⟧-preserves-tp (implicit wt-e₁ in' wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ {!!} | ⟦⟧-preserves-tp wt-e₂ {!!}
+⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
