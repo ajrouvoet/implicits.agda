@@ -19,3 +19,7 @@ lookup⋆map (x ∷ xs) f (suc y) = lookup⋆map xs f y
 ∈⟶index here = zero , refl
 ∈⟶index (there e) with ∈⟶index e
 ∈⟶index (there e) | i , lookup-i≡a = suc i , lookup-i≡a
+
+∈⋆map : ∀ {A B : Set} {n} {v : Vec A n} {a} → a ∈ v → (f : A → B) → (f a) ∈ (map f v)
+∈⋆map here f = here
+∈⋆map (there a∈v) f = there (∈⋆map a∈v f)

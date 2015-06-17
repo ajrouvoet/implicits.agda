@@ -18,9 +18,19 @@ module RewriteContext where
   K# : ∀ {ν n} (K : Ktx ν n) → Set
   K# (Γ , Δ) = Γ # Δ
   
-  postulate #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
-  postulate #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
+  #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
+  #tvar All.[] = All.[]
+  #tvar (px All.∷ K#K) = (∈⋆map px (λ t → t ptp/tp TypeSubst.wk)) All.∷ (#tvar K#K)
+
+  #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
+  #var a All.[] = All.[]
+  #var a (px All.∷ K#K) = there px All.∷ (#var a K#K)
+
   postulate #ivar : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷K K)
+  {-
+  #ivar a All.[] = here All.∷ All.[]
+  #ivar a (px All.∷ K#K) = here All.∷ ({!!})
+  -}
 
 private
   module TS = TypeSubst
