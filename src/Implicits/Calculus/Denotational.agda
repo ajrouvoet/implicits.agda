@@ -26,11 +26,8 @@ module RewriteContext where
   #var a All.[] = All.[]
   #var a (px All.∷ K#K) = there px All.∷ (#var a K#K)
 
-  postulate #ivar : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷K K)
-  {-
-  #ivar a All.[] = here All.∷ All.[]
-  #ivar a (px All.∷ K#K) = here All.∷ ({!!})
-  -}
+  #ivar : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷K K)
+  #ivar a K#K = here All.∷ (All.map there K#K)
 
 private
   module TS = TypeSubst
