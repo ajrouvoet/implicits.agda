@@ -25,18 +25,3 @@ a ∷K (Γ , Δ) = a ∷ Γ , a List.∷ Δ
 
 nil : Ktx 0 0
 nil = [] , List.[]
-
-module CtxSubst where
-  
-  _/_ : ∀ {ν μ n} → Ctx ν n → Sub Type ν μ → Ctx μ n
-  Γ / σ = map (λ s → s PTypeSubst./ σ) Γ
-  
-  ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
-  ctx-weaken Γ = Γ / TypeSubst.wk
-  
-  ktx-weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
-  ktx-weaken (Γ , Δ) = (
-    ctx-weaken Γ , 
-    List.map (λ t → t PTypeSubst./ TypeSubst.wk) Δ)
-
-open CtxSubst public renaming (_/_ to _ctx-/_)

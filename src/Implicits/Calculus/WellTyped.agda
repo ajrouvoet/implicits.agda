@@ -7,7 +7,7 @@ open import Implicits.Calculus.Types public
 open import Implicits.Calculus.Terms public
 open import Implicits.Calculus.Contexts public
 open import Extensions.ListFirst
-open TypeSubst
+open import Implicits.Calculus.Substitutions
 
 infixl 4 _⊢_∈_
 
@@ -17,7 +17,7 @@ data _⊑_ {ν} : PolyType ν → PolyType ν → Set where
   poly-forall : ∀ {a : PolyType (suc ν)} {b : PolyType (suc ν)} → 
               a ⊑ b → ∀' a ⊑ ∀' b
   poly-instance : ∀ {a : PolyType (suc ν)} {c} {b : PolyType ν} → 
-                  a ptp[/tp c ] ⊑ b → ∀' a ⊑ b
+                  a pt[/tp c ] ⊑ b → ∀' a ⊑ b
 
 _⋢_ : ∀ {ν} → PolyType ν → PolyType ν → Set
 a ⋢ b = ¬ a ⊑ b
@@ -45,7 +45,7 @@ data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → PolyType ν → Set where
   λ' : ∀ {t b} a → (mono a) ∷Γ K ⊢ t ∈ mono b → K ⊢ λ' a t ∈ mono (a →' b)
   Λ : ∀ {t} {a : PolyType (suc ν)} → ktx-weaken K ⊢ t ∈ a → K ⊢ Λ t ∈ ∀' a
   _[_] : ∀ {t} {a : PolyType (suc ν)} → 
-         K ⊢ t ∈ ∀' a → (b : Type ν) → K ⊢ t [ b ] ∈ a ptp[/tp b ]
+         K ⊢ t ∈ ∀' a → (b : Type ν) → K ⊢ t [ b ] ∈ a pt[/tp b ]
   _·_  : ∀ {f t a b} → K ⊢ f ∈ mono (a →' b) → K ⊢ t ∈ mono a → K ⊢ f · t ∈ mono b
   
   -- implicit abstract/application

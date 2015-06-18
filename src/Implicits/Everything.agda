@@ -25,6 +25,10 @@ open import Implicits.Calculus.Types
 open import Implicits.Calculus.Terms
 open import Implicits.Calculus.Contexts
 
+-- subsitutions on types/terms/contexts
+open import Implicits.Calculus.Substitutions
+open import Implicits.Calculus.Substitutions.Lemmas
+
 -- the well-typed relation
 open import Implicits.Calculus.WellTyped
 

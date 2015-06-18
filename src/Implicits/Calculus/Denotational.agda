@@ -4,6 +4,7 @@ module Implicits.Calculus.Denotational where
 open import Prelude
 
 open import Implicits.Calculus.WellTyped
+open import Implicits.Calculus.Substitutions
 open import Implicits.SystemF as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
@@ -20,7 +21,7 @@ module RewriteContext where
   
   #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
   #tvar All.[] = All.[]
-  #tvar (px All.∷ K#K) = (∈⋆map px (λ t → t ptp/tp TypeSubst.wk)) All.∷ (#tvar K#K)
+  #tvar (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeSubst.wk)) All.∷ (#tvar K#K)
 
   #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
   #var a All.[] = All.[]
