@@ -79,3 +79,12 @@ module CtxLemmas where
     Γ ≡⟨ idVar-/Var Γ ⟩
     Var.id /Var Γ ≡⟨ map-∘ _ _ VarSubst.id ⟩
     Var.wk /Var (a ∷ Γ) ∎
+  
+  ctx-weaken-sub-vanishes : ∀ {ν n} {Γ : Ctx ν n} {a} → (ctx-weaken Γ) ctx/ (Tp.sub a) ≡ Γ
+  ctx-weaken-sub-vanishes {Γ = Γ} {a} = begin
+    (Γ ctx/ Tp.wk) ctx/ (Tp.sub a) 
+      ≡⟨ sym $ map-∘ (λ s → s tp/tp Tp.sub a) (λ s → s tp/tp Tp.wk) Γ ⟩
+    (map (λ s → s tp/tp Tp.wk tp/tp (Tp.sub a)) Γ) 
+      ≡⟨ map-cong (TypeLemmas.wk-sub-vanishes) Γ ⟩
+    (map (λ s → s) Γ) ≡⟨ map-id Γ ⟩
+    Γ ∎

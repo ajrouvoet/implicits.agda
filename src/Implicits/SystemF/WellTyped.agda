@@ -71,12 +71,12 @@ private
     a₁ ≡ a₂ → Γ ⊢ t ∈ a₁ → Γ ⊢ t ∈ a₂
   ⊢substTp refl hyp = hyp 
 
-module WtTypeSubst where
+module WtTypeLemmas where
   open TypeLemmas hiding (_/_; var; weaken)
   private
     module Tp = TypeLemmas
     module TmTp = TermTypeLemmas
-    module C  = CtxSubst
+    module C  = CtxLemmas
 
   infixl 8 _/_
 
@@ -119,7 +119,13 @@ module WtTypeSubst where
           Γ ⊢ t ∈ a → (b : Type n) → Γ C./ sub b ⊢ t TmTp./ sub b ∈ a Tp./ sub b
   ⊢t [/ b ] = ⊢t / sub b
 
-module WtTermSubst where
+  tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
+  tm[/tp]-preserves {Γ = Γ} {t} {τ} (Λ p) a = 
+    ctx-subst C.ctx-weaken-sub-vanishes (p / (Tp.sub a))
+    where
+      ctx-subst = Prelude.subst (λ c → c ⊢ t tm[/tp a ] ∈ τ tp[/tp a ])
+
+module WtTermLemmas where
   private
     module Tp  = TypeLemmas
     module TmTp  = TermTypeLemmas
@@ -191,7 +197,7 @@ module WtTermSubst where
     where
       weaken-⊢p : ctx-weaken Γ ⇒ ctx-weaken Δ ⊢ map TmTp.weaken ρ 
       weaken-⊢p = (subst 
-        (λ G → G ⇒ ctx-weaken Δ ⊢ map TmTp.weaken ρ) Tp.map-weaken (WtTypeSubst.weakenAll ⊢ρ))
+        (λ G → G ⇒ ctx-weaken Δ ⊢ map TmTp.weaken ρ) Tp.map-weaken (WtTypeLemmas.weakenAll ⊢ρ))
   λ' a ⊢t     / ⊢ρ = λ' a (⊢t / ⊢ρ ↑)
   (⊢t [ a ])  / ⊢ρ = (⊢t / ⊢ρ) [ a ]
   (⊢s · ⊢t)   / ⊢ρ = (⊢s / ⊢ρ) · (⊢t / ⊢ρ)
@@ -201,25 +207,6 @@ module WtTermSubst where
           b ∷ Γ ⊢ s ∈ a → Γ ⊢ t ∈ b → Γ ⊢ s TmTm./ TmTm.sub t ∈ a
   ⊢s [/ ⊢t ] = ⊢s / sub ⊢t
 
-module WellTypedLemmas where
-  private module Tp  = TypeLemmas
-  
-  ctx-weaken-sub-vanishes : ∀ {ν n} {Γ : Ctx ν n} {a} → (ctx-weaken Γ) ctx/ (Tp.sub a) ≡ Γ
-  ctx-weaken-sub-vanishes {Γ = Γ} {a} = begin
-    (Γ ctx/ Tp.wk) ctx/ (Tp.sub a) 
-      ≡⟨ sym $ map-∘ (λ s → s tp/tp Tp.sub a) (λ s → s tp/tp Tp.wk) Γ ⟩
-    (map (λ s → s tp/tp Tp.wk tp/tp (Tp.sub a)) Γ) 
-      ≡⟨ map-cong (TypeLemmas.wk-sub-vanishes) Γ ⟩
-    (map (λ s → s) Γ) ≡⟨ map-id Γ ⟩
-    Γ ∎
-
-  tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
-  tm[/tp]-preserves {Γ = Γ} {t} {τ} (Λ p) a = 
-    ctx-subst ctx-weaken-sub-vanishes (p WtTypeSubst./ (Tp.sub a))
-    where
-      ctx-subst = subst (λ c → c ⊢ t tm[/tp a ] ∈ τ tp[/tp a ])
-
-  postulate tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t u a b} → 
+  tm[/tm]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t u a b} → 
                       b ∷ Γ ⊢ t ∈ a → Γ ⊢ u ∈ b → Γ ⊢ (t tm[/tm u ]) ∈ a
-
-  postulate ⊢weaken-preserves : ∀ {ν n} {K : Ctx ν n} {t a} → K ⊢ t ∈ a → ctx-weaken K ⊢ tm-weaken t ∈ tp-weaken a
+  tm[/tm]-preserves ⊢s ⊢t = ⊢s / sub ⊢t

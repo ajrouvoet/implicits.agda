@@ -194,13 +194,16 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t =
     wt-t' = subst 
       (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) 
       (F.TypeLemmas.a/var-wk-↑/sub-0≡a ⟦ a' ⟧pt)
-      ((F.WellTypedLemmas.⊢weaken-preserves wt-t) F.[ F.tvar zero ])
+      ((F.WtTypeLemmas.weaken wt-t) F.[ F.tvar zero ])
 inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-at = 
   inst a[c]⊑b wt-t[c]
   where
     t[c] : F.Term ν n
     t[c] = t F.[ ⟦ c ⟧tp ]
-    wt-t[c] = subst (λ a′ → K F.⊢ t F.[ ⟦ c ⟧tp ] ∈ a′) (sym $ ⟦sub⟧≡sub⟦⟧ a' c) (wt-at F.[ ⟦ c ⟧tp ])
+    wt-t[c] = subst 
+      (λ a′ → K F.⊢ t F.[ ⟦ c ⟧tp ] ∈ a′) 
+      (sym $ ⟦sub⟧≡sub⟦⟧ a' c) 
+      (wt-at F.[ ⟦ c ⟧tp ])
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)
@@ -232,22 +235,22 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-
   where
     subst-wt-var = subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a)
 ⟦⟧-preserves-tp {K = K} {a = ∀' a} (Λ wt-e) m with ⟦⟧-preserves-tp wt-e (#tvar m)
-... | f-wt-e = F.Λ (subst-wt-ctx (ctx-weaken⋆⟦⟧ctx K) f-wt-e)
+... | ih = F.Λ (subst-wt-ctx (ctx-weaken⋆⟦⟧ctx K) ih)
   where
     subst-wt-ctx = subst (λ c → c F.⊢ ⟦ wt-e , #tvar m ⟧ ∈ ⟦ a ⟧pt)
 ⟦⟧-preserves-tp (λ' a wt-e) m with ⟦⟧-preserves-tp wt-e (#var (mono a) m)
-⟦⟧-preserves-tp (λ' a wt-e) m | x = F.λ' ⟦ a ⟧tp x
+⟦⟧-preserves-tp (λ' a wt-e) m | ih = F.λ' ⟦ a ⟧tp ih
 ⟦⟧-preserves-tp {K = K} (_[_] {a = a} wt-tc b) m with ⟦⟧-preserves-tp wt-tc m
-... | x = subst-tp (sym $ ⟦sub⟧≡sub⟦⟧ a b) (x F.[ ⟦ b ⟧tp ])
+... | ih = subst-tp (sym $ ⟦sub⟧≡sub⟦⟧ a b) (ih F.[ ⟦ b ⟧tp ])
   where
     subst-tp = subst (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] , m ⟧ ∈ c) 
 ⟦⟧-preserves-tp (wt-f · wt-e) m with ⟦⟧-preserves-tp wt-f m | ⟦⟧-preserves-tp wt-e m
-⟦⟧-preserves-tp (wt-f · wt-e) m | x | y = x F.· y
+⟦⟧-preserves-tp (wt-f · wt-e) m | ih | y = ih F.· y
 ⟦⟧-preserves-tp (ρ a wt-e) m with ⟦⟧-preserves-tp wt-e (#ivar (mono a) m)
-⟦⟧-preserves-tp (ρ a wt-e) m | x = F.λ' ⟦ a ⟧tp x
+⟦⟧-preserves-tp (ρ a wt-e) m | ih = F.λ' ⟦ a ⟧tp ih
 ⟦⟧-preserves-tp (_⟨⟩ wt-r e) m with ⟦⟧-preserves-tp wt-r m
 ⟦⟧-preserves-tp (_⟨⟩ wt-r e) m | f-wt-r = f-wt-r F.· (proj₂ ⟦ e , m ⟧i)
 ⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ m | ⟦⟧-preserves-tp wt-e₂ (#var a m)
-⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
+⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m | ih | y = (F.λ' ⟦ a ⟧pt y) F.· ih
 ⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ m | ⟦⟧-preserves-tp wt-e₂ (#ivar a m)
-⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m | x | y = (F.λ' ⟦ a ⟧pt y) F.· x
+⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m | ih | y = (F.λ' ⟦ a ⟧pt y) F.· ih
