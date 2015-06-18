@@ -15,6 +15,10 @@ open import Implicits.SystemF.Contexts
 -- the well-typed relation
 open import Implicits.SystemF.WellTyped
 
+-- substitution stuff
+open import Implicits.SystemF.Substitutions
+open import Implicits.SystemF.Substitutions.Lemmas
+
 -- the small step semantics + proof of soundness
 open import Implicits.SystemF.SmallStep
 
