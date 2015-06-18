@@ -1,6 +1,6 @@
 module Extensions.ListFirst where
 
-open import Prelude
+open import Prelude hiding (_⊔_)
 open import Data.List
 open import Level
 

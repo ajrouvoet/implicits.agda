@@ -33,6 +33,7 @@ module TypeSubst where
   typeSubst : TermSubst Type
   typeSubst = record { var = tvar; app = TypeApp._/_ }
 
+
   open TermSubst typeSubst public hiding (var)
 
   infix 8 _[/_]
@@ -42,16 +43,57 @@ module TypeSubst where
   a [/ b ] = a / sub b
 
 module PTypeSubst where
-  _/_ : ∀ {ν μ} → PolyType ν → Sub Type ν μ → PolyType μ
-  mono x / σ = mono $ x TypeSubst./ σ
-  ∀' x / σ = ∀' (x / (σ TypeSubst.↑))
+  -- polytype function constructor
+  -- even though the termination checker can't see it, 
+  -- this must terminate: 
+  -- induction is on the remaining number of ∀' constructors, which is strictly decreasing
+  {-# NO_TERMINATION_CHECK #-}
+  _→ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
+  mono x →ₚ mono y = mono (x →' y)
+  mono x →ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) →ₚ r)
+  ∀' l →ₚ mono r = ∀' (l →ₚ (mono $ TypeSubst.weaken r))
+  ∀' l →ₚ ∀' r = ∀' (l →ₚ r)
+
+  -- polytype rule constructor
+  {-# NO_TERMINATION_CHECK #-}
+  _⇒ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
+  mono x ⇒ₚ mono y = mono (x ⇒ y)
+  mono x ⇒ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) ⇒ₚ r)
+  ∀' l ⇒ₚ mono r = ∀' (l ⇒ₚ (mono $ TypeSubst.weaken r))
+  ∀' l ⇒ₚ ∀' r = ∀' (l ⇒ₚ r)
+
+  -- lift substitution of types into polytypes
+  infixl 6 _/tp_
+  _/tp_ : ∀ {ν μ} → PolyType ν → Sub Type ν μ → PolyType μ
+  mono x /tp σ = mono $ x TypeSubst./ σ
+  ∀' x /tp σ = ∀' (x /tp (σ TypeSubst.↑))
   
-  _[/_] : ∀ {ν} → PolyType (suc ν) → Type ν → PolyType ν
-  _[/_] p t = p / TypeSubst.sub t
+  _[/tp_] : ∀ {ν} → PolyType (suc ν) → Type ν → PolyType ν
+  _[/tp_] p t = p /tp TypeSubst.sub t
 
-  weaken : ∀ {ν} → PolyType ν → PolyType (suc ν)
-  weaken x = x / TypeSubst.wk
+  module TypeApp {T} (l : Lift T PolyType) where
+    open Lift l hiding (var)
 
+    infixl 8 _/_
+
+    _/_ : ∀ {ν μ} → PolyType ν → Sub T ν μ → PolyType μ
+    mono (tvar n) / σ = lift $ lookup n σ
+    mono (x →' y) / σ = (mono x / σ) →ₚ (mono y / σ)
+    mono (x ⇒ y) / σ = (mono x / σ) ⇒ₚ (mono y / σ)
+    ∀' x / σ = ∀' (x / (σ ↑))
+
+    open Application (record { _/_ = _/_ }) using (_/✶_)
+
+  typeSubst : TermSubst PolyType
+  typeSubst = record { var = mono ∘ tvar; app = TypeApp._/_ }
+
+  open TermSubst typeSubst public hiding (var)
+
+  -- Shorthand for single-variable type substitutions
+  infix 8 _[/_]
+  _[/_] : ∀ {n} → PolyType (suc n) → PolyType n → PolyType n
+  a [/ b ] = a / sub b
+  
 module TermTypeSubst where
 
   module TermTypeApp {T} (l : Lift T Type) where
@@ -99,7 +141,7 @@ module TermTypeSubst where
 module KtxSubst where
   
   _/_ : ∀ {ν μ n} → Ctx ν n → Sub Type ν μ → Ctx μ n
-  Γ / σ = map (λ s → s PTypeSubst./ σ) Γ
+  Γ / σ = map (λ s → s PTypeSubst./tp σ) Γ
   
   ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
   ctx-weaken Γ = Γ / TypeSubst.wk
@@ -107,12 +149,12 @@ module KtxSubst where
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
   weaken (Γ , Δ) = (
     ctx-weaken Γ , 
-    List.map (λ t → t PTypeSubst./ TypeSubst.wk) Δ)
+    List.map (λ t → t PTypeSubst./tp TypeSubst.wk) Δ)
 
 open TypeSubst public using ()
   renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
-open PTypeSubst public using ()
-  renaming (_/_ to _pt/tp_; _[/_] to _pt[/tp_]; weaken to pt-weaken)
+open PTypeSubst public using (_→ₚ_; _⇒ₚ_)
+  renaming (_/tp_ to _pt/tp_; _[/tp_] to _pt[/tp_]; _[/_] to _pt[/pt_]; weaken to pt-weaken)
 open TermTypeSubst public using () 
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open KtxSubst public 

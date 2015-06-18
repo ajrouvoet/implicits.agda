@@ -1,7 +1,7 @@
 module Prelude where
 
 open import Data.Nat public
-  using (ℕ; zero; suc)
+  using (ℕ; zero; suc; _⊔_)
   renaming ( _+_ to _N+_; _∸_ to _N-_
            ; _≤_ to _N≤_; _≥_ to _N≥_; _<_ to _N<_; _≤?_ to _N≤?_
            ; _≟_ to _N≟_)

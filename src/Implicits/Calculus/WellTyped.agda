@@ -16,8 +16,8 @@ data _⊑_ {ν} : PolyType ν → PolyType ν → Set where
   mono : ∀ {a b : Type ν} → a ≡ b → mono a ⊑ mono b
   poly-forall : ∀ {a : PolyType (suc ν)} {b : PolyType (suc ν)} → 
               a ⊑ b → ∀' a ⊑ ∀' b
-  poly-instance : ∀ {a : PolyType (suc ν)} {c} {b : PolyType ν} → 
-                  a pt[/tp c ] ⊑ b → ∀' a ⊑ b
+  poly-instance : ∀ {a : PolyType (suc ν)} c {b : PolyType ν} → 
+                  a pt[/pt c ] ⊑ b → ∀' a ⊑ b
 
 _⋢_ : ∀ {ν} → PolyType ν → PolyType ν → Set
 a ⋢ b = ¬ a ⊑ b

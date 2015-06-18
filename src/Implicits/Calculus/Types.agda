@@ -7,6 +7,8 @@ open import Data.Star using (Star; ε; _◅_)
 open import Extensions.Nat
 import Data.Vec
   
+infixr 10 _→'_
+infixr 10 _⇒_
 data Type (ν : ℕ) : Set where
   tvar : (n : Fin ν) → Type ν
   _→'_ : Type ν → Type ν → Type ν

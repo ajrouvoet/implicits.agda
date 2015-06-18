@@ -32,7 +32,7 @@ module RewriteContext where
 
 private
   module TS = TypeSubst
-  open PTypeSubst
+  open PTypeSubst using (_/_; _/tp_; _[/_]; weaken)
   open RewriteContext
   
   module TSS = Simple TS.simple
@@ -141,10 +141,10 @@ module Lemmas where
   /⋆⟦⟧tp (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
 
   -- polytype substitution commutes with interpreting types
-  /⋆⟦⟧pt : ∀ {ν μ} (tp : PolyType ν) (σ : Sub Type ν μ) → ⟦ tp / σ ⟧pt ≡ ⟦ tp ⟧pt F./ (map ⟦_⟧tp σ)
+  /⋆⟦⟧pt : ∀ {ν μ} (tp : PolyType ν) (σ : Sub Type ν μ) → ⟦ tp /tp σ ⟧pt ≡ ⟦ tp ⟧pt F./ (map ⟦_⟧tp σ)
   /⋆⟦⟧pt (mono x) σ = /⋆⟦⟧tp x σ
   /⋆⟦⟧pt (∀' tp) σ = begin
-    F.∀' (⟦ tp / (σ TS.↑) ⟧pt) 
+    F.∀' (⟦ tp /tp (σ TS.↑) ⟧pt) 
       ≡⟨ cong F.∀' (/⋆⟦⟧pt tp (σ TS.↑)) ⟩
     F.∀' (⟦ tp ⟧pt F./ (map ⟦_⟧tp (σ TS.↑))) 
       ≡⟨ cong (λ e → F.∀' (⟦ tp ⟧pt F./ e)) (⟦⟧tps⋆↑ σ) ⟩
@@ -152,9 +152,9 @@ module Lemmas where
   
   -- forall' application commutes with interpreting types
   ⟦sub⟧≡sub⟦⟧ : ∀ {ν} (a : PolyType (suc ν)) b → 
-                ⟦ a / (TS.sub b) ⟧pt ≡ ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp)
+                ⟦ a /tp (TS.sub b) ⟧pt ≡ ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp)
   ⟦sub⟧≡sub⟦⟧ a b = begin
-      ⟦ a / TS.sub b ⟧pt 
+      ⟦ a /tp TS.sub b ⟧pt 
         ≡⟨ /⋆⟦⟧pt a (b ∷ TS.id) ⟩
       ⟦ a ⟧pt F./ (map ⟦_⟧tp (b ∷ TS.id)) 
         ≡⟨ refl ⟩
@@ -162,10 +162,13 @@ module Lemmas where
         ≡⟨ cong (λ s → ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
       ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp) ∎
 
+  postulate ⟦sub⟧≡sub⟦⟧' : ∀ {ν} (a : PolyType (suc ν)) b → 
+                           ⟦ a pt[/pt b ] ⟧pt ≡ ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧pt)
+
   -- type weakening commutes with interpreting types
-  weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp / TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
+  weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp /tp TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
   weaken-pt⋆⟦⟧pt tp = begin
-    ⟦ tp / TS.wk ⟧pt
+    ⟦ tp /tp TS.wk ⟧pt
       ≡⟨ /⋆⟦⟧pt tp TS.wk ⟩
     ⟦ tp ⟧pt F./ (map ⟦_⟧tp TS.wk) 
       ≡⟨ cong (λ e → ⟦ tp ⟧pt F./ e) ⟦wk⟧≡fwk ⟩
@@ -177,12 +180,12 @@ module Lemmas where
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) | ih = begin
     ⟦ ktx-weaken (x ∷ Γ , Δ) ⟧ctx ≡⟨ refl ⟩ 
-    ⟦ x / TS.wk ⟧pt ∷ xs ≡⟨ cong (flip _∷_ xs) (weaken-pt⋆⟦⟧pt x) ⟩
+    ⟦ x /tp TS.wk ⟧pt ∷ xs ≡⟨ cong (flip _∷_ xs) (weaken-pt⋆⟦⟧pt x) ⟩
     ⟦ x ⟧pt F./ F.wk ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx ≡⟨ cong (_∷_ (⟦ x ⟧pt F./ F.wk)) ih ⟩
     ⟦ x ⟧pt F./ F.wk ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx ≡⟨ refl ⟩
     F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx ∎
     where
-      xs = map ⟦_⟧pt $ map (λ s → s / TS.wk ) Γ
+      xs = map ⟦_⟧pt $ map (λ s → s /tp TS.wk ) Γ
 
 open Lemmas
 
@@ -196,15 +199,16 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t =
       (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) 
       (F.TypeLemmas.a/var-wk-↑/sub-0≡a ⟦ a' ⟧pt)
       ((F.WtTypeLemmas.weaken wt-t) F.[ F.tvar zero ])
-inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance {c = c} a[c]⊑b) wt-at = 
+inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = 
   inst a[c]⊑b wt-t[c]
   where
     t[c] : F.Term ν n
-    t[c] = t F.[ ⟦ c ⟧tp ]
+    t[c] = t F.[ ⟦ c ⟧pt ]
+    -- proof that t[c] is well typed
     wt-t[c] = subst 
-      (λ a′ → K F.⊢ t F.[ ⟦ c ⟧tp ] ∈ a′) 
-      (sym $ ⟦sub⟧≡sub⟦⟧ a' c) 
-      (wt-at F.[ ⟦ c ⟧tp ])
+      (λ a′ → K F.⊢ t[c] ∈ a′) 
+      {!!} -- (sym $ ⟦sub⟧≡sub⟦⟧' a' c) 
+      (wt-at F.[ ⟦ c ⟧pt ])
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)
