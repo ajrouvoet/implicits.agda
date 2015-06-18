@@ -2,7 +2,8 @@ module Implicits.SystemF.SmallStep where
 
 open import Prelude
 open import Implicits.SystemF.WellTyped
-open import Data.Fin.Substitution
+open import Implicits.SystemF.Substitutions
+open import Implicits.SystemF.Substitutions.Lemmas
 
 infixl 4 _≻_
 
