@@ -67,10 +67,12 @@ module PTypeSubst where
   -- lift substitution of types into polytypes
   module MonoTypeApp {T} (l : Lift T Type) where
     open Lift l hiding (var)
+    open TypeSubst.TypeApp l using () renaming (_/_ to _tp/tp_)
 
     infixl 6 _/_
     _/_ : ∀ {ν μ} → PolyType ν → Sub T ν μ → PolyType μ
-    x / σ = x tms./ (map (mono ∘ lift) σ)
+    mono x / σ = mono $ x tp/tp σ
+    ∀' x / σ = ∀' (x / σ ↑)
   
   open MonoTypeApp TypeSubst.termLift public renaming (_/_ to _/tp_)
 

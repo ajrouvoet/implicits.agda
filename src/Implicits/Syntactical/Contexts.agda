@@ -12,6 +12,10 @@ Ctx ν n = Vec (PolyType ν) n
 data Binding ν : Set where
   rule : PolyType ν → PolyType ν → Binding ν
   val  : PolyType ν → Binding ν
+  
+totype : ∀ {ν} → Binding ν → PolyType ν
+totype (rule a b) = a →ₚ b
+totype (val x) = x
 
 ICtx : ℕ → Set
 ICtx ν = List.List (Binding ν)
