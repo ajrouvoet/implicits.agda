@@ -162,9 +162,6 @@ module Lemmas where
         ≡⟨ cong (λ s → ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
       ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp) ∎
 
-  postulate ⟦sub⟧≡sub⟦⟧' : ∀ {ν} (a : PolyType (suc ν)) b → 
-                           ⟦ a pt[/pt b ] ⟧pt ≡ ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧pt)
-
   -- type weakening commutes with interpreting types
   weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp /tp TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
   weaken-pt⋆⟦⟧pt tp = begin
@@ -199,16 +196,14 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t =
       (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) 
       (F.TypeLemmas.a/var-wk-↑/sub-0≡a ⟦ a' ⟧pt)
       ((F.WtTypeLemmas.weaken wt-t) F.[ F.tvar zero ])
-inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = 
-  inst a[c]⊑b wt-t[c]
+inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = {!!} -- inst a[c]⊑b wt-t[c]
   where
     t[c] : F.Term ν n
     t[c] = t F.[ ⟦ c ⟧pt ]
     -- proof that t[c] is well typed
-    wt-t[c] = subst 
-      (λ a′ → K F.⊢ t[c] ∈ a′) 
-      {!!} -- (sym $ ⟦sub⟧≡sub⟦⟧' a' c) 
-      (wt-at F.[ ⟦ c ⟧pt ])
+    -- wt-t[c] : K F.⊢ t[c] ∈ 
+    -- wt-t[c] = (wt-at F.[ ⟦ c ⟧pt ])
+      
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)

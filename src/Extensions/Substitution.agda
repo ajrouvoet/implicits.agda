@@ -29,3 +29,12 @@ module Extensions.Substitution where
       σ₁ ⊙ (wk ⊙ (σ₂ ↑))       ≡⟨ ⊙-assoc ⟩
       (σ₁ ⊙ wk) ⊙ (σ₂ ↑)       ≡⟨ cong (λ σ₁ → σ₁ ⊙ (σ₂ ↑)) (sym map-weaken) ⟩
       (map weaken σ₁) ⊙ (σ₂ ↑) ∎
+
+    weaken⋆↑ : ∀ {ν μ} (x : T ν) (s : Sub T ν μ) → (weaken x) / (s ↑) ≡ weaken (x / s)
+    weaken⋆↑ x s = begin
+      (weaken x) / (s ↑) ≡⟨ cong (λ u → u / (s ↑)) (sym /-wk) ⟩
+      x / wk / (s ↑) ≡⟨ sym (/-⊙ x) ⟩
+      x / (wk ⊙ (s ↑)) ≡⟨ cong (_/_ x) (sym ⊙-wk) ⟩
+      x / (s ⊙ wk) ≡⟨ /-⊙ x ⟩
+      x / s / wk ≡⟨ /-wk ⟩
+      weaken (x / s) ∎

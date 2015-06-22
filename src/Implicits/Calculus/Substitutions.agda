@@ -49,18 +49,10 @@ module PTypeSubst where
   -- induction is on the remaining number of ∀' constructors, which is strictly decreasing
   {-# NO_TERMINATION_CHECK #-}
   _→ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
-  mono x →ₚ mono y = mono (x →' y)
-  mono x →ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) →ₚ r)
-  ∀' l →ₚ mono r = ∀' (l →ₚ (mono $ TypeSubst.weaken r))
-  ∀' l →ₚ ∀' r = ∀' (l →ₚ r)
 
   -- polytype rule constructor
   {-# NO_TERMINATION_CHECK #-}
   _⇒ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
-  mono x ⇒ₚ mono y = mono (x ⇒ y)
-  mono x ⇒ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) ⇒ₚ r)
-  ∀' l ⇒ₚ mono r = ∀' (l ⇒ₚ (mono $ TypeSubst.weaken r))
-  ∀' l ⇒ₚ ∀' r = ∀' (l ⇒ₚ r)
 
   -- lift substitution of types into polytypes
   infixl 6 _/tp_
@@ -88,6 +80,14 @@ module PTypeSubst where
   typeSubst = record { var = mono ∘ tvar; app = TypeApp._/_ }
 
   open TermSubst typeSubst public hiding (var)
+
+  mono x →ₚ mono y = mono (x →' y)
+  mono x →ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) →ₚ r)
+  ∀' l →ₚ r = ∀' (l →ₚ (weaken r))
+
+  mono x ⇒ₚ mono y = mono (x ⇒ y)
+  mono x ⇒ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) ⇒ₚ r)
+  ∀' l ⇒ₚ r = ∀' (l ⇒ₚ (weaken r))
 
   -- Shorthand for single-variable type substitutions
   infix 8 _[/_]

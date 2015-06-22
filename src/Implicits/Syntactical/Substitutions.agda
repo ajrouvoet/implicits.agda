@@ -54,19 +54,24 @@ module TermTypeSubst where
   _[/_] : ∀ {ν n} → Term (suc ν) n → Type ν → Term ν n
   t [/ b ] = t / sub b
 
+module BindingSubst where
+  _/_ : ∀ {ν μ} → Binding ν → Sub Type ν μ → Binding μ
+  _/_  (rule a b) σ = rule (a PTypeSubst./tp σ) (b PTypeSubst./tp σ)
+  _/_ (val a) σ = val (a PTypeSubst./tp σ)
+
+  weaken : ∀ {ν} → Binding ν → Binding (suc ν)
+  weaken K = K / TypeSubst.wk
+
 module KtxSubst where
-  
   _/_ : ∀ {ν μ n} → Ktx ν n → Sub Type ν μ → Ktx μ n
-  _/_ {ν} {μ} (Γ , Δ) σ = map (λ t → t PTypeSubst./tp σ) Γ , List.map mapper Δ
-    where 
-      mapper : Binding ν → Binding μ
-      mapper (rule a b) = rule (a PTypeSubst./tp σ) (b PTypeSubst./tp σ)
-      mapper (val a) = val (a PTypeSubst./tp σ)
+  _/_ {ν} {μ} (Γ , Δ) σ = map (flip PTypeSubst._/tp_ σ) Γ , List.map (flip BindingSubst._/_ σ) Δ
   
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
   weaken K = K / TypeSubst.wk
 
 open TermTypeSubst public using () 
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
+open BindingSubst public 
+  renaming (_/_ to _binding/_; weaken to binding-weaken)
 open KtxSubst public 
-  renaming (_/_ to _ctx-/_; weaken to ktx-weaken)
+  renaming (_/_ to _ctx/_; weaken to ktx-weaken)

@@ -39,13 +39,9 @@ module PTypeSubst where
   -- polytype function constructor
   -- even though the termination checker can't see it, 
   -- this must terminate: 
-  -- induction is on the remaining number of ∀' constructors, which is strictly decreasing
+  -- induction is well-founded on the remaining number of ∀' constructors
   {-# NO_TERMINATION_CHECK #-}
   _→ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
-  mono x →ₚ mono y = mono (x →' y)
-  mono x →ₚ ∀' r = ∀' ((mono $ TypeSubst.weaken x) →ₚ r)
-  ∀' l →ₚ mono r = ∀' (l →ₚ (mono $ TypeSubst.weaken r))
-  ∀' l →ₚ ∀' r = ∀' (l →ₚ r)
 
   module TypeApp {T} (l : Lift T PolyType) where
     open Lift l hiding (var)
@@ -71,8 +67,7 @@ module PTypeSubst where
 
     infixl 6 _/_
     _/_ : ∀ {ν μ} → PolyType ν → Sub T ν μ → PolyType μ
-    mono x / σ = mono $ x tp/tp σ
-    ∀' x / σ = ∀' (x / σ ↑)
+    x / σ = x tms./ (map (mono ∘ lift) σ)
   
   open MonoTypeApp TypeSubst.termLift public renaming (_/_ to _/tp_)
 
@@ -80,6 +75,10 @@ module PTypeSubst where
   _[/tp_] p t = p /tp TypeSubst.sub t
   
   open tms public
+
+  mono x →ₚ mono y = mono (x →' y)
+  mono x →ₚ ∀' r = ∀' ((weaken $ mono x) →ₚ r)
+  ∀' l →ₚ r = ∀' (l →ₚ (weaken r))
 
   -- Shorthand for single-variable type substitutions
   infix 8 _[/_]

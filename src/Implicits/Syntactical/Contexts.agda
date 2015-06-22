@@ -30,8 +30,7 @@ _∷Δ_ : ∀ {ν n} → Binding ν → Ktx ν n → Ktx ν n
 a ∷Δ (Γ , Δ) = Γ , a List.∷ Δ
 
 _∷K_ : ∀ {ν n} → Binding ν → Ktx ν n → Ktx ν (suc n)
-rule a b ∷K (Γ , Δ) = (a →ₚ b) ∷ Γ , (rule a b) List.∷ Δ
-val x ∷K (Γ , Δ) = x ∷ Γ , (val x) List.∷ Δ
+x ∷K (Γ , Δ) = (totype x) ∷ Γ , x List.∷ Δ
 
 nil : Ktx 0 0
 nil = [] , List.[]
