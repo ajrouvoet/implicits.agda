@@ -12,7 +12,7 @@ tnat⊑tnat : tnat ⊑ tnat
 tnat⊑tnat = poly-forall (mono refl)
 
 tid⊑nattid : tid ⊑ nattid
-tid⊑nattid = poly-instance tnat (poly-forall (mono refl))
+tid⊑nattid = poly-instance tnat (poly-forall (poly-forall (mono refl)))
 
 open import Data.Fin.Substitution
 open TypeSubst

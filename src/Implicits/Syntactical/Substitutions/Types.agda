@@ -43,7 +43,11 @@ module PTypeSubst where
   {-# NO_TERMINATION_CHECK #-}
   _→ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
 
-  module TypeApp {T} (l : Lift T PolyType) where
+  private
+    -- this is trivial, but we need it below, before we can use the definition of _→ₚ_
+    mono⋆→ₚ : ∀ {ν} (a b : Type ν)  → (mono a) →ₚ (mono b) ≡ mono (a →' b)
+
+  module PTypeApp {T} (l : Lift T PolyType) where
     open Lift l hiding (var)
 
     infixl 8 _/_
@@ -55,8 +59,21 @@ module PTypeSubst where
 
     open Application (record { _/_ = _/_ }) using (_/✶_)
 
+    mono→'-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs T m n) →
+                   (mono (a →' b)) /✶ ρs ↑✶ k ≡ (mono a /✶ ρs ↑✶ k) →ₚ (mono b /✶ ρs ↑✶ k)
+    mono→'-/✶-↑✶ k {a = a} {b = b} ε        = sym $ mono⋆→ₚ a b
+    mono→'-/✶-↑✶ k {a = a} {b = b} (r ◅ ρs) = blam{-begin
+      (mono (a →' b)) /✶ (r ◅ ρs) ↑✶ k ≡⟨ {!!} ⟩
+      ((mono (a →' b)) / (r ↑⋆ k)) /✶ ρs ↑✶ k ≡⟨ {!!} ⟩
+      (mono a /✶ (r ◅ ρs) ↑✶ k) →ₚ (mono b /✶ (r ◅ ρs) ↑✶ k) ∎-}
+      where postulate blam : (mono (a →' b)) /✶ (r ◅ ρs) ↑✶ k ≡
+                             (mono a /✶ (r ◅ ρs) ↑✶ k) →ₚ (mono b /✶ (r ◅ ρs) ↑✶ k)
+
+    postulate ∀'-/✶-↑✶ : ∀ k {ν μ a} (ρs : Subs T ν μ) →
+                         (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))
+
   typeSubst : TermSubst PolyType
-  typeSubst = record { var = mono ∘ tvar; app = TypeApp._/_ }
+  typeSubst = record { var = mono ∘ tvar; app = PTypeApp._/_ }
 
   module tms = TermSubst typeSubst 
 
@@ -79,6 +96,8 @@ module PTypeSubst where
   mono x →ₚ mono y = mono (x →' y)
   mono x →ₚ ∀' r = ∀' ((weaken $ mono x) →ₚ r)
   ∀' l →ₚ r = ∀' (l →ₚ (weaken r))
+
+  mono⋆→ₚ a b = refl
 
   -- Shorthand for single-variable type substitutions
   infix 8 _[/_]

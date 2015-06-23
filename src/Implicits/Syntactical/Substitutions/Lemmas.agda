@@ -65,9 +65,27 @@ module PTypeLemmas where
         open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
         open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
 
-        postulate /✶-↑✶ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) → 
-                          (∀ k x → (mono $ tvar x) /✶₁ σs₁ ↑✶₁ k ≡ (mono $ tvar x) /✶₂ σs₂ ↑✶₂ k) → 
-                          ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
+        /✶-↑✶ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) → 
+                (∀ k x → (mono $ tvar x) /✶₁ σs₁ ↑✶₁ k ≡ (mono $ tvar x) /✶₂ σs₂ ↑✶₂ k) → 
+                ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
+        /✶-↑✶ ρs₁ ρs₂ hyp k (mono (tvar n)) = hyp k n
+        /✶-↑✶ ρs₁ ρs₂ hyp k (mono (a →' b)) = begin
+            (mono (a →' b)) /✶₁ ρs₁ ↑✶₁ k
+          ≡⟨ PTypeApp.mono→'-/✶-↑✶ lift₁ k ρs₁ ⟩
+            (mono a /✶₁ ρs₁ ↑✶₁ k) →ₚ (mono b /✶₁ ρs₁ ↑✶₁ k)
+          ≡⟨ cong₂ _→ₚ_ (/✶-↑✶ ρs₁ ρs₂ hyp k (mono a)) (/✶-↑✶ ρs₁ ρs₂ hyp k (mono b)) ⟩
+            (mono a /✶₂ ρs₂ ↑✶₂ k) →ₚ (mono b /✶₂ ρs₂ ↑✶₂ k)
+          ≡⟨ sym (PTypeApp.mono→'-/✶-↑✶ lift₂ k ρs₂) ⟩
+            (mono (a →' b)) /✶₂ ρs₂ ↑✶₂ k
+          ∎
+        /✶-↑✶ ρs₁ ρs₂ hyp k (∀' a) = begin
+          (∀' a) /✶₁ ρs₁ ↑✶₁ k
+            ≡⟨ PTypeApp.∀'-/✶-↑✶ _ k ρs₁ ⟩
+          ∀' (a /✶₁ ρs₁ ↑✶₁ (suc k))
+            ≡⟨ cong ∀' (/✶-↑✶ ρs₁ ρs₂ hyp (suc k) a) ⟩
+          ∀' (a /✶₂ ρs₂ ↑✶₂ (suc k))
+            ≡⟨ sym $ PTypeApp.∀'-/✶-↑✶ _ k ρs₂ ⟩
+          (∀' a) /✶₂ ρs₂ ↑✶₂ k ∎
 
   open TermLemmas typeLemmas public hiding (var; weaken; _/_; _↑)
 
