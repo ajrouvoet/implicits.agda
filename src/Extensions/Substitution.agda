@@ -38,3 +38,15 @@ module Extensions.Substitution where
       x / (s ⊙ wk) ≡⟨ /-⊙ x ⟩
       x / s / wk ≡⟨ /-wk ⟩
       weaken (x / s) ∎
+
+    weaken-sub-vanishes : ∀ {ν} {a b : T ν} → (weaken a) / (sub b) ≡ a
+    weaken-sub-vanishes {ν} {a} {b} = begin
+      (weaken a) / (sub b) ≡⟨ cong (flip _/_ (sub b)) (sym $ /-wk {t = a}) ⟩
+      a / wk / (sub b) ≡⟨ wk-sub-vanishes a ⟩
+      a ∎
+
+    postulate a/wk↑/sub0≡a : ∀ {ν} (a : T (suc ν)) → a / wk ↑ / (sub $ var zero) ≡ a
+    {-a/var-wk-↑/sub-0≡a a = begin
+        (a /Var (VarSubst.wk VarSubst.↑)) / (sub $ tvar zero) ≡⟨ {!!} ⟩
+        (a /Var (zero ∷ (map suc VarSubst.wk))) / ((tvar zero) ∷ TypeSubst.id) ≡⟨ {!!} ⟩
+        a ∎-}
