@@ -65,10 +65,6 @@ inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a �
 -- construct an System F term from an implicit resolution
 ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
 
-bob : ∀ {ν n} {K : Ktx ν n} {t} {b} a → (val a) ∷K K ⊢ t ∈ b → 
-      ∃ λ t' → ⟦ K ⟧ctx F.⊢ t' ∈ ⟦ a →ₚ b ⟧pt
-bob a wt-t = {!!}
-
 -- denotational semantics of well-typed terms
 ⟦_,_⟧ : ∀ {ν n} {K : Ktx ν n} {t} {a : PolyType ν} → K ⊢ t ∈ a → K# K → F.Term ν n
 ⟦_,_⟧ (var x) m = F.var x
@@ -82,7 +78,7 @@ bob a wt-t = {!!}
 ⟦_,_⟧ (implicit_in'_ {a = a} t e) m = 
   (F.λ' ⟦ a ⟧pt ⟦ e , #ival (val a) m ⟧) F.· ⟦ t , m ⟧
 ⟦_,_⟧ (implicit_⇒_in'_ {b = b} a t e) m =
-  (F.λ' (⟦ a →ₚ b ⟧pt) ⟦ e , #ival (rule a b) m ⟧) F.· (proj₁ $ bob a t)
+  (F.λ' (⟦ a →ₚ b ⟧pt) ⟦ e , #ival (rule a b) m ⟧) F.· (F.λml ⟦ a ⟧pt ⟦ t , (#ival (val a) m) ⟧)
 
 module Lemmas where
 
@@ -170,6 +166,8 @@ module Lemmas where
       ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ (map ⟦_⟧tp TS.id)) 
         ≡⟨ cong (λ s → ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
       ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp) ∎
+
+  postulate ⟦⟧⋆→ml : ∀ {ν} (a b : PolyType ν) → ⟦ a →ₚ b ⟧pt ≡ ⟦ a ⟧pt F.→ml ⟦ b ⟧pt
 
   -- type weakening commutes with interpreting types
   weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp /tp TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
@@ -289,5 +287,5 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = {
 ⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m | ih₁ | ih₂ = (F.λ' ⟦ a ⟧pt ih₂) F.· ih₁
 ⟦⟧-preserves-tp {ν = ν} {n = n} {K = K} (implicit_⇒_in'_ {b = b} a wt-e₁ wt-e₂) m 
   with ⟦⟧-preserves-tp wt-e₁ (#ival (val a) m) | ⟦⟧-preserves-tp wt-e₂ (#ival (rule a b) m)
-⟦⟧-preserves-tp {ν = ν} {n = n} {K = K} (implicit_⇒_in'_ {b = b} a wt-e₁ wt-e₂) m | ih₁ | ih₂ = 
- (F.λ' ⟦ a →ₚ b ⟧pt ih₂) F.· proj₂ (bob a wt-e₁)
+⟦⟧-preserves-tp {ν = ν} {n = n} {K = K} (implicit_⇒_in'_ {b = b} a wt-e₁ wt-e₂) m | ih₁ | ih₂
+  rewrite ⟦⟧⋆→ml a b = (F.λ' (⟦ a ⟧pt F.→ml ⟦ b ⟧pt) ih₂) F.· (F.⊢λml ⟦ a ⟧pt ih₁)

@@ -58,7 +58,7 @@ private
 -- (it might seem more natural to first build a Calculus term and keep the interpretation out of this,
 --    but that gives termination checking problems, since we could put more implicit applications in the 
 --    constructed term)
-inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
+postulate inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
 
 -- construct an System F term from an implicit resolution
 ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
@@ -186,6 +186,7 @@ module Lemmas where
 
 open Lemmas
 
+{-
 inst {t = t} {K = K} (mono a≡b) pt = , Prelude.subst (λ x → K F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
 inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t = 
   , F.Λ (proj₂ $ inst a'⊑b wt-t')
@@ -196,14 +197,14 @@ inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t =
       (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) 
       (F.TypeLemmas.a/var-wk-↑/sub-0≡a ⟦ a' ⟧pt)
       ((F.WtTypeLemmas.weaken wt-t) F.[ F.tvar zero ])
-inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = {!!} -- inst a[c]⊑b wt-t[c]
+inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = inst a[c]⊑b {!!}
   where
     t[c] : F.Term ν n
     t[c] = t F.[ ⟦ c ⟧pt ]
     -- proof that t[c] is well typed
-    -- wt-t[c] : K F.⊢ t[c] ∈ 
-    -- wt-t[c] = (wt-at F.[ ⟦ c ⟧pt ])
-      
+    wt-t[c] : K F.⊢ t[c] ∈ _
+    wt-t[c] = (wt-at F.[ ⟦ c ⟧pt ]ml)
+    -}
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)
