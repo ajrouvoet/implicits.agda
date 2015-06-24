@@ -51,12 +51,7 @@ module Extensions.Substitution where
     open TermSubst termSubst using (_/Var_) public
     
     postulate /Var-/ : ∀ {ν μ} (t : T ν) {s : Sub Fin ν μ} → t /Var s ≡ t / (map var s)
-    {-
-    /Var-/ t {s} = begin
-      t /Var s ≡⟨ {!!} ⟩
-      t / s ≡⟨ {!!} ⟩
-      t / (map var s) ∎
-    -}
+    -- /Var-/ t = {!!}
 
     private
       var⋆weaken : ∀ {n} → _≗_ {A = Fin n} (var ∘ suc) (weaken ∘ var)
@@ -73,50 +68,56 @@ module Extensions.Substitution where
         map (weaken ∘ var) v ≡⟨ map-∘ weaken var v ⟩
         map weaken (map var v) ∎
 
-    map-var-varkid≡id : ∀ {n} → map var (Var.id {n}) ≡ id {n}
-    map-var-varkid≡id {zero} = refl
-    map-var-varkid≡id {suc n} = begin
+    map-var-varid≡id : ∀ {n} → map var (Var.id {n}) ≡ id {n}
+    map-var-varid≡id {zero} = refl
+    map-var-varid≡id {suc n} = begin
       var zero ∷ (map var $ map suc Var.id)
-        ≡⟨ cong (λ u → var zero ∷ u) map-var⋆weaken ⟩
+        ≡⟨ cong (_∷_ (var zero)) map-var⋆weaken ⟩
       var zero ∷ (map weaken $ map var Var.id)
-        ≡⟨ cong (λ u → var zero ∷ (map weaken u)) map-var-varkid≡id ⟩
+        ≡⟨ cong (λ u → var zero ∷ (map weaken u)) map-var-varid≡id ⟩
       id ↑ ∎
 
     map-var-varwk≡wk : ∀ {n} → map var (Var.wk {n}) ≡ wk {n}
     map-var-varwk≡wk {zero} = refl
     map-var-varwk≡wk {suc n} = begin
       map var (map suc Var.id) ≡⟨ map-var⋆weaken ⟩ 
-      map weaken (map var Var.id) ≡⟨ cong (map weaken) map-var-varkid≡id ⟩
+      map weaken (map var Var.id) ≡⟨ cong (map weaken) map-var-varid≡id ⟩
       wk ∎ 
 
-    postulate map-var-varwk↑≡wk↑ : ∀ {n} → map var (Var.wk {n} Var.↑) ≡ wk {n} ↑
-    {-
-    map-var-varwk↑≡wk↑ {zero} = refl
-    map-var-varwk↑≡wk↑ {suc n} = {!!}
-    -}
+    map-var-↑ : ∀ {n m} {s : Vec (Fin n) m} {s'} → map var s ≡ s' → map var (s Var.↑) ≡ s' ↑
+    map-var-↑ {s = s} {s' = s'} eq = begin
+      var zero ∷ (map var $ map suc s)
+        ≡⟨ cong (_∷_ $ var zero) map-var⋆weaken ⟩
+      var zero ∷ (map weaken $ map var s)
+        ≡⟨ cong (λ u → var zero ∷ (map weaken u)) eq ⟩
+      s' ↑ ∎
     
     a/wk↑/sub0≡a : ∀ {ν} (a : T (suc ν)) → a / wk ↑ / (sub $ var zero) ≡ a
     a/wk↑/sub0≡a a = begin
-      a / wk ↑ / (sub $ var zero) ≡⟨ sym $ /-⊙ a ⟩
-      a / (var zero / (sub $ var zero) ∷ map (λ t → t / (sub $ var zero)) (map weaken wk))
-        ≡⟨ cong (λ u → a / (u ∷ map (λ t → t / (sub $ var zero)) (map weaken wk))) var-/ ⟩
-      a / (var zero ∷ map (λ t → t / (sub $ var zero)) (map weaken wk))
-        ≡⟨ cong (λ u → a / (var zero ∷ u)) (sym $ map-∘ (λ t → t / (sub $ var zero)) weaken wk) ⟩
+      a / wk ↑ / (sub $ var zero)
+        ≡⟨ sym $ /-⊙ a ⟩
+      a / (var zero / (sub $ var zero) ∷ map /-var-zero (map weaken wk))
+        ≡⟨ cong (λ u → a / (u ∷ map /-var-zero (map weaken wk))) var-/ ⟩
+      a / (var zero ∷ map /-var-zero (map weaken wk))
+        ≡⟨ cong' (sym $ map-∘ /-var-zero weaken wk) ⟩
       a / (var zero ∷ map (λ t → (weaken t) / (sub $ var zero)) wk)
-        ≡⟨ cong (λ u → a / (var zero ∷ u)) (map-cong (λ t → weaken-sub-vanishes) wk) ⟩
+        ≡⟨ cong' (map-cong (λ t → weaken-sub-vanishes) wk) ⟩
       a / (var zero ∷ map Prelude.id wk)
-        ≡⟨ cong (λ u → a / (var zero ∷ u)) (map-id wk) ⟩
+        ≡⟨ cong' (map-id wk) ⟩
       a / ((var zero ∷ wk))
         ≡⟨ id-vanishes a ⟩
       a ∎
-
+      where
+        /-var-zero = (λ t → t / (sub $ var zero))
+        cong' : ∀ {x y} → x ≡ y → a / (var zero ∷ x) ≡ a / (var zero ∷ y)
+        cong' = λ rest → cong (λ u → a / (var zero ∷ u)) rest 
 
     a-/Var-varwk↑-/-sub0≡a : ∀ {n} (a : T (suc n)) → (a /Var Var.wk Var.↑) / sub (var zero) ≡ a
     a-/Var-varwk↑-/-sub0≡a a = begin
       (a /Var Var.wk Var.↑) / (sub $ var zero)
         ≡⟨ cong (λ u → u / (sub $ var zero)) (/Var-/ a) ⟩
       (a / (map var $ Var.wk Var.↑)) / sub (var zero)
-        ≡⟨ cong (λ u → (a / u) / (sub $ var zero)) map-var-varwk↑≡wk↑ ⟩
+        ≡⟨ cong (λ u → (a / u) / (sub $ var zero)) (map-var-↑ map-var-varwk≡wk) ⟩
       (a / wk ↑) / (sub $ var zero)
         ≡⟨ a/wk↑/sub0≡a a ⟩
       a ∎
