@@ -50,9 +50,6 @@ module Extensions.Substitution where
     -- make /Var usable from lemmas
     open TermSubst termSubst using (_/Var_) public
     
-    postulate /Var-/ : ∀ {ν μ} (t : T ν) {s : Sub Fin ν μ} → t /Var s ≡ t / (map var s)
-    -- /Var-/ t = {!!}
-
     private
       var⋆weaken : ∀ {n} → _≗_ {A = Fin n} (var ∘ suc) (weaken ∘ var)
       var⋆weaken n = begin 
@@ -111,13 +108,3 @@ module Extensions.Substitution where
         /-var-zero = (λ t → t / (sub $ var zero))
         cong' : ∀ {x y} → x ≡ y → a / (var zero ∷ x) ≡ a / (var zero ∷ y)
         cong' = λ rest → cong (λ u → a / (var zero ∷ u)) rest 
-
-    a-/Var-varwk↑-/-sub0≡a : ∀ {n} (a : T (suc n)) → (a /Var Var.wk Var.↑) / sub (var zero) ≡ a
-    a-/Var-varwk↑-/-sub0≡a a = begin
-      (a /Var Var.wk Var.↑) / (sub $ var zero)
-        ≡⟨ cong (λ u → u / (sub $ var zero)) (/Var-/ a) ⟩
-      (a / (map var $ Var.wk Var.↑)) / sub (var zero)
-        ≡⟨ cong (λ u → (a / u) / (sub $ var zero)) (map-var-↑ map-var-varwk≡wk) ⟩
-      (a / wk ↑) / (sub $ var zero)
-        ≡⟨ a/wk↑/sub0≡a a ⟩
-      a ∎

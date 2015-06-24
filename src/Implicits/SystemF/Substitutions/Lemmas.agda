@@ -14,7 +14,7 @@ import Category.Applicative.Indexed as Applicative
 open Applicative.Morphism using (op-<$>)
 
 module TypeLemmas where
-  open TypeSubst
+  open TypeSubst using (module Lifted; module TypeApp)
   open TypeSubst public using (_[/_])
   open import Data.Fin.Substitution.Lemmas
   open import Data.Star using (Star; ε; _◅_)
@@ -60,6 +60,26 @@ module TypeLemmas where
 
   open AdditionalLemmas typeLemmas public
   open tpl public
+
+  /Var-/ : ∀ {ν μ} (t : Type ν) (s : Sub Fin ν μ) → t /Var s ≡ t / (map tvar s)
+  /Var-/ (tvar n) s = lookup⋆map s tvar n
+  /Var-/ (a →' b) s = cong₂ _→'_ (/Var-/ a s) (/Var-/ b s)
+  /Var-/ (∀' t) s = begin
+    ∀' (t /Var (s Var.↑))
+      ≡⟨ cong ∀' $ /Var-/ t (s Var.↑) ⟩
+    ∀' (t / (map tvar $ s Var.↑))
+      ≡⟨ cong (λ u → ∀' (t / u)) (map-var-↑ refl) ⟩
+    ∀' t / (map tvar s) ∎
+
+  a-/Var-varwk↑-/-sub0≡a : ∀ {n} (a : Type (suc n)) → (a /Var Var.wk Var.↑) / sub (tvar zero) ≡ a
+  a-/Var-varwk↑-/-sub0≡a a = begin
+    (a /Var Var.wk Var.↑) / (sub $ tvar zero)
+      ≡⟨ cong (λ u → u / (sub $ tvar zero)) (/Var-/ a $ Var.wk Var.↑) ⟩
+    (a / (map tvar $ Var.wk Var.↑)) / sub (tvar zero)
+      ≡⟨ cong (λ u → (a / u) / (sub $ tvar zero)) (map-var-↑ map-var-varwk≡wk) ⟩
+    (a / wk ↑) / (sub $ tvar zero)
+      ≡⟨ a/wk↑/sub0≡a a ⟩
+    a ∎
 
 -- Lemmas about type substitutions in terms.
 module TermTypeLemmas where
