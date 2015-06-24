@@ -58,13 +58,6 @@ module TypeLemmas where
           ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
   /-↑⋆ ρ₁ ρ₂ hyp i a = tpl./✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
-  postulate a/var-wk-↑/sub-0≡a : ∀ {ν} (a : Type (suc ν)) → 
-               (a /Var (VarSubst.wk VarSubst.↑)) / (sub $ tvar zero) ≡ a
-  {-a/var-wk-↑/sub-0≡a a = begin
-    (a /Var (VarSubst.wk VarSubst.↑)) / (sub $ tvar zero) ≡⟨ {!!} ⟩
-    (a /Var (zero ∷ (map suc VarSubst.wk))) / ((tvar zero) ∷ TypeSubst.id) ≡⟨ {!!} ⟩
-    a ∎-}
-
   open AdditionalLemmas typeLemmas public
   open tpl public
 
@@ -227,8 +220,7 @@ module WtTypeLemmas where
   ⊢t [/ b ] = ⊢t / sub b
 
   tm[/tp]-preserves : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ Λ t ∈ ∀' τ → ∀ a → Γ ⊢ (t tm[/tp a ]) ∈ τ tp[/tp a ]
-  tm[/tp]-preserves {Γ = Γ} {t} {τ} (Λ p) a = 
-    ctx-subst C.ctx-weaken-sub-vanishes (p / (Tp.sub a))
+  tm[/tp]-preserves {Γ = Γ} {t} {τ} (Λ p) a = ctx-subst C.ctx-weaken-sub-vanishes (p / (Tp.sub a))
     where
       ctx-subst = Prelude.subst (λ c → c ⊢ t tm[/tp a ] ∈ τ tp[/tp a ])
 
