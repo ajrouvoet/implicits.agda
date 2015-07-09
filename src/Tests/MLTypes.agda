@@ -3,7 +3,6 @@ module Tests.MLTypes where
 open import Prelude
 open import Implicits.Calculus.WellTyped
 open import Implicits.Calculus.Types.Constructors
-open import Implicits.Calculus.Terms.Constructors
 open import Implicits.Calculus.Substitutions
 
 nattid = (∀' (mono (

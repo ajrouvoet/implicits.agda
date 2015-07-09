@@ -3,7 +3,7 @@ module Implicits.Calculus.Denotational where
 open import Prelude
 
 open import Implicits.Calculus.WellTyped
-open import Implicits.Calculus.Substitutions
+open import Implicits.Calculus.Substitutions.Lemmas
 open import Implicits.SystemF as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
@@ -20,7 +20,7 @@ module RewriteContext where
   
   #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
   #tvar {K = Γ , List.[]} All.[] = All.[]
-  #tvar {K = Γ , ._} (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeSubst.wk)) All.∷ (#tvar K#K)
+  #tvar {K = Γ , ._} (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeLemmas.wk)) All.∷ (#tvar K#K)
 
   #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
   #var {K = Γ , List.[]} a All.[] = All.[]
@@ -30,7 +30,7 @@ module RewriteContext where
   #ivar a K#K = here All.∷ (All.map there K#K)
 
 private
-  module TS = TypeSubst
+  module TS = TypeLemmas
   open RewriteContext
 
   -- saving characters here like a pro
@@ -75,7 +75,6 @@ private
 ⟦_,_⟧ (implicit_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧pt ⟦ e , #ivar a m ⟧) F.· ⟦ t , m ⟧
 
 module Lemmas where
-
   -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
   lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧pt
   lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧pt x
@@ -161,14 +160,21 @@ module Lemmas where
         ≡⟨ cong (λ s → ⟦ a ⟧pt F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
       ⟦ a ⟧pt F./ (F.sub ⟦ b ⟧tp) ∎
 
-  -- type weakening commutes with interpreting types
-  weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp /tp TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
-  weaken-pt⋆⟦⟧pt tp = begin
+
+  /-wk⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ tp /tp TS.wk ⟧pt ≡ ⟦ tp ⟧pt F./ F.wk
+  /-wk⋆⟦⟧pt tp = begin
     ⟦ tp /tp TS.wk ⟧pt
       ≡⟨ /⋆⟦⟧pt tp TS.wk ⟩
     ⟦ tp ⟧pt F./ (map ⟦_⟧tp TS.wk) 
       ≡⟨ cong (λ e → ⟦ tp ⟧pt F./ e) ⟦wk⟧≡fwk ⟩
     ⟦ tp ⟧pt F./ F.wk ∎
+
+  -- type weakening commutes with interpreting types
+  weaken-pt⋆⟦⟧pt : ∀ {ν} (tp : PolyType ν) → ⟦ pt-weaken tp ⟧pt ≡ F.tp-weaken ⟦ tp ⟧pt
+  weaken-pt⋆⟦⟧pt tp = begin
+    ⟦ tp /tp TS.wk ⟧pt ≡⟨ /-wk⋆⟦⟧pt tp ⟩
+    ⟦ tp ⟧pt F./ F.wk ≡⟨ F.TypeLemmas./-wk {t = ⟦ tp ⟧pt} ⟩
+    F.tp-weaken ⟦ tp ⟧pt ∎
 
   -- context weakening commutes with interpreting contexts
   ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
@@ -176,7 +182,7 @@ module Lemmas where
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) | ih = begin
     ⟦ ktx-weaken (x ∷ Γ , Δ) ⟧ctx ≡⟨ refl ⟩ 
-    ⟦ x /tp TS.wk ⟧pt ∷ xs ≡⟨ cong (flip _∷_ xs) (weaken-pt⋆⟦⟧pt x) ⟩
+    ⟦ x /tp TS.wk ⟧pt ∷ xs ≡⟨ cong (flip _∷_ xs) (/-wk⋆⟦⟧pt x) ⟩
     ⟦ x ⟧pt F./ F.wk ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx ≡⟨ cong (_∷_ (⟦ x ⟧pt F./ F.wk)) ih ⟩
     ⟦ x ⟧pt F./ F.wk ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx ≡⟨ refl ⟩
     F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx ∎
@@ -185,51 +191,25 @@ module Lemmas where
 
 open Lemmas
 
-{-
-postulate magic : ∀ {ν n} {Γ : F.Ctx ν n} {t} a →
-                  Γ F.⊢ t ∈ ⟦ ∀' a ⟧pt → ∀ c → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ a pt[/pt c ] ⟧pt
-magic {t = t} (mono (tvar zero)) wtf-∀a c = , wtf-∀a F.[ ⟦ c ⟧pt ]
-magic {Γ = Γ} {t = t} (mono (tvar (suc n))) wtf-∀a c =
-  , subst (λ u → Γ F.⊢ _ ∈ u) eq (wtf-∀a F.[ ⟦ c ⟧pt ])
-  where
-    postulate eq : lookup n F.id ≡ ⟦ lookup n PTypePTypeSubst.id ⟧pt
-magic (mono (a →' b)) wtf-∀a c = {!!}
-magic (mono (a ⇒ b)) wtf-∀a c = {!!}
-
--- when a has a universal quantifier
--- we can recurse
-magic {Γ = Γ} {t = t} (∀' a) wtf-∀a c with magic a (hyp₁ wtf-∀a) (pt-weaken c)
-  where
-    -- hyp1 is about applying well typed terms to a freshly introduced tvar
-    -- aka: weaken and apply to tvar 0.
-    -- it's an hypothesis, because we haven't got well-typed substitutions defined...
-    postulate hyp₁ : Γ F.⊢ t ∈ ⟦ ∀' (∀' a) ⟧pt →
-                     F.ctx-weaken Γ F.⊢ (F.tm-weaken t) F.[ F.tvar zero ] ∈ F.∀' ⟦ a ⟧pt
-magic {ν} {n} {Γ = Γ} {t = t} (∀' a) wtf-∀a c | t' , u = (F.Λ t') , F.Λ u
--}
-
 -- given a proof that some calculus type b is a specialization of a,
 -- and an F-instance of a, we can build an F-instance of b
 -- (it might seem simpler to first build a Calculus term
 --    and keep the interpretation out of this,
 --    but that gives termination checking problems,
 --    since we could put more implicit applications in the constructed term)
-postulate inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧pt
-{-
-inst {t = t} {Γ = Γ} (mono a≡b) pt =
-  , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
-inst {a = ∀' a'} {t = t} {Γ = Γ} (poly-forall a'⊑b) wt-t = 
-  , F.Λ (proj₂ $ inst a'⊑b wt-t')
+inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧pt
+inst {t = t} {Γ = Γ} (poly-equal a≡b) pt =
+  , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧pt a≡b) pt
+inst {a = a} {t = t} {Γ = Γ} (poly-intro a⊑b) wt-a = , F.Λ (proj₂ $ inst a⊑b wt-wk-a)
   where
-    t' = (F.tm-weaken t) F.[ F.tvar zero ]
-    wt-t' : F.ctx-weaken Γ F.⊢ t' ∈ ⟦ a' ⟧pt
-    wt-t' = subst 
-      (λ τ → F.ctx-weaken Γ F.⊢ t' ∈ τ) 
-      (F.TypeLemmas.a-/Var-varwk↑-/-sub0≡a ⟦ a' ⟧pt)
-      ((F.WtTypeLemmas.weaken wt-t) F.[ F.tvar zero ])
-inst {ν} {n} {a = ∀' a'} {t = t} {Γ = Γ} (poly-instance c a[c]⊑b) wt-at =
-  inst a[c]⊑b (proj₂ $ magic a' wt-at c)
--}
+    wt-wk-a = subst
+      (F._⊢_∈_ (F.ctx-weaken Γ) (F.tm-weaken t))
+      (sym $ weaken-pt⋆⟦⟧pt a)
+      (F.⊢tp-weaken wt-a)
+inst {a = ∀' a} {t = t} {Γ = Γ} (poly-elim c a[c]⊑b) wt-a = , (proj₂ $ inst a[c]⊑b wt-a[c])
+  where
+    wt-a[c] : Γ F.⊢ t F.[ ⟦ c ⟧tp ] ∈ ⟦ a pt[/tp c ] ⟧pt
+    wt-a[c] = subst (F._⊢_∈_ Γ _) (sym $ ⟦sub⟧≡sub⟦⟧ a c) (wt-a F.[ ⟦ c ⟧tp ])
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)
