@@ -17,3 +17,15 @@ data Type (ν : ℕ) : Set where
 data PolyType (ν : ℕ) : Set where
   mono : Type ν → PolyType ν
   ∀'   : PolyType (suc ν) → PolyType ν
+
+is-∀' : ∀ {ν} → PolyType ν → Set
+is-∀' (mono x) = ⊥
+is-∀' (∀' x) = ⊤
+
+is-mono : ∀ {ν} → PolyType ν → Set
+is-mono (mono x) = ⊤
+is-mono (∀' x) = ⊥
+
+mono-totype : ∀ {ν} → (a : PolyType ν) → {ism : is-mono a} → Type ν
+mono-totype (mono x) = x
+mono-totype (∀' a) {ism = ()}

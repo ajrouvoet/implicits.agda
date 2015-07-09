@@ -13,11 +13,11 @@ infixl 4 _⊢_∈_
 
 infixl 4 _⊑_
 data _⊑_ {ν} : PolyType ν → PolyType ν → Set where
-  mono : ∀ {a b : Type ν} → a ≡ b → mono a ⊑ mono b
-  poly-forall : ∀ {a : PolyType (suc ν)} {b : PolyType (suc ν)} → 
-              a ⊑ b → ∀' a ⊑ ∀' b
-  poly-instance : ∀ {a : PolyType (suc ν)} c {b : PolyType ν} → 
-                  a pt[/pt c ] ⊑ b → ∀' a ⊑ b
+  poly-equal : ∀ {a b : PolyType ν} → a ≡ b → a ⊑ b
+  poly-intro : ∀ {a : PolyType ν} {b : PolyType (suc ν)} →
+               pt-weaken a ⊑ b → a ⊑ ∀' b
+  poly-elim : ∀ {a : PolyType (suc ν)} c {b : PolyType ν} → 
+              a pt[/tp c ] ⊑ b → ∀' a ⊑ b
 
 _⋢_ : ∀ {ν} → PolyType ν → PolyType ν → Set
 a ⋢ b = ¬ a ⊑ b

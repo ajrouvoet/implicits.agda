@@ -6,22 +6,33 @@ open import Implicits.Calculus.Types.Constructors
 open import Implicits.Calculus.Terms.Constructors
 open import Implicits.Calculus.Substitutions
 
-nattid = (tnat →ₚ tnat)
+nattid = (∀' (mono (
+  (mono-totype ((pt-weaken tnat) ∙ (tvar zero)))
+  →'
+  (mono-totype ((pt-weaken tnat) ∙ (tvar zero))))))
 
 tnat⊑tnat : tnat ⊑ tnat
-tnat⊑tnat = poly-forall (mono refl)
+tnat⊑tnat = poly-equal refl
 
 tid⊑nattid : tid ⊑ nattid
-tid⊑nattid = poly-instance tnat (poly-forall (poly-forall (mono refl)))
+tid⊑nattid = poly-intro (poly-elim (mono-totype (pt-weaken tnat ∙ tvar zero)) (poly-equal refl))
 
 open import Data.Fin.Substitution
 open TypeSubst
 open TermSubst typeSubst
 
+-- ∀S.∀T.S → T ⊑ ∀T.T → tnat
 test4 : (∀' (∀' (mono (tvar (suc zero) →' tvar zero)))) ⊑ 
-            ∀' ((mono (tvar zero)) →ₚ (pt-weaken tnat))
-test4 = poly-forall (poly-instance (pt-weaken tnat) (poly-forall (mono refl)))
-
-test4' : (∀' (∀' (mono (tvar (suc zero) →' tvar zero)))) ⊑ 
-            ∀' ((pt-weaken tnat) →ₚ (mono (tvar zero)))
-test4' = poly-instance tnat (poly-forall (poly-forall (mono refl)))
+          ∀' (∀' (mono (
+            (tvar (suc zero))
+            →'
+            (tp-weaken $ mono-totype ((pt-weaken tnat) ∙ (tvar zero)))
+        )))
+test4 = poly-intro (
+  poly-elim (tvar zero)
+    (poly-elim (mono-totype ((pt-weaken tnat) ∙ (tvar zero)))
+      (poly-intro
+        (poly-equal refl)
+      )
+    )
+  )

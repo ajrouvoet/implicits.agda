@@ -22,9 +22,9 @@ tnat = ∀' $ mono $ ((tvar zero) →' (tvar zero)) →' (tvar zero) →' (tvar 
 ∃' a = ∀' (∀' ((a pt/tp (wk ↑)) →ₚ (mono $ tvar (suc zero))) →ₚ mono (tvar zero))
 
 -- unit type
-⊤ : ∀ {n} → PolyType n
-⊤ = tid
+⊤' : ∀ {n} → PolyType n
+⊤' = tid
 
 -- zero type
-⊥ : ∀ {n} → PolyType n
-⊥ = ∀' $ mono $ (tvar zero)
+⊥' : ∀ {n} → PolyType n
+⊥' = ∀' $ mono $ (tvar zero)

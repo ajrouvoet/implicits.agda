@@ -56,5 +56,7 @@ module TypeLemmas where
 
 open TypeSubst public using () 
   renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_])
-open PTypeSubst public using ()
-  renaming (_/_ to _ptp/tp_; _[/_] to _ptp[/tp_]; weaken to pt-weaken)
+open PTypeTypeSubst public using ()
+  renaming (_/_ to _pt/tp_; _[/_] to _pt[/tp_])
+open PTypePTypeSubst public using ()
+  renaming (_/_ to _pt/pt_; _[/_] to _pt[/pt_]; weaken to pt-weaken)

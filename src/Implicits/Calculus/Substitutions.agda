@@ -42,10 +42,98 @@ module TypeSubst where
   _[/_] : ∀ {n} → Type (suc n) → Type n → Type n
   a [/ b ] = a / sub b
 
+module PTypeTypeSubst where
+  infix 8 _/_ _[/_]
+
+  _/_ : ∀ {ν μ} → PolyType ν → Sub Type ν μ → PolyType μ
+  mono x / s = mono (x TypeSubst./ s)
+  ∀' x / s = ∀' (x / (s TypeSubst.↑))
+
+  _[/_] : ∀ {n} → PolyType (suc n) → Type n → PolyType n
+  a [/ b ] = a / (TypeSubst.sub b)
+
+  -- shorthand for type application
+  _∙_ : ∀ {ν} → (a : PolyType ν) → {is∀ : is-∀' a} → Type ν → PolyType ν
+  _∙_ (∀' x) b = x [/ b ]
+  _∙_ (mono x) {is∀ = ()} _
+
+module PTypePTypeSubst where
+  -- normalizing polytype to polytype function type construction
+  -- this is well founded on the number of ∀' quantifiers
+  {-# NO_TERMINATION_CHECK #-}
+  _→ₚ_ : ∀ {ν} → PolyType ν → PolyType ν → PolyType ν
+
+  {-# NO_TERMINATION_CHECK #-}
+  _⇒ₚ_ : ∀ {ν} → PolyType ν → PolyType ν → PolyType ν
+
+  module PTypeApp {T} (l : Lift T PolyType) where
+    open Lift l hiding (var)
+
+    infixl 8 _/_
+
+    _/_ : ∀ {m n} → PolyType m → Sub T m n → PolyType n
+    mono x / s = x mono/ s
+      where
+        _mono/_ : ∀ {m n} → Type m → Sub T m n → PolyType n
+        tvar n mono/ s = lift $ lookup n s
+        (a →' b) mono/ s = (a mono/ s) →ₚ (b mono/ s)
+        (a ⇒ b) mono/ s = (a mono/ s) ⇒ₚ (b mono/ s)
+    ∀' x / s = ∀' (x / s ↑)
+
+    open Application (record { _/_ = _/_ }) using (_/✶_)
+
+    --postulate →'-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs T m n) →
+               --(mono (a →' b)) /✶ ρs ↑✶ k ≡ ((mono a) /✶ ρs ↑✶ k) →ₚ ((mono b) /✶ ρs ↑✶ k)
+    {-
+    →'-/✶-↑✶ k ε        = ?
+    →'-/✶-↑✶ k (r ◅ ρs) = ?
+    -}
+
+    --postulate ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
+            --   (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))
+
+  typeSubst : TermSubst PolyType
+  typeSubst = record { var = mono ∘ tvar; app = PTypeApp._/_ }
+
+  open TermSubst typeSubst public hiding (var)
+
+  mono a →ₚ mono b = mono (a →' b)
+  mono a →ₚ ∀' b = ∀' (unfoldRight (TypeSubst.weaken a) b)
+    where
+        unfoldRight : ∀ {ν} → Type ν → PolyType ν → PolyType ν
+        unfoldRight a (mono b) = mono $ a →' b
+        unfoldRight a (∀' b) = ∀' (unfoldRight (TypeSubst.weaken a) b)
+  ∀' a →ₚ mono b = ∀' (unfoldLeft a (TypeSubst.weaken b))
+    where
+        unfoldLeft : ∀ {ν} → PolyType ν → Type ν → PolyType ν
+        unfoldLeft (mono a) b = mono $ a →' b
+        unfoldLeft (∀' a) b = ∀' (unfoldLeft a (TypeSubst.weaken b))
+  ∀' a →ₚ ∀' b = ∀' (∀' ((a / wk) →ₚ (b / wk ↑)))
+
+  mono a ⇒ₚ mono b = mono (a ⇒ b)
+  mono a ⇒ₚ ∀' b = ∀' (unfoldRight (TypeSubst.weaken a) b)
+    where
+        unfoldRight : ∀ {ν} → Type ν → PolyType ν → PolyType ν
+        unfoldRight a (mono b) = mono $ a ⇒ b
+        unfoldRight a (∀' b) = ∀' (unfoldRight (TypeSubst.weaken a) b)
+  ∀' a ⇒ₚ mono b = ∀' (unfoldLeft a (TypeSubst.weaken b))
+    where
+        unfoldLeft : ∀ {ν} → PolyType ν → Type ν → PolyType ν
+        unfoldLeft (mono a) b = mono $ a ⇒ b
+        unfoldLeft (∀' a) b = ∀' (unfoldLeft a (TypeSubst.weaken b))
+  ∀' a ⇒ₚ ∀' b = ∀' (∀' ((a / wk) ⇒ₚ (b / wk ↑)))
+
+  infix 8 _[/_]
+
+  -- Shorthand for single-variable type substitutions
+  _[/_] : ∀ {n} → PolyType (suc n) → PolyType n → PolyType n
+  a [/ b ] = a / sub b
+
+{-
 module PTypeSubst where
   -- polytype function constructor
-  -- even though the termination checker can't see it, 
-  -- this must terminate: 
+  -- even though the termination checker can't see it,
+  -- this must terminate:
   -- induction is on the remaining number of ∀' constructors, which is strictly decreasing
   {-# NO_TERMINATION_CHECK #-}
   _→ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
@@ -55,11 +143,13 @@ module PTypeSubst where
   _⇒ₚ_ : ∀ {n} → PolyType n → PolyType n → PolyType n
 
   -- lift substitution of types into polytypes
+  -- this implementation is much simpler than the normalizing implementation of _/_ below
+  -- which probably simplifies some proofs about these forms
   infixl 6 _/tp_
   _/tp_ : ∀ {ν μ} → PolyType ν → Sub Type ν μ → PolyType μ
   mono x /tp σ = mono $ x TypeSubst./ σ
   ∀' x /tp σ = ∀' (x /tp (σ TypeSubst.↑))
-  
+
   _[/tp_] : ∀ {ν} → PolyType (suc ν) → Type ν → PolyType ν
   _[/tp_] p t = p /tp TypeSubst.sub t
 
@@ -93,7 +183,8 @@ module PTypeSubst where
   infix 8 _[/_]
   _[/_] : ∀ {n} → PolyType (suc n) → PolyType n → PolyType n
   a [/ b ] = a / sub b
-  
+-}
+
 module TermTypeSubst where
 
   module TermTypeApp {T} (l : Lift T Type) where
@@ -139,23 +230,25 @@ module TermTypeSubst where
   t [/ b ] = t / sub b
 
 module KtxSubst where
-  
+
   _/_ : ∀ {ν μ n} → Ctx ν n → Sub Type ν μ → Ctx μ n
-  Γ / σ = map (λ s → s PTypeSubst./tp σ) Γ
-  
+  Γ / σ = map (λ s → s PTypeTypeSubst./ σ) Γ
+
   ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
   ctx-weaken Γ = Γ / TypeSubst.wk
-  
+
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
   weaken (Γ , Δ) = (
-    ctx-weaken Γ , 
-    List.map (λ t → t PTypeSubst./tp TypeSubst.wk) Δ)
+    ctx-weaken Γ ,
+    List.map (λ t → t PTypeTypeSubst./ TypeSubst.wk) Δ)
 
 open TypeSubst public using ()
   renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
-open PTypeSubst public using (_→ₚ_; _⇒ₚ_)
-  renaming (_/tp_ to _pt/tp_; _[/tp_] to _pt[/tp_]; _[/_] to _pt[/pt_]; weaken to pt-weaken)
-open TermTypeSubst public using () 
+open PTypeTypeSubst public using (_∙_)
+  renaming (_/_ to _pt/tp_; _[/_] to _pt[/tp_])
+open PTypePTypeSubst public using (_→ₚ_; _⇒ₚ_)
+  renaming (_/_ to _pt/pt_; _[/_] to _pt[/pt_]; weaken to pt-weaken)
+open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
-open KtxSubst public 
+open KtxSubst public
   renaming (_/_ to _ctx-/_; weaken to ktx-weaken)

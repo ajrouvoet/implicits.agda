@@ -16,6 +16,8 @@ open import Relation.Nullary public using (yes; no; ¬_; Dec)
 open import Relation.Binary.PropositionalEquality public renaming ([_] to reveal[_])
 open ≡-Reasoning public
 open import Function public
+open import Data.Empty public using (⊥)
+open import Data.Unit public using (⊤)
 
 open import Extensions.Vec public
 
@@ -23,4 +25,5 @@ module List where
   open List' public
   open Membership-≡ public
 
-module All = All'
+module All where
+  open All' public

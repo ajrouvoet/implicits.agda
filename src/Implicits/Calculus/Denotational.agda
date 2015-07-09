@@ -1,4 +1,3 @@
-{-# OPTIONS --no-termination-check #-}
 module Implicits.Calculus.Denotational where
 
 open import Prelude
@@ -20,20 +19,22 @@ module RewriteContext where
   K# (Γ , Δ) = Γ # Δ
   
   #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
-  #tvar All.[] = All.[]
-  #tvar (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeSubst.wk)) All.∷ (#tvar K#K)
+  #tvar {K = Γ , List.[]} All.[] = All.[]
+  #tvar {K = Γ , ._} (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeSubst.wk)) All.∷ (#tvar K#K)
 
   #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
-  #var a All.[] = All.[]
-  #var a (px All.∷ K#K) = there px All.∷ (#var a K#K)
+  #var {K = Γ , List.[]} a All.[] = All.[]
+  #var {K = Γ , ._} a (px All.∷ K#K) = there px All.∷ (#var a K#K)
 
   #ivar : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷K K)
   #ivar a K#K = here All.∷ (All.map there K#K)
 
 private
   module TS = TypeSubst
-  open PTypeSubst using (_/_; _/tp_; _[/_]; weaken)
   open RewriteContext
+
+  -- saving characters here like a pro
+  _/tp_ = _pt/tp_
   
   module TSS = Simple TS.simple
   module FTSS = Simple F.simple
@@ -50,17 +51,15 @@ private
 ⟦_⟧tps : ∀ {ν n} → Vec (Type ν) n → Vec (F.Type ν) n
 ⟦ v ⟧tps = map (⟦_⟧tp) v
 
+⟦_⟧pts : ∀ {ν n} → Vec (PolyType ν) n → Vec (F.Type ν) n
+⟦ v ⟧pts = map (⟦_⟧pt) v
+
 ⟦_⟧ctx : ∀ {ν n} → Ktx ν n → F.Ctx ν n
 ⟦ Γ , Δ ⟧ctx = map ⟦_⟧pt Γ
 
--- given a proof that some calculus type b is a specialization of a,
--- and an F-instance of a, we can build an F-instance of b
--- (it might seem more natural to first build a Calculus term and keep the interpretation out of this,
---    but that gives termination checking problems, since we could put more implicit applications in the 
---    constructed term)
-postulate inst : ∀ {ν n} {a b t} {K : F.Ctx ν n} → a ⊑ b → K F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → K F.⊢ t' ∈ ⟦ b ⟧pt
-
 -- construct an System F term from an implicit resolution
+-- this does not necessarily terminate since K Δ↝ a is not strictly positive
+{-# NO_TERMINATION_CHECK #-}
 ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
 
 -- denotational semantics of well-typed terms
@@ -187,24 +186,50 @@ module Lemmas where
 open Lemmas
 
 {-
-inst {t = t} {K = K} (mono a≡b) pt = , Prelude.subst (λ x → K F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
-inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-forall a'⊑b) wt-t = 
+postulate magic : ∀ {ν n} {Γ : F.Ctx ν n} {t} a →
+                  Γ F.⊢ t ∈ ⟦ ∀' a ⟧pt → ∀ c → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ a pt[/pt c ] ⟧pt
+magic {t = t} (mono (tvar zero)) wtf-∀a c = , wtf-∀a F.[ ⟦ c ⟧pt ]
+magic {Γ = Γ} {t = t} (mono (tvar (suc n))) wtf-∀a c =
+  , subst (λ u → Γ F.⊢ _ ∈ u) eq (wtf-∀a F.[ ⟦ c ⟧pt ])
+  where
+    postulate eq : lookup n F.id ≡ ⟦ lookup n PTypePTypeSubst.id ⟧pt
+magic (mono (a →' b)) wtf-∀a c = {!!}
+magic (mono (a ⇒ b)) wtf-∀a c = {!!}
+
+-- when a has a universal quantifier
+-- we can recurse
+magic {Γ = Γ} {t = t} (∀' a) wtf-∀a c with magic a (hyp₁ wtf-∀a) (pt-weaken c)
+  where
+    -- hyp1 is about applying well typed terms to a freshly introduced tvar
+    -- aka: weaken and apply to tvar 0.
+    -- it's an hypothesis, because we haven't got well-typed substitutions defined...
+    postulate hyp₁ : Γ F.⊢ t ∈ ⟦ ∀' (∀' a) ⟧pt →
+                     F.ctx-weaken Γ F.⊢ (F.tm-weaken t) F.[ F.tvar zero ] ∈ F.∀' ⟦ a ⟧pt
+magic {ν} {n} {Γ = Γ} {t = t} (∀' a) wtf-∀a c | t' , u = (F.Λ t') , F.Λ u
+-}
+
+-- given a proof that some calculus type b is a specialization of a,
+-- and an F-instance of a, we can build an F-instance of b
+-- (it might seem simpler to first build a Calculus term
+--    and keep the interpretation out of this,
+--    but that gives termination checking problems,
+--    since we could put more implicit applications in the constructed term)
+postulate inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧pt
+{-
+inst {t = t} {Γ = Γ} (mono a≡b) pt =
+  , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) pt
+inst {a = ∀' a'} {t = t} {Γ = Γ} (poly-forall a'⊑b) wt-t = 
   , F.Λ (proj₂ $ inst a'⊑b wt-t')
   where
     t' = (F.tm-weaken t) F.[ F.tvar zero ]
-    wt-t' : F.ctx-weaken K F.⊢ t' ∈ ⟦ a' ⟧pt
+    wt-t' : F.ctx-weaken Γ F.⊢ t' ∈ ⟦ a' ⟧pt
     wt-t' = subst 
-      (λ τ → F.ctx-weaken K F.⊢ t' ∈ τ) 
-      (F.TypeLemmas.a/var-wk-↑/sub-0≡a ⟦ a' ⟧pt)
+      (λ τ → F.ctx-weaken Γ F.⊢ t' ∈ τ) 
+      (F.TypeLemmas.a-/Var-varwk↑-/-sub0≡a ⟦ a' ⟧pt)
       ((F.WtTypeLemmas.weaken wt-t) F.[ F.tvar zero ])
-inst {ν} {n} {a = ∀' a'} {t = t} {K = K} (poly-instance c a[c]⊑b) wt-at = inst a[c]⊑b {!!}
-  where
-    t[c] : F.Term ν n
-    t[c] = t F.[ ⟦ c ⟧pt ]
-    -- proof that t[c] is well typed
-    wt-t[c] : K F.⊢ t[c] ∈ _
-    wt-t[c] = (wt-at F.[ ⟦ c ⟧pt ]ml)
-    -}
+inst {ν} {n} {a = ∀' a'} {t = t} {Γ = Γ} (poly-instance c a[c]⊑b) wt-at =
+  inst a[c]⊑b (proj₂ $ magic a' wt-at c)
+-}
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)
