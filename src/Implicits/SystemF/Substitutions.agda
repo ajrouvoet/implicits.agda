@@ -139,3 +139,5 @@ open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open CtxSubst public using () 
   renaming (_/_ to _ctx/_; weaken to ctx-weaken; _/Var_ to _ctx/Var_)
+  
+  

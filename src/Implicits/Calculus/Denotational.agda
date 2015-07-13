@@ -189,32 +189,61 @@ module Lemmas where
     where
       xs = map ⟦_⟧pt $ map (λ s → s /tp TS.wk ) Γ
 
+  open Rules
+  -- if we translate a polymorphic rule, we get a polymorphic function
+  postulate ⟦rule-a⟧⟶function-⟦a⟧ : ∀ {ν} {a : PolyType ν} → IsRule a → F.IsFunction ⟦ a ⟧pt
+  postulate rule-codomain⋆⟦⟧ : ∀ {ν} {a : PolyType ν} → (r : IsRule a) →
+                               ⟦ codomain r ⟧pt ≡ F.codomain (⟦rule-a⟧⟶function-⟦a⟧ r)
+  postulate rule-domain⋆⟦⟧ : ∀ {ν} {a : PolyType ν} → (r : IsRule a) →
+                             ⟦ domain r ⟧pt ≡ F.domain (⟦rule-a⟧⟶function-⟦a⟧ r)
+
+  postulate blaat : ∀ {ν n} {a : PolyType ν} {Γ : F.Ctx ν n} {f t} → (ρ : IsRule a) →
+                    Γ F.⊢ f ∈ ⟦ a ⟧pt → Γ F.⊢ t ∈ ⟦ domain ρ ⟧pt →
+                    ∃ λ t' → Γ F.⊢ t' ∈ ⟦ codomain ρ ⟧pt
+
 open Lemmas
 
--- given a proof that some calculus type b is a specialization of a,
--- and an F-instance of a, we can build an F-instance of b
--- (it might seem simpler to first build a Calculus term
---    and keep the interpretation out of this,
---    but that gives termination checking problems,
---    since we could put more implicit applications in the constructed term)
-inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧pt
-inst {t = t} {Γ = Γ} (poly-equal a≡b) pt =
-  , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧pt a≡b) pt
-inst {a = a} {t = t} {Γ = Γ} (poly-intro a⊑b) wt-a = , F.Λ (proj₂ $ inst a⊑b wt-wk-a)
-  where
-    wt-wk-a = subst
-      (F._⊢_∈_ (F.ctx-weaken Γ) (F.tm-weaken t))
-      (sym $ weaken-pt⋆⟦⟧pt a)
-      (F.⊢tp-weaken wt-a)
-inst {a = ∀' a} {t = t} {Γ = Γ} (poly-elim c a[c]⊑b) wt-a = , (proj₂ $ inst a[c]⊑b wt-a[c])
-  where
-    wt-a[c] : Γ F.⊢ t F.[ ⟦ c ⟧tp ] ∈ ⟦ a pt[/tp c ] ⟧pt
-    wt-a[c] = subst (F._⊢_∈_ Γ _) (sym $ ⟦sub⟧≡sub⟦⟧ a c) (wt-a F.[ ⟦ c ⟧tp ])
+private
+  open Rules
+  
+  -- given a proof that some calculus type b is a specialization of a,
+  -- and an F-instance of a, we can build an F-instance of b
+  -- (it might seem simpler to first build a Calculus term
+  --    and keep the interpretation out of this,
+  --    but that gives termination checking problems,
+  --    since we could put more implicit applications in the constructed term)
+  inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧pt
+  inst {t = t} {Γ = Γ} (poly-equal a≡b) pt =
+    , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧pt a≡b) pt
+  inst {a = a} {t = t} {Γ = Γ} (poly-intro a⊑b) wt-a = , F.Λ (proj₂ $ inst a⊑b wt-wk-a)
+    where
+      wt-wk-a = subst
+        (F._⊢_∈_ (F.ctx-weaken Γ) (F.tm-weaken t))
+        (sym $ weaken-pt⋆⟦⟧pt a)
+        (F.⊢tp-weaken wt-a)
+  inst {a = ∀' a} {t = t} {Γ = Γ} (poly-elim c a[c]⊑b) wt-a = , (proj₂ $ inst a[c]⊑b wt-a[c])
+    where
+      wt-a[c] : Γ F.⊢ t F.[ ⟦ c ⟧tp ] ∈ ⟦ a pt[/tp c ] ⟧pt
+      wt-a[c] = subst (F._⊢_∈_ Γ _) (sym $ ⟦sub⟧≡sub⟦⟧ a c) (wt-a F.[ ⟦ c ⟧tp ])
+
+  inst-ρ : ∀ {ν n} {K : Ktx ν n} {r a t} → K# K →
+           ρ⟨ K , r ⟩↝ a → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt → ∃ λ t' → ⟦ K ⟧ctx F.⊢ t' ∈ ⟦ a ⟧pt
+  inst-ρ _ (by-value r) ⊢a = , ⊢a
+  inst-ρ m (by-subsumption r↝a a⊑b) ⊢r = inst a⊑b (proj₂ $ inst-ρ m r↝a ⊢r)
+  inst-ρ {K = K} m (by-implication {a = a} r↝a a-rule Δ↝arg) ⊢r =
+    blaat a-rule ⊢a ⊢arg
+    where
+      ⊢a : ⟦ K ⟧ctx F.⊢ _ ∈ ⟦ a ⟧pt
+      ⊢a = proj₂ $ inst-ρ m r↝a ⊢r
+      ⊢arg : ⟦ K ⟧ctx F.⊢ _ ∈ ⟦ domain a-rule ⟧pt
+      ⊢arg = proj₂ $ ⟦ Δ↝arg , m ⟧i
+      function-⟦a⟧ : F.IsFunction ⟦ a ⟧pt
+      function-⟦a⟧ = ⟦rule-a⟧⟶function-⟦a⟧ a-rule
 
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
-⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a with ∈⟶index (All.lookup m r∈Δ)
-⟦_,_⟧i {K = K} (r , p) m | r∈Δ , by-value r⊑a | i , lookup-i≡r = 
-  (inst r⊑a (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i)))
+⟦_,_⟧i {K = K} (r , p) m | r∈Δ , ρ↝r with ∈⟶index (All.lookup m r∈Δ)
+⟦_,_⟧i {K = K} (r , p) m | r∈Δ , ρ↝r | i , lookup-i≡r =
+  inst-ρ m ρ↝r (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i))
   where
     eq = begin 
       lookup i ⟦ K ⟧ctx 
@@ -222,17 +251,6 @@ inst {a = ∀' a} {t = t} {Γ = Γ} (poly-elim c a[c]⊑b) wt-a = , (proj₂ $ i
       ⟦ lookup i (proj₁ K) ⟧pt
         ≡⟨ cong ⟦_⟧pt lookup-i≡r ⟩
       ⟦ r ⟧pt ∎ 
-⟦_,_⟧i {K = K} (r , p) m | r∈Δ , yields Δ↝b r⊑b⇒a with ∈⟶index (All.lookup m r∈Δ)
-⟦_,_⟧i {K = K} (r , p) m | r∈Δ , yields Δ↝b r⊑b⇒a | i , lookup-i≡r = 
-  , (rule-inst F.· (proj₂ ⟦ Δ↝b , m ⟧i))
-  where
-    eq = begin 
-      lookup i ⟦ K ⟧ctx
-        ≡⟨ lookup⋆⟦⟧ctx K i ⟩
-      ⟦ lookup i (proj₁ K) ⟧pt
-        ≡⟨ cong ⟦_⟧pt lookup-i≡r ⟩
-      ⟦ r ⟧pt ∎ 
-    rule-inst = proj₂ (inst r⊑b⇒a (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i)))
 
 -- interpretation of well-typed terms in System F preserves type
 ⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → (m : K# K) →

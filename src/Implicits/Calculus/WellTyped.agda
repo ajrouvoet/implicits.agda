@@ -8,6 +8,7 @@ open import Implicits.Calculus.Terms public
 open import Implicits.Calculus.Contexts public
 open import Extensions.ListFirst
 open import Implicits.Calculus.Substitutions
+open Rules
 
 infixl 4 _⊢_∈_
 
@@ -25,13 +26,22 @@ a ⋢ b = ¬ a ⊑ b
 _Δ↝_ : ∀ {ν n} (K : Ktx ν n) → PolyType ν → Set
 
 data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : PolyType ν → PolyType ν → Set where
-  by-value : {a b : PolyType ν} → a ⊑ b → ρ⟨ K , a ⟩↝ b
-  -- todo: not strictly positive
-  yields : {a b : Type ν} {c : PolyType ν} → 
-           K Δ↝ mono a → c ⊑ mono (a ⇒ b) → ρ⟨ K , c ⟩↝ mono b
-
+  -- base case
+  by-value : {b : PolyType ν} → (a : PolyType ν) → ρ⟨ K , a ⟩↝ a
+  -- induction steps
+  by-subsumption : {r a b : PolyType ν} →
+                   ρ⟨ K , r ⟩↝ a →
+                   a ⊑ b →
+                   ρ⟨ K , r ⟩↝ b
+  by-implication : {r a : PolyType ν} →
+                   ρ⟨ K , r ⟩↝ a →
+                   (a-rule : IsRule a) →
+                   K Δ↝ (domain a-rule) → 
+                   ρ⟨ K , r ⟩↝ codomain a-rule 
   -- it's easy to turn rules into functions
-  -- as-func  : {a b c : Type ν} → (a →' b) ⊑ c → ρ⟨ K , a ⇒ b ⟩↝ c
+  -- by-conversion : {u r : PolyType ν} →
+                  -- ρ⟨ K , u ⟩↝ r →
+                  -- (r-rule : IsRule r) → ρ⟨ K , u ⟩↝ to-function r-rule
 
 -- implicit resolution is simply the first rule in the implicit context
 -- that yields the queried type

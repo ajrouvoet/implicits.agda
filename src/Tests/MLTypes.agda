@@ -16,10 +16,6 @@ tnat⊑tnat = poly-equal refl
 tid⊑nattid : tid ⊑ nattid
 tid⊑nattid = poly-intro (poly-elim (mono-totype (pt-weaken tnat ∙ tvar zero)) (poly-equal refl))
 
-open import Data.Fin.Substitution
-open TypeSubst
-open TermSubst typeSubst
-
 -- ∀S.∀T.S → T ⊑ ∀T.T → tnat
 test4 : (∀' (∀' (mono (tvar (suc zero) →' tvar zero)))) ⊑ 
           ∀' (∀' (mono (
