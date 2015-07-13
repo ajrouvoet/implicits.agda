@@ -7,7 +7,7 @@ the small step semantics of SystemF.
 
 # Usage
 
-The code has been compiled against agda 2.4.2.4 (783b5ccf1d0032)
+The code has been compiled against *agda 2.4.2.3* and beyond.
 with the associated version of the standard library.
 The standard library is included as a submodule;
 

@@ -19,12 +19,12 @@ module RewriteContext where
   K# (Γ , Δ) = Γ # Δ
   
   #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
-  #tvar {K = Γ , List.[]} All.[] = All.[]
-  #tvar {K = Γ , ._} (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeLemmas.wk)) All.∷ (#tvar K#K)
+  #tvar All.[] = All.[]
+  #tvar (px All.∷ K#K) = (∈⋆map px (λ t → t pt/tp TypeLemmas.wk)) All.∷ (#tvar K#K)
 
   #var : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷Γ K)
-  #var {K = Γ , List.[]} a All.[] = All.[]
-  #var {K = Γ , ._} a (px All.∷ K#K) = there px All.∷ (#var a K#K)
+  #var a All.[] = All.[]
+  #var a (px All.∷ K#K) = there px All.∷ (#var a K#K)
 
   #ivar : ∀ {ν n} {K : Ktx ν n} → (a : PolyType ν) → K# K → K# (a ∷K K)
   #ivar a K#K = here All.∷ (All.map there K#K)
