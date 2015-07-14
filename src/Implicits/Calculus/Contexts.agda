@@ -23,5 +23,5 @@ a ∷Δ (Γ , Δ) = Γ , a List.∷ Δ
 _∷K_ : ∀ {ν n} → PolyType ν → Ktx ν n → Ktx ν (suc n)
 a ∷K (Γ , Δ) = a ∷ Γ , a List.∷ Δ
 
-nil : Ktx 0 0
+nil : ∀ {ν} → Ktx ν 0
 nil = [] , List.[]

@@ -27,7 +27,7 @@ _Δ↝_ : ∀ {ν n} (K : Ktx ν n) → PolyType ν → Set
 
 data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : PolyType ν → PolyType ν → Set where
   -- base case
-  by-value : {b : PolyType ν} → (a : PolyType ν) → ρ⟨ K , a ⟩↝ a
+  by-value : (a : PolyType ν) → ρ⟨ K , a ⟩↝ a
   -- induction steps
   by-subsumption : {r a b : PolyType ν} →
                    ρ⟨ K , r ⟩↝ a →
