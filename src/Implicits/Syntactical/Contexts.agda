@@ -4,21 +4,12 @@ open import Prelude
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
 open import Implicits.Syntactical.Types
-open import Implicits.Syntactical.Substitutions.Types
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (PolyType ν) n
 
-data Binding ν : Set where
-  rule : PolyType ν → PolyType ν → Binding ν
-  val  : PolyType ν → Binding ν
-  
-totype : ∀ {ν} → Binding ν → PolyType ν
-totype (rule a b) = a →ₚ b
-totype (val x) = x
-
 ICtx : ℕ → Set
-ICtx ν = List.List (Binding ν)
+ICtx ν = List.List (Implicit ν)
 
 Ktx : ℕ → ℕ → Set
 Ktx ν n = Ctx ν n × ICtx ν
@@ -26,11 +17,11 @@ Ktx ν n = Ctx ν n × ICtx ν
 _∷Γ_ : ∀ {ν n} → PolyType ν → Ktx ν n → Ktx ν (suc n)
 a ∷Γ (Γ , Δ) = (a ∷ Γ) , Δ
 
-_∷Δ_ : ∀ {ν n} → Binding ν → Ktx ν n → Ktx ν n
+_∷Δ_ : ∀ {ν n} → Implicit ν → Ktx ν n → Ktx ν n
 a ∷Δ (Γ , Δ) = Γ , a List.∷ Δ
 
-_∷K_ : ∀ {ν n} → Binding ν → Ktx ν n → Ktx ν (suc n)
-x ∷K (Γ , Δ) = (totype x) ∷ Γ , x List.∷ Δ
+_∷K_ : ∀ {ν n} → Implicit ν → Ktx ν n → Ktx ν (suc n)
+a ∷K (Γ , Δ) = (totype a) ∷ Γ , a List.∷ Δ
 
-nil : Ktx 0 0
+nil : ∀ {ν} → Ktx ν 0
 nil = [] , List.[]

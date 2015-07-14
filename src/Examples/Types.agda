@@ -1,4 +1,4 @@
-module Tests.MLTypes where
+module Examples.Types where
 
 open import Prelude
 open import Implicits.Calculus.WellTyped
@@ -17,7 +17,7 @@ tid⊑nattid : tid ⊑ nattid
 tid⊑nattid = poly-intro (poly-elim (mono-totype (pt-weaken tnat ∙ tvar zero)) (poly-equal refl))
 
 -- ∀S.∀T.S → T ⊑ ∀T.T → tnat
-test4 : (∀' (∀' (mono (tvar (suc zero) →' tvar zero)))) ⊑ 
+test4 : (∀' (∀' (mono (tvar (suc zero) →' tvar zero)))) ⊑
           ∀' (∀' (mono (
             (tvar (suc zero))
             →'

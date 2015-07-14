@@ -6,29 +6,88 @@ open import Implicits.Syntactical.Terms
 open import Implicits.Syntactical.Contexts
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
-  
-open import Implicits.Syntactical.Substitutions.Types public
+
+module TypeSubst where
+  module TypeApp {T} (l : Lift T Type) where
+    open Lift l hiding (var)
+
+    infixl 8 _/_
+
+    _/_ : ∀ {m n} → Type m → Sub T m n → Type n
+    tvar x   / σ = lift (lookup x σ)
+    (a →' b) / σ = (a / σ) →' (b / σ)
+
+    open Application (record { _/_ = _/_ }) using (_/✶_)
+
+    →'-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs T m n) →
+               (a →' b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k)
+    →'-/✶-↑✶ k ε        = refl
+    →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
+
+  typeSubst : TermSubst Type
+  typeSubst = record { var = tvar; app = TypeApp._/_ }
+
+
+  open TermSubst typeSubst public hiding (var)
+
+  infix 8 _[/_]
+
+  -- Shorthand for single-variable type substitutions
+  _[/_] : ∀ {n} → Type (suc n) → Type n → Type n
+  a [/ b ] = a / sub b
+
+module PTypeTypeSubst where
+  infix 8 _/_ _[/_]
+
+  _/_ : ∀ {ν μ} → PolyType ν → Sub Type ν μ → PolyType μ
+  mono x / s = mono (x TypeSubst./ s)
+  ∀' x / s = ∀' (x / (s TypeSubst.↑))
+
+  -- lifted to IsFunction instances
+  _f/_ : ∀ {ν μ} {a : PolyType ν} → IsFunction a → (s : Sub Type ν μ) → IsFunction (a / s) 
+  lambda a b f/ s = lambda (TypeSubst._/_ a s) (TypeSubst._/_ b s)
+  ∀'-lambda f f/ s = ∀'-lambda (f f/ (s TypeSubst.↑))
+
+  -- lifted to implicits
+  _i/_ : ∀ {ν μ} → Implicit ν → Sub Type ν μ → Implicit μ
+  rule a i/ s = rule (a f/ s)
+  val b i/ s = val (b / s)
+
+  _[/_] : ∀ {n} → PolyType (suc n) → Type n → PolyType n
+  a [/ b ] = a / (TypeSubst.sub b)
+
+  weaken : ∀ {ν} → PolyType ν → PolyType (suc ν)
+  weaken a = a / TypeSubst.wk
+
+  -- shorthand for type application
+  _∙_ : ∀ {ν} → (a : PolyType ν) → {is∀ : is-∀' a} → Type ν → PolyType ν
+  _∙_ (∀' x) b = x [/ b ]
+  _∙_ (mono x) {is∀ = ()} _
 
 module TermTypeSubst where
 
   module TermTypeApp {T} (l : Lift T Type) where
     open Lift l hiding (var)
-    open TypeSubst.TypeApp l renaming (_/_ to _tp/_)
-    open PTypeSubst.MonoTypeApp l renaming (_/_ to _pt/_)
+    open TypeSubst.TypeApp l renaming (_/_ to _/tp_)
 
     infixl 8 _/_
 
-    -- Apply a type substitution to a term
-    _/_ : ∀ {ν μ n} → Term ν n → Sub T ν μ → Term μ n
-    var x      / σ = var x
-    Λ t        / σ = Λ (t / σ ↑)
-    λ' a t     / σ = λ' (a tp/ σ) (t / σ)
-    t [ a ]    / σ = (t / σ) [ a tp/ σ ]
-    s · t      / σ = (s / σ) · (t / σ)
-    t ⟨⟩       / σ = (t / σ) ⟨⟩
-    let' e in' e' / σ = let' (e / σ) in' (e' / σ)
-    implicit e in' e' / σ = implicit (e / σ) in' (e' / σ)
-    implicit a ⇒ e in' e' / σ = implicit (a pt/ σ) ⇒ (e / σ) in' (e' / σ)
+    mutual 
+      -- substitution implicit terms
+      _it/_ : ∀ {ν μ n} → ImplicitTerm ν n → Sub T ν μ → ImplicitTerm μ n
+      val x it/ s = val (x / s) 
+      rule x it/ s = rule (x / s)
+
+      -- Apply a type substitution to a term
+      _/_ : ∀ {ν μ n} → Term ν n → Sub T ν μ → Term μ n
+      var x      / σ = var x
+      Λ t        / σ = Λ (t / σ ↑)
+      λ' a t     / σ = λ' (a /tp σ) (t / σ)
+      t [ a ]    / σ = (t / σ) [ a /tp σ ]
+      s · t      / σ = (s / σ) · (t / σ)
+      t ⟨⟩       / σ = (t / σ) ⟨⟩
+      implicit e in' e' / σ = implicit (e it/ σ) in' (e' / σ)
+      let' e in' e' / σ = let' (e / σ) in' (e' / σ)
 
   open TypeSubst using (varLift; termLift; sub)
 
@@ -54,24 +113,39 @@ module TermTypeSubst where
   _[/_] : ∀ {ν n} → Term (suc ν) n → Type ν → Term ν n
   t [/ b ] = t / sub b
 
-module BindingSubst where
-  _/_ : ∀ {ν μ} → Binding ν → Sub Type ν μ → Binding μ
-  _/_  (rule a b) σ = rule (a PTypeSubst./tp σ) (b PTypeSubst./tp σ)
-  _/_ (val a) σ = val (a PTypeSubst./tp σ)
-
-  weaken : ∀ {ν} → Binding ν → Binding (suc ν)
-  weaken K = K / TypeSubst.wk
-
 module KtxSubst where
-  _/_ : ∀ {ν μ n} → Ktx ν n → Sub Type ν μ → Ktx μ n
-  _/_ {ν} {μ} (Γ , Δ) σ = map (flip PTypeSubst._/tp_ σ) Γ , List.map (flip BindingSubst._/_ σ) Δ
-  
+
+  _/_ : ∀ {ν μ n} → Ctx ν n → Sub Type ν μ → Ctx μ n
+  Γ / σ = map (λ s → s PTypeTypeSubst./ σ) Γ
+
+  ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
+  ctx-weaken Γ = Γ / TypeSubst.wk
+
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
+  weaken (Γ , Δ) = (
+    ctx-weaken Γ ,
+    List.map (λ t → t PTypeTypeSubst.i/ TypeSubst.wk) Δ)
+
+module ImplicitSubst where
+  infixl 8 _/_ _f/_
+  
+  _f/_ : ∀ {ν μ} {a : PolyType ν} → IsFunction a → (σ : Sub Type ν μ) →
+         IsFunction (a PTypeTypeSubst./ σ)
+  lambda a b f/ σ = lambda (a TypeSubst./ σ) (b TypeSubst./ σ)
+  ∀'-lambda fa f/ σ = ∀'-lambda (fa f/ σ TypeSubst.↑)
+
+  _/_ : ∀ {ν μ} → Implicit ν → Sub Type ν μ → Implicit μ
+  _/_ (rule {a} p) σ = rule (p f/ σ)
+  _/_ (val a) σ = val (a PTypeTypeSubst./ σ)
+
+  weaken : ∀ {ν} → Implicit ν → Implicit (suc ν)
   weaken K = K / TypeSubst.wk
 
-open TermTypeSubst public using () 
+open TypeSubst public using ()
+  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
+open PTypeTypeSubst public using (_∙_; _i/_)
+  renaming (_/_ to _pt/tp_; _[/_] to _pt[/tp_]; weaken to pt-weaken)
+open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
-open BindingSubst public 
-  renaming (_/_ to _binding/_; weaken to binding-weaken)
-open KtxSubst public 
-  renaming (_/_ to _ctx/_; weaken to ktx-weaken)
+open KtxSubst public
+  renaming (_/_ to _ctx-/_; weaken to ktx-weaken)

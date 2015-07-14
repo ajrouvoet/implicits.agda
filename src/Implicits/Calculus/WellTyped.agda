@@ -25,6 +25,10 @@ a ⋢ b = ¬ a ⊑ b
 
 _Δ↝_ : ∀ {ν n} (K : Ktx ν n) → PolyType ν → Set
 
+-- The rules of implicit derivision.
+-- This can be extended to support more complex derivations.
+-- An example is the rule 'by-conversion' that allows implicit rules to be
+-- used as implicit function values.
 data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : PolyType ν → PolyType ν → Set where
   -- base case
   by-value : (a : PolyType ν) → ρ⟨ K , a ⟩↝ a

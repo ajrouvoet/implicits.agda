@@ -18,13 +18,13 @@ tnat : PolyType 0
 tnat = ∀' $ mono $ ((tvar zero) →' (tvar zero)) →' (tvar zero) →' (tvar zero)
 
 -- existential quantification
-∃' : ∀ {n} → (PolyType (suc n)) → PolyType n
-∃' a = ∀' (∀' ((a pt/tp (wk ↑)) →ₚ (mono $ tvar (suc zero))) →ₚ mono (tvar zero))
+-- ∃' : ∀ {n} → (PolyType (suc n)) → PolyType n
+-- ∃' a = ∀' (∀' ((a pt/tp (wk ↑)) →' (mono $ tvar (suc zero))) →' mono (tvar zero))
 
 -- unit type
-⊤ : ∀ {n} → PolyType n
-⊤ = tid
+⊤' : ∀ {n} → PolyType n
+⊤' = tid
 
 -- zero type
-⊥ : ∀ {n} → PolyType n
-⊥ = ∀' $ mono $ (tvar zero)
+⊥' : ∀ {n} → PolyType n
+⊥' = ∀' $ mono $ (tvar zero)

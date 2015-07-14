@@ -3,6 +3,11 @@ module Implicits.Everything where
 -- common agda stdlib imports
 open import Prelude
 
+-- examples of types and polymorphic type orderings
+open import Examples.Types
+-- examples of implicit derviations
+open import Examples.Resolution
+
 --
 -- System F
 --

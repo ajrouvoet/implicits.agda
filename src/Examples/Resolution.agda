@@ -1,4 +1,4 @@
-module Tests.Resolution where
+module Examples.Resolution where
 
 open import Prelude
 open import Implicits.Calculus.WellTyped
