@@ -7,6 +7,8 @@ open import Implicits.SystemF.Types.Constructors
 
 open Functions
 
+-- polymorphic function application
+-- applies a polymorphic function to an argument with the type of the domain
 poly-· : ∀ {ν n} {a : Type ν} {K : Ctx ν n} {f arg} →
          (fa : IsFunction a) → K ⊢ f ∈ a → K ⊢ arg ∈ domain fa → ∃ λ t → K ⊢ t ∈ codomain fa
 poly-· (lambda a b) ⊢f ⊢arg = , ⊢f · ⊢arg

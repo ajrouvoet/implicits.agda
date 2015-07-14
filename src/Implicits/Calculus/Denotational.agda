@@ -190,16 +190,37 @@ module Lemmas where
       xs = map ⟦_⟧pt $ map (λ s → s /tp TS.wk ) Γ
 
   open Rules
-  -- if we translate a polymorphic rule, we get a polymorphic function
-  postulate ⟦rule-a⟧⟶function-⟦a⟧ : ∀ {ν} {a : PolyType ν} → IsRule a → F.IsFunction ⟦ a ⟧pt
-  postulate rule-codomain⋆⟦⟧ : ∀ {ν} {a : PolyType ν} → (r : IsRule a) →
-                               ⟦ codomain r ⟧pt ≡ F.codomain (⟦rule-a⟧⟶function-⟦a⟧ r)
-  postulate rule-domain⋆⟦⟧ : ∀ {ν} {a : PolyType ν} → (r : IsRule a) →
-                             ⟦ domain r ⟧pt ≡ F.domain (⟦rule-a⟧⟶function-⟦a⟧ r)
 
-  postulate blaat : ∀ {ν n} {a : PolyType ν} {Γ : F.Ctx ν n} {f t} → (ρ : IsRule a) →
-                    Γ F.⊢ f ∈ ⟦ a ⟧pt → Γ F.⊢ t ∈ ⟦ domain ρ ⟧pt →
-                    ∃ λ t' → Γ F.⊢ t' ∈ ⟦ codomain ρ ⟧pt
+  -- polymorphic rules, translate to polymorphic functions
+  ⟦rule⟧⟶function : ∀ {ν} {a : PolyType ν} → IsRule a → F.IsFunction ⟦ a ⟧pt
+  ⟦rule⟧⟶function (rule a b) = F.lambda ⟦ a ⟧tp ⟦ b ⟧tp
+  ⟦rule⟧⟶function (∀'-rule r) = F.∀'-lambda (⟦rule⟧⟶function r)
+
+  -- using the above definition of rule translation
+  -- we can prove that codomains of rules translate to codomains of functions
+  rule-codomain⋆⟦⟧ : ∀ {ν} {a : PolyType ν} → (r : IsRule a) →
+                     ⟦ codomain r ⟧pt ≡ F.codomain (⟦rule⟧⟶function r)
+  rule-codomain⋆⟦⟧ (rule a b) = refl
+  rule-codomain⋆⟦⟧ (∀'-rule r) = cong F.∀' (rule-codomain⋆⟦⟧ r)
+
+  -- using the above definition of rule translation
+  -- we can prove that the domains of rules translate to the domains of functions
+  rule-domain⋆⟦⟧ : ∀ {ν} {a : PolyType ν} → (r : IsRule a) →
+                   ⟦ domain r ⟧pt ≡ F.domain (⟦rule⟧⟶function r)
+  rule-domain⋆⟦⟧ (rule a b) = refl
+  rule-domain⋆⟦⟧ (∀'-rule r) = cong F.∀' (rule-domain⋆⟦⟧ r)
+
+  -- finally we can prove that we can build a instance in the codomain of a polymorphic rule
+  -- from an instance of the rule and an instance in its domain
+  poly-· : ∀ {ν n} {a} {Γ : F.Ctx ν n} {f t} →
+           (ρ : IsRule a) → Γ F.⊢ f ∈ ⟦ a ⟧pt → Γ F.⊢ t ∈ ⟦ domain ρ ⟧pt →
+           ∃ λ t' → Γ F.⊢ t' ∈ ⟦ codomain ρ ⟧pt
+  poly-· {Γ = Γ} a-rule ⊢f ⊢arg =
+    , subst (λ u → Γ F.⊢ proj₁ ⊢t ∈ u) (sym $ rule-codomain⋆⟦⟧ a-rule) (proj₂ ⊢t)
+    where
+      ⊢t = F.poly-·
+             (⟦rule⟧⟶function a-rule) ⊢f -- function
+             (subst (λ u → Γ F.⊢ _ ∈ u) (rule-domain⋆⟦⟧ a-rule) ⊢arg) -- argument
 
 open Lemmas
 
@@ -215,7 +236,8 @@ private
   inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧pt → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧pt
   inst {t = t} {Γ = Γ} (poly-equal a≡b) pt =
     , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧pt a≡b) pt
-  inst {a = a} {t = t} {Γ = Γ} (poly-intro a⊑b) wt-a = , F.Λ (proj₂ $ inst a⊑b wt-wk-a)
+  inst {a = a} {t = t} {Γ = Γ} (poly-intro a⊑b) wt-a =
+    , F.Λ (proj₂ $ inst a⊑b wt-wk-a)
     where
       wt-wk-a = subst
         (F._⊢_∈_ (F.ctx-weaken Γ) (F.tm-weaken t))
@@ -226,20 +248,16 @@ private
       wt-a[c] : Γ F.⊢ t F.[ ⟦ c ⟧tp ] ∈ ⟦ a pt[/tp c ] ⟧pt
       wt-a[c] = subst (F._⊢_∈_ Γ _) (sym $ ⟦sub⟧≡sub⟦⟧ a c) (wt-a F.[ ⟦ c ⟧tp ])
 
+  -- ρ⟨ K , r ⟩↝ a means that we can derive an instance of `a` using an instance of `r`
   inst-ρ : ∀ {ν n} {K : Ktx ν n} {r a t} → K# K →
            ρ⟨ K , r ⟩↝ a → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧pt → ∃ λ t' → ⟦ K ⟧ctx F.⊢ t' ∈ ⟦ a ⟧pt
   inst-ρ _ (by-value r) ⊢a = , ⊢a
   inst-ρ m (by-subsumption r↝a a⊑b) ⊢r = inst a⊑b (proj₂ $ inst-ρ m r↝a ⊢r)
   inst-ρ {K = K} m (by-implication {a = a} r↝a a-rule Δ↝arg) ⊢r =
-    blaat a-rule ⊢a ⊢arg
-    where
-      ⊢a : ⟦ K ⟧ctx F.⊢ _ ∈ ⟦ a ⟧pt
-      ⊢a = proj₂ $ inst-ρ m r↝a ⊢r
-      ⊢arg : ⟦ K ⟧ctx F.⊢ _ ∈ ⟦ domain a-rule ⟧pt
-      ⊢arg = proj₂ $ ⟦ Δ↝arg , m ⟧i
-      function-⟦a⟧ : F.IsFunction ⟦ a ⟧pt
-      function-⟦a⟧ = ⟦rule-a⟧⟶function-⟦a⟧ a-rule
+    poly-· a-rule (proj₂ $ inst-ρ m r↝a ⊢r) (proj₂ $ ⟦ Δ↝arg , m ⟧i)
 
+-- We can build an instance of type `a` of an implicit derivation of `a` (K Δ↝ a)
+-- ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧pt
 ⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , ρ↝r with ∈⟶index (All.lookup m r∈Δ)
 ⟦_,_⟧i {K = K} (r , p) m | r∈Δ , ρ↝r | i , lookup-i≡r =
