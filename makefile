@@ -6,7 +6,10 @@ AGDA = agda $(AGDA_OPTS)
 AGDA_DOC = agda $(AGDA_OPTS) --html --html-dir=./doc/html/
 
 # main
+CALC_MAIN = $(SRC)/Implicits/Calculus.agda
 MAIN = $(SRC)/Implicits/Everything.agda
+
+calculus: $(CALC_MAIN)i
 
 all: $(MAIN)i
 

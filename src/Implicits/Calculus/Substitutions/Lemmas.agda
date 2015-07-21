@@ -41,6 +41,15 @@ module TypeLemmas where
           ≡⟨ sym (TypeApp.⇒-/✶-↑✶ _ k ρs₂) ⟩
             (a ⇒ b) /✶₂ ρs₂ ↑✶₂ k
           ∎
+        /✶-↑✶ ρs₁ ρs₂ hyp k (∀' a) = begin
+            (∀' a) /✶₁ ρs₁ ↑✶₁ k
+          ≡⟨ TypeApp.∀'-/✶-↑✶ _ k ρs₁ ⟩
+            ∀' (a /✶₁ ρs₁ ↑✶₁ (suc k))
+          ≡⟨ cong ∀' (/✶-↑✶ ρs₁ ρs₂ hyp (suc k) a) ⟩
+            ∀' (a /✶₂ ρs₂ ↑✶₂ (suc k))
+          ≡⟨ sym (TypeApp.∀'-/✶-↑✶ _ k ρs₂) ⟩
+            (∀' a) /✶₂ ρs₂ ↑✶₂ k
+          ∎
 
   open TermLemmas typeLemmas public hiding (var)
 
@@ -54,10 +63,8 @@ module TypeLemmas where
           ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
   /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
-open TypeSubst public using () 
-  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_])
-open PTypeTypeSubst public using ()
-  renaming (_/_ to _pt/tp_; _[/_] to _pt[/tp_]; weaken to pt-weaken)
+open TypeSubst public using (_∙_)
+  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
 open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open KtxSubst public
