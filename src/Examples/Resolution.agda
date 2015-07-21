@@ -8,33 +8,24 @@ open import Extensions.ListFirst
 open Rules
 
 
-free-nat = (tp-weaken (mono-totype $ ((pt-weaken tnat) ∙ (tvar zero))))
+free-nat = (tp-weaken (((tp-weaken tnat) ∙ (tvar zero))))
 
-r : PolyType zero
-r =
-  ∀' (
-    ∀' (
-      mono (
-        free-nat
-        ⇒
-        (tvar $ suc (zero))
-      )
-    )
-  )
+r : Type zero
+r = ∀' (tp-weaken tnat ⇒ (tvar zero))
 
 -- proof that the above type is a rule
 r-isrule : IsRule r
-r-isrule = ∀'-rule (∀'-rule (rule free-nat (tvar (suc zero))))
+r-isrule = ∀'-rule (rule (tp-weaken tnat) (tvar zero))
 
 -- the subsumption of the domain by tnat
-eq : tnat ⊑ ∀' (∀' (mono free-nat))
-eq = poly-intro (poly-elim (tvar zero) (poly-intro (poly-equal refl)))
+eq : tnat ⊑ (∀' $ tp-weaken tnat)
+eq = poly-intro (poly-equal refl)
 
 -- the context used
 K = tnat ∷K nil
 
 -- the implicit derivation of the codomain from the domain, using the implicit rule
-ex₁ : ρ⟨ K , r ⟩↝ ∀' (∀' (mono (tvar (suc zero))))
+ex₁ : ρ⟨ K , r ⟩↝ (∀' (tvar zero))
 ex₁ = by-implication
   (by-value r) -- the rule used
   r-isrule     -- proof that r is an implication
