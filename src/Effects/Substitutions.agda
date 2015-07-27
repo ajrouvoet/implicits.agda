@@ -1,45 +1,9 @@
 module Effects.Substitutions where
 
-open import Prelude hiding (lift)
+open import Prelude hiding (lift; Fin′; subst)
 open import Effects.Terms
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
-
-module TypeTypeSubst {η : ℕ} where
-  Type′ : ℕ → Set
-  Type′ = flip Type η
-
-  module TypeApp {T} (l : Lift T Type′) where
-    open Lift l hiding (var)
-
-    infixl 8 _/_
-
-    _/_ : ∀ {m n} → Type′ m → Sub T m n → Type′ n
-    void     / σ = void
-    tvar x   / σ = lift (lookup x σ)
-    (a →[ e ] b) / σ = (a / σ) →[ e ] (b / σ)
-    (∀' a)   / σ = ∀' (a / σ ↑)
-
-    open Application (record { _/_ = _/_ }) using (_/✶_)
-
-    →'-/✶-↑✶ : ∀ k {m n a b e} (ρs : Subs T m n) →
-               (a →[ e ] b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) →[ e ] (b /✶ ρs ↑✶ k)
-    →'-/✶-↑✶ k ε        = refl
-    →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
-
-    postulate ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
-               (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))
-
-  typeSubst : TermSubst Type′
-  typeSubst = record { var = tvar; app = TypeApp._/_ }
-
-  open TermSubst typeSubst public hiding (var)
-
-  infix 8 _[/_]
-
-  -- Shorthand for single-variable type substitutions
-  _[/_] : ∀ {n} → Type′ (suc n) → Type′ n → Type′ n
-  a [/ b ] = a / sub b
 
 module EffectEffectSubst where
   
@@ -80,10 +44,11 @@ module TypeEffectSubst where
     infixl 8 _/_
 
     _/_ : ∀ {ν m n} → Type ν m → Sub T m n → Type ν n
-    void     / σ = void
+    unit     / σ = unit
     tvar x   / σ = tvar x
     (a →[ e ] b) / σ = (a / σ) →[ e /e σ ] (b / σ)
     (∀' a)   / σ = ∀' (a / σ)
+    (H a)    / σ = H (a / σ ↑)
   
   open EffectEffectSubst using (varLift; termLift; sub)
 
@@ -103,6 +68,75 @@ module TypeEffectSubst where
 
   weaken : ∀ {ν η} → Type ν η → Type ν (suc η)
   weaken a = a / EffectEffectSubst.wk
+
+module TypeTypeSubst where
+  -- substitution that takes a Type ν η to a Type ν μ
+  TypeSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
+  TypeSub T ν η μ = Sub (flip T η) ν μ
+
+  record TypeLift (T : ℕ → ℕ → Set) : Set where
+    infix 10 _↑ef _↑tp
+    field
+      lift : ∀ {ν η} → T ν η → Type ν η
+      _↑tp : ∀ {ν η μ} → TypeSub T ν η μ → TypeSub T (suc ν) η (suc μ)
+      _↑ef : ∀ {ν η μ} → TypeSub T ν η μ → TypeSub T ν (suc η) μ
+  
+  module TypeApp {T} (l : TypeLift T) where
+    open TypeLift l
+
+    infixl 8 _/_
+
+    _/_ : ∀ {ν η μ} → Type ν η → TypeSub T ν η μ → Type μ η
+    unit     / σ = unit
+    tvar x   / σ = lift (lookup x σ)
+    (a →[ e ] b) / σ = (a / σ) →[ e ] (b / σ)
+    (∀' a)   / σ = ∀' (a / σ ↑tp)
+    (H a)    / σ = H (a / σ ↑ef) 
+
+  Fin′ : ℕ → ℕ → Set
+  Fin′ n _ = Fin n
+
+  varLift : TypeLift Fin′
+  varLift = record { lift = tvar; _↑tp = VarSubst._↑; _↑ef = id }
+
+  infixl 8 _/Var_
+
+  _/Var_ : ∀ {m n k} → Type m n → Sub Fin m k → Type k n
+  _/Var_ = TypeApp._/_ varLift
+
+  private
+    module ExpandSimple {η : ℕ} where
+      simple : Simple (flip Type η)
+      simple = record { var = tvar; weaken = λ t → t /Var VarSubst.wk }
+
+      open Simple simple public
+
+  open ExpandSimple  using (_↑; simple)
+
+  termLift : TypeLift Type
+  termLift = record
+    { lift = id; _↑tp = _↑ ; _↑ef = λ ρ → map TypeEffectSubst.weaken ρ }
+
+  private
+    module ExpandSubst {η : ℕ} where
+      app : Application (flip Type η) (flip Type η)
+      app = record { _/_ = TypeApp._/_ termLift {η = η} }
+
+      subst : Subst (flip Type η)
+      subst = record
+        { simple      = simple
+        ; application = app
+        }
+
+      open Subst subst public
+
+  open ExpandSubst public hiding (var; simple)
+
+  infix 8 _[/_]
+
+  -- Shorthand for single-variable type substitutions
+  _[/_] : ∀ {ν η} → Type (suc ν) η → Type ν η → Type ν η
+  a [/ b ] = a / sub b
 
 module ContextTypeSubst where
 

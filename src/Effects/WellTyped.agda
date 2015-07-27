@@ -1,12 +1,12 @@
 module Effects.WellTyped where
 
 open import Prelude
-open import Effects.Terms
+open import Effects.Terms public
 open import Effects.Substitutions
 
 infixl 7 _⊢_∈_&_
 data _⊢_∈_&_ {ν η n : ℕ} (Γ : Ctx ν η n) : Term ν η n → Type ν η → Effect η → Set where
-  var : ∀ {n} → Γ ⊢ var n ∈ (lookup n Γ) & Pure
+  var : ∀ x → Γ ⊢ var x ∈ (lookup x Γ) & Pure
 
   -- value abstraction & application
   λ'  : ∀ {b t e} →
@@ -23,11 +23,14 @@ data _⊢_∈_&_ {ν η n : ℕ} (Γ : Ctx ν η n) : Term ν η n → Type ν �
   _[_] : ∀ {f e a} → Γ ⊢ f ∈ ∀' a & e → (b : Type ν η) → Γ ⊢ f [ b ] ∈ a [/tp b ] & e
 
   -- effect abstraction & application
-  H : ∀ {t a e} → ctx-ef-weaken Γ ⊢ t ∈ tp-ef-weaken a & e → Γ ⊢ H t ∈ a & H e
+  H : ∀ {t a e} → ctx-ef-weaken Γ ⊢ t ∈ a & e → Γ ⊢ H t ∈ H a & H e
   _!_ : ∀ {t a e} → Γ ⊢ t ∈ a & H e → (f : Effect η) → Γ ⊢ (t ! f) ∈ a & e [/ef f ]
   
   -- the effectful primitives
-  print : Γ ⊢ print ∈ void & IO
-  throw : Γ ⊢ throw ∈ void & Throws
-  write : Γ ⊢ write ∈ void & Writes
-  read  : Γ ⊢ read ∈ void & Reads
+  print : Γ ⊢ print ∈ unit & IO
+  throw : Γ ⊢ throw ∈ unit & Throws
+  write : Γ ⊢ write ∈ unit & Writes
+  read  : Γ ⊢ read ∈ unit & Reads
+
+  -- primitive terms
+  tt : Γ ⊢ tt ∈ unit & Pure

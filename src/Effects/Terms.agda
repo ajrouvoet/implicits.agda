@@ -22,14 +22,20 @@ data Effect (η : ℕ) : Set where
 
 data Type (ν η : ℕ) : Set where
 
-  void : Type ν η
+  unit : Type ν η
   tvar : Fin ν → Type ν η
   _→[_]_ : Type ν η → Effect η → Type ν η → Type ν η
 
   -- type abstraction
-  ∀'   : Type (suc ν) η → Type ν η
+  ∀' : Type (suc ν) η → Type ν η
+
+  -- effect abstraction
+  H : Type ν (suc η) → Type ν η
 
 data Term (ν η n : ℕ) : Set where
+
+  -- unit value
+  tt : Term ν η n
 
   -- some primitives that perform effectful computations
   print : Term ν η n -- io
