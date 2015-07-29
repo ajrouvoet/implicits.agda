@@ -1,11 +1,8 @@
-module Implicits.SystemF.Substitutions.Lemmas where
+module Implicits.SystemF.Substitutions.Lemmas (TC : Set) where
 
 open import Prelude hiding (Fin′; subst; id) renaming (lift to finlift)
-open import Implicits.SystemF.Types
-open import Implicits.SystemF.Terms
-open import Implicits.SystemF.Contexts
-open import Implicits.SystemF.WellTyped
-open import Implicits.SystemF.Substitutions
+open import Implicits.SystemF.WellTyped TC
+open import Implicits.SystemF.Substitutions TC
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
 open import Extensions.Substitution
@@ -15,7 +12,6 @@ open Applicative.Morphism using (op-<$>)
 
 module TypeLemmas where
   open TypeSubst using (module Lifted; module TypeApp)
-  open TypeSubst public using (_[/_])
   open import Data.Fin.Substitution.Lemmas
   open import Data.Star using (Star; ε; _◅_)
   
@@ -31,6 +27,12 @@ module TypeLemmas where
                           (∀ k x → tvar x /✶₁ σs₁ ↑✶₁ k ≡ tvar x /✶₂ σs₂ ↑✶₂ k) → 
                           ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
         /✶-↑✶ ρs₁ ρs₂ hyp k (tvar x) = hyp k x
+        /✶-↑✶ ρs₁ ρs₂ hyp k (tc c) = begin
+            (tc c) /✶₁ ρs₁ ↑✶₁ k
+          ≡⟨ TypeApp.tc-/✶-↑✶ _ k ρs₁ ⟩
+            (tc c)
+          ≡⟨ sym $ TypeApp.tc-/✶-↑✶ _ k ρs₂ ⟩
+            (tc c) /✶₂ ρs₂ ↑✶₂ k ∎
         /✶-↑✶ ρs₁ ρs₂ hyp k (a →' b) = begin
             (a →' b) /✶₁ ρs₁ ↑✶₁ k
           ≡⟨ TypeApp.→'-/✶-↑✶ _ k ρs₁ ⟩
@@ -62,6 +64,7 @@ module TypeLemmas where
   open tpl public
 
   /Var-/ : ∀ {ν μ} (t : Type ν) (s : Sub Fin ν μ) → t /Var s ≡ t / (map tvar s)
+  /Var-/ (tc c) s = refl
   /Var-/ (tvar n) s = lookup⋆map s tvar n
   /Var-/ (a →' b) s = cong₂ _→'_ (/Var-/ a s) (/Var-/ b s)
   /Var-/ (∀' t) s = begin
@@ -99,6 +102,7 @@ module TermTypeLemmas where
     ∀ {n k} (ρ₁ : Sub T₁ n k) (ρ₂ : Sub T₂ n k) →
     (∀ i x → tvar x /tp₁ ρ₁ ↑⋆₁ i ≡ tvar x /tp₂ ρ₂ ↑⋆₂ i) →
      ∀ i {m} (t : Term (i N+ n) m)  → t /₁ ρ₁ ↑⋆₁ i ≡ t /₂ ρ₂ ↑⋆₂ i
+  /-↑⋆ ρ₁ ρ₂ hyp i (new x)      = refl
   /-↑⋆ ρ₁ ρ₂ hyp i (var x)      = refl
   /-↑⋆ ρ₁ ρ₂ hyp i (Λ t)        = cong Λ      (/-↑⋆ ρ₁ ρ₂ hyp (1 N+ i) t)
   /-↑⋆ ρ₁ ρ₂ hyp i (λ' a t)     =
@@ -192,7 +196,7 @@ private
   ⊢substTp refl hyp = hyp 
 
 module WtTypeLemmas where
-  open TypeLemmas hiding (_/_; var; weaken; _[/_])
+  open TypeLemmas hiding (_/_; var; weaken)
   private
     module Tp = TypeLemmas
     module TmTp = TermTypeLemmas
@@ -203,6 +207,7 @@ module WtTypeLemmas where
   -- Type substitutions lifted to well-typed terms
   _/_ : ∀ {m n k} {Γ : Ctx n m} {t : Term n m} {a : Type n} →
         Γ ⊢ t ∈ a → (σ : Sub Type n k) → Γ C./ σ ⊢ t TmTp./ σ ∈ a Tp./ σ
+  new c             / σ = new c
   var x             / σ = ⊢substTp (lookup-⊙ x) (var x)
   _/_ {Γ = Γ} (Λ ⊢t)  σ = Λ (⊢substCtx eq (⊢t / σ ↑))
     where
@@ -266,6 +271,7 @@ module WtTermLemmas where
   -- well-typed terms.
   _/Var_ : ∀ {m n k} {Γ : Ctx n k} {t : Term n m} {a : Type n}
              (ρ : Sub Fin m k) → ρ C./Var Γ ⊢ t ∈ a → Γ ⊢ t TmTm./Var ρ ∈ a
+  _/Var_ {Γ = Γ} ρ (new c)   = new c
   _/Var_ {Γ = Γ} ρ (var x)   =
     ⊢substTp (sym (C./Var-lookup x ρ Γ)) (var (lookup x ρ))
   _/Var_ {Γ = Γ} ρ (Λ ⊢t)    =
@@ -311,6 +317,7 @@ module WtTermLemmas where
   -- Application of term substitutions lifted to well-typed terms
   _/_ : ∀ {m n k} {Γ : Ctx n m} {Δ : Ctx n k} {t a ρ} →
         Γ ⊢ t ∈ a → Γ ⇒ Δ ⊢ ρ → Δ ⊢ t TmTm./ ρ ∈ a
+  new c       / ⊢ρ = new c
   var x       / ⊢ρ = lookup-⊢ x ⊢ρ
   _/_ {Γ = Γ} {Δ = Δ} {ρ = ρ} (Λ ⊢t) ⊢ρ = Λ (⊢t / weaken-⊢p)
     where
@@ -330,12 +337,6 @@ module WtTermLemmas where
                       b ∷ Γ ⊢ t ∈ a → Γ ⊢ u ∈ b → Γ ⊢ (t tm[/tm u ]) ∈ a
   tm[/tm]-preserves ⊢s ⊢t = ⊢s / sub ⊢t
 
-open TypeLemmas public using () 
-  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
-open TermTypeLemmas public using () 
-  renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
-open CtxLemmas public using ()
-  renaming (_/_ to _ctx/tp_; weaken to ctx-weaken)
 open WtTypeLemmas public using ()
   renaming (weaken to ⊢tp-weaken)
 open WtTermLemmas public using ()

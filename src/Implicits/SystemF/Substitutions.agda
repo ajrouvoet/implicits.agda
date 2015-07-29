@@ -1,13 +1,13 @@
-module Implicits.SystemF.Substitutions where
+module Implicits.SystemF.Substitutions (TC : Set) where
 
 open import Prelude hiding (lift; Fin′; subst)
-open import Implicits.SystemF.Types
-open import Implicits.SystemF.Terms
-open import Implicits.SystemF.Contexts
+open import Implicits.SystemF.Types TC
+open import Implicits.SystemF.Terms TC
+open import Implicits.SystemF.Contexts TC
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
 
-open import Implicits.SystemF.Substitutions.Types public
+open import Implicits.SystemF.Substitutions.Types TC public
 
 module TermTypeSubst where
 
@@ -19,6 +19,7 @@ module TermTypeSubst where
 
     -- Apply a type substitution to a term
     _/_ : ∀ {ν μ n} → Term ν n → Sub T ν μ → Term μ n
+    new c      / σ = new c
     var x      / σ = var x
     Λ t        / σ = Λ (t / σ ↑)
     λ' a t     / σ = λ' (a tp/ σ) (t / σ)
@@ -81,6 +82,7 @@ module TermTermSubst where
 
     -- Apply a term substitution to a term
     _/_ : ∀ {ν m n} → Term ν m → TermSub T ν m n → Term ν n
+    new c      / σ = new c
     var x      / σ = lift (lookup x σ)
     Λ t        / σ = Λ (t / (σ ↑tp))
     λ' a t     / σ = λ' a (t / σ ↑tm)
@@ -134,10 +136,9 @@ module TermTermSubst where
   s [/ t ] = s / sub t
 
 open TermTermSubst public using () 
-  renaming (_/_ to _tm/tm_; _[/_] to _tm[/tm_])
+  renaming (_/_ to _tm/tm_; _[/_] to _tm[/tm_]; weaken to tmtm-weaken)
 open TermTypeSubst public using () 
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open CtxSubst public using () 
   renaming (_/_ to _ctx/_; weaken to ctx-weaken; _/Var_ to _ctx/Var_)
-  
   

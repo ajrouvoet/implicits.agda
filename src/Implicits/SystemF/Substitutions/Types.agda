@@ -1,7 +1,7 @@
-module Implicits.SystemF.Substitutions.Types where
+module Implicits.SystemF.Substitutions.Types (TC : Set) where
 
 open import Prelude hiding (lift; Fin′; subst)
-open import Implicits.SystemF.Types
+open import Implicits.SystemF.Types TC
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
 
@@ -12,6 +12,7 @@ module TypeSubst where
     infixl 8 _/_
 
     _/_ : ∀ {m n} → Type m → Sub T m n → Type n
+    tc c     / σ = tc c
     tvar x   / σ = lift (lookup x σ)
     (a →' b) / σ = (a / σ) →' (b / σ)
     ∀' a     / σ = ∀' (a / σ ↑)
@@ -27,6 +28,11 @@ module TypeSubst where
                (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (1 N+ k))
     ∀'-/✶-↑✶ k ε        = refl
     ∀'-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (∀'-/✶-↑✶ k ρs) refl
+
+    tc-/✶-↑✶ : ∀ k {c m n} (ρs : Subs T m n) →
+               (tc c) /✶ ρs ↑✶ k ≡ tc c
+    tc-/✶-↑✶ k ε        = refl
+    tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
 
   typeSubst : TermSubst Type
   typeSubst = record { var = tvar; app = TypeApp._/_ }

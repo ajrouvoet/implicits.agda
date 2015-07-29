@@ -1,9 +1,8 @@
-module Implicits.SystemF.SmallStep where
+module Implicits.SystemF.SmallStep (TC : Set) where
 
 open import Prelude
-open import Implicits.SystemF.WellTyped
-open import Implicits.SystemF.Substitutions
-open import Implicits.SystemF.Substitutions.Lemmas
+open import Implicits.SystemF.WellTyped TC
+open import Implicits.SystemF.Substitutions.Lemmas TC
 
 infixl 4 _≻_
 
@@ -12,12 +11,11 @@ data Value {ν n} : Term ν n → Set where
   λ' : ∀ τ t → Value (λ' τ t)
   Λ : ∀ t → Value (Λ t)
 
-
 -- single step reduction of System F terms
 data _≻_ {ν n} : Term ν n → Term ν n → Set where
   -- redexes
   reduce-[] : ∀ t a → (Λ t) [ a ] ≻ t tm[/tp a ]
-  reduce-· : ∀ a t {u} → (λ' a t) · u ≻ t tm[/tm u ]
+  reduce-· : ∀ a t {u} → ((λ' a t) · u) ≻ (t tm[/tm u ])
 
   -- contextual closure
   step-·₁ : ∀ {t t' u} → t ≻ t' → t · u ≻ t' · u

@@ -1,4 +1,4 @@
-module Implicits.SystemF.Types where
+module Implicits.SystemF.Types (TC : Set) where
 
 open import Prelude hiding (lift)
 open import Data.Fin.Substitution
@@ -7,6 +7,7 @@ open import Data.Star using (Star; ε; _◅_)
   
 infixl 10 _→'_
 data Type (ν : ℕ) : Set where
+  tc   : TC → Type ν
   tvar : (n : Fin ν) → Type ν
   _→'_ : Type ν → Type ν → Type ν
   ∀'   : Type (suc ν) → Type ν
@@ -21,6 +22,7 @@ module Functions where
 
   -- decision procedure for IsFunction
   is-function : ∀ {ν} → (a : Type ν) → Dec (IsFunction a)
+  is-function (tc c) = no (λ ())
   is-function (tvar n) = no (λ ())
   is-function (a →' b) = yes (lambda a b)
   is-function (∀' a) with is-function a
