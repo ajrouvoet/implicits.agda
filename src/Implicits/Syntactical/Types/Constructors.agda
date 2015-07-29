@@ -6,25 +6,25 @@ open import Implicits.Syntactical.Substitutions
 open TypeSubst
 
 -- polymorphic identity
-tid : ∀ {n} → PolyType n
-tid = ∀' $ mono $ (tvar zero) →' (tvar zero)
+tid : ∀ {n} → Type n
+tid = ∀' $ (tvar zero) →' (tvar zero)
 
 -- type of bools encoding
-tbool : PolyType 0
-tbool = ∀' $ mono $ (tvar zero) →' (tvar zero) →' (tvar zero)
+tbool : Type 0
+tbool = ∀' $ (tvar zero) →' (tvar zero) →' (tvar zero)
 
 -- church numerals
-tnat : PolyType 0
-tnat = ∀' $ mono $ ((tvar zero) →' (tvar zero)) →' (tvar zero) →' (tvar zero)
+tnat : Type 0
+tnat = ∀' $ ((tvar zero) →' (tvar zero)) →' (tvar zero) →' (tvar zero)
 
 -- existential quantification
--- ∃' : ∀ {n} → (PolyType (suc n)) → PolyType n
--- ∃' a = ∀' (∀' ((a pt/tp (wk ↑)) →' (mono $ tvar (suc zero))) →' mono (tvar zero))
+∃' : ∀ {n} → (Type (suc n)) → Type n
+∃' a = ∀' (∀' ((a tp/tp wk ↑) →' (tvar (suc zero))) →' (tvar zero))
 
 -- unit type
-⊤' : ∀ {n} → PolyType n
+⊤' : ∀ {n} → Type n
 ⊤' = tid
 
 -- zero type
-⊥' : ∀ {n} → PolyType n
-⊥' = ∀' $ mono $ (tvar zero)
+⊥' : ∀ {n} → Type n
+⊥' = ∀' $ (tvar zero)

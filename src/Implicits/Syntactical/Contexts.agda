@@ -6,7 +6,7 @@ open import Data.Fin.Substitution.Lemmas
 open import Implicits.Syntactical.Types
 
 Ctx : ℕ → ℕ → Set
-Ctx ν n = Vec (PolyType ν) n
+Ctx ν n = Vec (Type ν) n
 
 ICtx : ℕ → Set
 ICtx ν = List.List (Implicit ν)
@@ -14,7 +14,7 @@ ICtx ν = List.List (Implicit ν)
 Ktx : ℕ → ℕ → Set
 Ktx ν n = Ctx ν n × ICtx ν
 
-_∷Γ_ : ∀ {ν n} → PolyType ν → Ktx ν n → Ktx ν (suc n)
+_∷Γ_ : ∀ {ν n} → Type ν → Ktx ν n → Ktx ν (suc n)
 a ∷Γ (Γ , Δ) = (a ∷ Γ) , Δ
 
 _∷Δ_ : ∀ {ν n} → Implicit ν → Ktx ν n → Ktx ν n
