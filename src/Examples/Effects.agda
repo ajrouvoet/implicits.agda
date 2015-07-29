@@ -2,36 +2,14 @@ module Examples.Effects where
 
 open import Prelude
 
--- the effect primitives
-data EC : Set where
-  read : EC
-  write : EC
-  throw : EC
-  io : EC
-
-_ec≟_ : Decidable {A = EC} _≡_
-read ec≟ read = yes refl
-read ec≟ write = no (λ ())
-read ec≟ throw = no (λ ())
-read ec≟ io = no (λ ())
-write ec≟ read = no (λ ())
-write ec≟ write = yes refl
-write ec≟ throw = no (λ ())
-write ec≟ io = no (λ ())
-throw ec≟ read = no (λ ())
-throw ec≟ write = no (λ ())
-throw ec≟ throw = yes refl
-throw ec≟ io = no (λ ())
-io ec≟ read = no (λ ())
-io ec≟ write = no (λ ())
-io ec≟ throw = no (λ ())
-io ec≟ io = yes refl
-
+open import Effects.Denotational
 open import Effects.WellTyped EC _ec≟_
 open import Effects.Substitutions EC _ec≟_
+open import Implicits.Calculus.Types
 
 -- value abstraction
 module ex₁ where
+
   f : Term 0 0 0
   f = λ' unit print
 
@@ -64,3 +42,11 @@ module ex₂ where
     & pure
   wt-f = H (Λ (Λ (λ' (tvar zero →[ evar zero & pure ] tvar (suc zero))
     (λ' (tvar zero) (var (suc zero) · var zero)))))
+
+module ex₃ where
+  eff : Effects 0
+  eff = (has io) & (has read) & pure
+
+  -- lists of effects transtlate to tuples of Can*
+  test : ⟦ eff , ([] , []) ⟧ef ≡ C.rec (tc CanIO ∷ tc CanRead ∷ [])
+  test = refl

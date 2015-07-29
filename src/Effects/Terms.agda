@@ -3,6 +3,7 @@ open import Prelude
 module Effects.Terms (EC : Set) (_ec≟_ : Decidable {A = EC} _≡_) where
 
 infixl 8 _∪_ _→[_]_ _·_ _[_]
+infixr 8 _&_ 
 
 data Effect (η : ℕ) : Set where
 

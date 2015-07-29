@@ -92,27 +92,10 @@ fprint = (ρ (tc CanIO) (new unit))
 fthrow : ∀ {ν n} → C.Term ν n
 fthrow = (ρ (tc CanThrow) (new unit))
 
-pair : ∀ {ν n} → C.Term ν n
-pair =
-  (Λ (Λ (
-    -- 1st arg
-    λ' (tvar (suc zero))
-      -- 2nd arg
-      (λ' (tvar zero)
-        -- projector
-        (λ'
-          (∀' (tvar (suc (suc zero)) →' tvar (suc zero) →' tvar zero))
-          ((
-            -- apply projector to fst type arg and fst arg
-            ((var zero) [ tvar (suc zero) ] · (var (suc (suc zero))))
-            -- apply result to snd type arg and snd arg
-            [ tvar zero ]) · (var (suc zero))
-          )
-  -- grandpa's parens
-  )))))
-
 ⟦_,_⟧ef : ∀ {ν η} → E.Effects η → TCtx ν η → C.Type (ν N+ η)
-⟦_,_⟧ef {ν} {η} ef m = List.foldl (λ acc e → ⟦ e , m ⟧e C.×' acc) (C.tc unit) ef
+⟦_,_⟧ef {ν} {η} ef m =
+  -- effects can be combined using the record type constructor
+  C.rec (fromList (List.map (λ e → ⟦ e , m ⟧e) ef))
   where
     ⟦_,_⟧e : ∀ {ν η} → E.Effect η → TCtx ν η → C.Type (ν N+ η)
     ⟦ evar x , m ⟧e = tvar (lookup-evar m x)
@@ -124,14 +107,13 @@ pair =
 
 ⟦_,_⟧tp : ∀ {ν η} → E.Type ν η → TCtx ν η → C.Type (ν N+ η)
 ⟦ unit , m ⟧tp = tc unit
-⟦_,_⟧tp {η = η} (tvar x) m = C.tvar (lookup-tvar m x)
-⟦_,_⟧tp {ν = ν} (a →[ e ] b ) m = ⟦ a , m ⟧tp C.→' ((⟦ e , m ⟧ef) C.⇒ ⟦ b , m ⟧tp)
+⟦ tvar x , m ⟧tp = C.tvar (lookup-tvar m x)
+⟦ (a →[ e ] b ) , m ⟧tp = ⟦ a , m ⟧tp C.→' ((⟦ e , m ⟧ef) C.⇒ ⟦ b , m ⟧tp)
 ⟦ ∀' t , m ⟧tp = C.∀' ⟦ t , m +tvar ⟧tp
-⟦_,_⟧tp {ν} {η} (H t) m  = C.∀' (subst C.Type (+-suc ν η) ⟦ t , m +evar ⟧tp)
+⟦_,_⟧tp {ν} {η} (H t) m = C.∀' (subst C.Type (+-suc ν η) ⟦ t , m +evar ⟧tp)
 
-{-
-⟦_&_,_⟧tp : ∀ {ν η} → E.Type ν η → E.Effect η → TCtx ν η → C.Type (ν N+ η)
-⟦ a & e , m ⟧tp = {!e!}
+⟦_&_,_⟧tp : ∀ {ν η} → E.Type ν η → E.Effects η → TCtx ν η → C.Type (ν N+ η)
+⟦ a & e , m ⟧tp = ⟦ e , m ⟧ef ⇒ ⟦ a , m ⟧tp
 
 -- type driven translation of effect terms into
 -- terms from the implicit calculus
@@ -153,6 +135,5 @@ pair =
 ⟦⟧-preserves : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} →
   (wt : Γ E.⊢ t ∈ a & e) → TCtx ν η → 
   ⟦ Γ ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a & e ⟧
-  -}
 
 -}
