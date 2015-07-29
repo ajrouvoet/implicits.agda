@@ -1,4 +1,4 @@
-module Implicits.Calculus.Types where
+module Implicits.Calculus.Types (TypeConstant : Set) where
 
 open import Prelude hiding (lift; id)
 open import Data.Fin.Substitution
@@ -11,18 +11,21 @@ infixr 10 _→'_
 infixr 10 _⇒_
  
 data Type (ν : ℕ) : Set where
+  tc   : TypeConstant → Type ν
   tvar : (n : Fin ν) → Type ν
   _→'_ : Type ν → Type ν → Type ν
   _⇒_  : Type ν → Type ν → Type ν
   ∀'   : Type (suc ν) → Type ν
 
 is-∀' : ∀ {ν} → Type ν → Set
+is-∀' (tc _) = ⊥
 is-∀' (tvar _) = ⊥
 is-∀' (_ →' _) = ⊥
 is-∀' (_ ⇒ _) = ⊥
 is-∀' (∀' x) = ⊤
 
 is-mono : ∀ {ν} → Type ν → Set
+is-mono (tc _) = ⊤
 is-mono (tvar _) = ⊤
 is-mono (_ →' _) = ⊤
 is-mono (_ ⇒ _) = ⊤
@@ -38,6 +41,7 @@ module Functions where
 
   -- decision procedure for IsFunction
   is-function : ∀ {ν} → (a : Type ν) → Dec (IsFunction a)
+  is-function (tc _) = no (λ ())
   is-function (tvar n) = no (λ ())
   is-function (a →' b) = yes (lambda a b)
   is-function (x ⇒ x₁) = no (λ ())
@@ -63,9 +67,10 @@ module Rules where
 
   -- decision procedure for IsRule
   is-rule : ∀ {ν} → (a : Type ν) → Dec (IsRule a)
-  is-rule ((tvar n)) = no (λ ())
-  is-rule ((a →' b)) = no (λ ())
-  is-rule ((a ⇒ b)) = yes (rule a b)
+  is-rule (tc _) = no (λ ())
+  is-rule (tvar n) = no (λ ())
+  is-rule (a →' b) = no (λ ())
+  is-rule (a ⇒ b)  = yes (rule a b)
   is-rule (∀' a) with is-rule a
   is-rule (∀' a) | yes a-is-f = yes $ ∀'-rule a-is-f
   is-rule (∀' a) | no a-not-f = no (λ{ (∀'-rule a-is-f) → a-not-f a-is-f })

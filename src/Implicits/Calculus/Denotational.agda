@@ -1,10 +1,10 @@
-module Implicits.Calculus.Denotational where
+module Implicits.Calculus.Denotational (TypeConstant : Set) where
 
 open import Prelude
 
-open import Implicits.Calculus.WellTyped
-open import Implicits.Calculus.Substitutions.Lemmas
-open import Implicits.SystemF as F using ()
+open import Implicits.Calculus.WellTyped TypeConstant
+open import Implicits.Calculus.Substitutions.Lemmas TypeConstant
+open import Implicits.SystemF TypeConstant as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec.Properties
@@ -40,6 +40,7 @@ private
   module FTSS = Simple F.simple
 
 ⟦_⟧tp : ∀ {ν} → Type ν → F.Type ν
+⟦ tc c ⟧tp = F.tc c
 ⟦ tvar n ⟧tp = F.tvar n
 ⟦ a →' b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
 ⟦ a ⇒ b ⟧tp = ⟦ a ⟧tp F.→' ⟦ b ⟧tp
@@ -58,6 +59,7 @@ private
 
 -- denotational semantics of well-typed terms
 ⟦_,_⟧ : ∀ {ν n} {K : Ktx ν n} {t} {a : Type ν} → K ⊢ t ∈ a → K# K → F.Term ν n
+⟦_,_⟧ (new c) m = F.new c
 ⟦_,_⟧ (var x) m = F.var x
 ⟦_,_⟧ (Λ t) m = F.Λ ⟦ t , #tvar m ⟧
 ⟦_,_⟧ (λ' a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #var a m ⟧
@@ -79,6 +81,7 @@ module Lemmas where
 
   -- type substitution commutes with interpreting types
   /⋆⟦⟧tp : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp TS./ σ ⟧tp ≡ ⟦ tp ⟧tp F./ (map ⟦_⟧tp σ)
+  /⋆⟦⟧tp (tc c) σ = refl
   /⋆⟦⟧tp (tvar n) σ = begin
     ⟦ lookup n σ ⟧tp 
       ≡⟨ lookup⋆map σ ⟦_⟧tp n ⟩
@@ -271,6 +274,7 @@ private
 -- interpretation of well-typed terms in System F preserves type
 ⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → (m : K# K) →
                   ⟦ K ⟧ctx F.⊢ ⟦ wt-t , m ⟧ ∈ ⟦ a ⟧tp
+⟦⟧-preserves-tp {K = K} (new c) m = F.new c
 ⟦⟧-preserves-tp {K = K} (var x) m = subst-wt-var (lookup⋆⟦⟧ctx K x) (F.var x)
   where
     subst-wt-var = subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a)

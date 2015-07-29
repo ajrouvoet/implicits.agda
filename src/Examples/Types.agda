@@ -1,9 +1,11 @@
 module Examples.Types where
 
+data TC : Set where
+
 open import Prelude
-open import Implicits.Calculus.WellTyped
-open import Implicits.Calculus.Types.Constructors
-open import Implicits.Calculus.Substitutions
+open import Implicits.Calculus.WellTyped TC
+open import Implicits.Calculus.Types.Constructors TC
+open import Implicits.Calculus.Substitutions TC
 
 nattid = (∀' (
   ((tp-weaken tnat) ∙ (tvar zero))

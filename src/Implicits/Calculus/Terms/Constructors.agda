@@ -1,12 +1,11 @@
-module Implicits.Calculus.Terms.Constructors where
+module Implicits.Calculus.Terms.Constructors (TC : Set) where
 
 open import Prelude hiding (id)
-open import Implicits.Calculus.Terms
-open import Implicits.Calculus.WellTyped
-open import Implicits.Calculus.Substitutions
-open import Implicits.Calculus.Types.Constructors
+open import Implicits.Calculus.WellTyped TC
+open import Implicits.Calculus.Substitutions TC
+open import Implicits.Calculus.Types.Constructors TC
 
-id : nil ⊢ _ ∈ tid
+id : ∀ {n} → nil ⊢ _ ∈ tid {n}
 id = Λ (λ' (tvar zero) (var zero))
 
 true : nil ⊢ _ ∈ tbool

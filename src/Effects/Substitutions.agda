@@ -1,7 +1,8 @@
-module Effects.Substitutions where
-
 open import Prelude hiding (lift; Fin′; subst)
-open import Effects.Terms
+
+module Effects.Substitutions (EC : Set) (_ec≟_ : Decidable {A = EC} _≡_ ) where
+
+open import Effects.Terms EC _ec≟_
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
 
@@ -14,27 +15,49 @@ module EffectEffectSubst where
 
     _/_ : ∀ {m n} → Effect m → Sub T m n → Effect n
     evar x / s = lift $ lookup x s
-    IO / s = IO
-    Reads / s = Reads
-    Writes / s = Writes
-    Throws / s = Throws
-    Pure / s = Pure
-    e ∪ f / s = (e / s) ∪ (f / s)
+    has c / s = has c
     H e / s = H (e / s ↑)
+
+    _/s_ : ∀ {m n} → Effects m → Sub T m n → Effects n
+    e /s s = List.map (flip _/_ s) e
 
     open Application (record { _/_ = _/_ }) using (_/✶_)
 
-  typeSubst : TermSubst Effect
-  typeSubst = record { var = evar; app = EffectApp._/_ }
+  effSubst : TermSubst Effect
+  effSubst = record { var = evar; app = EffectApp._/_ }
 
+  open TermSubst effSubst public hiding (var) renaming (_/_ to _/e_)
 
-  open TermSubst typeSubst public hiding (var)
-
-  infix 8 _[/_]
+  _/_ = EffectApp._/s_ termLift
 
   -- Shorthand for single-variable effect substitutions
-  _[/_] : ∀ {n} → Effect (suc n) → Effect n → Effect n
-  a [/ b ] = a / sub b
+  infix 8 _[/_]
+  _[/_] : ∀ {n} → Effects (suc n) → Effect n → Effects n
+  a [/ b ] = a / (sub b)
+
+module EffectsEffectsSubst where
+  
+  module EffectsApp {T} (l : Lift T Effects) where
+    open Lift l hiding (var)
+
+    _/e_ : ∀ {m n} → Effect m → Sub T m n → Effects n
+    evar x /e as = lift $ lookup x as
+    has x /e as = List.[ has x ]
+    H e /e as = H' (e /e (as ↑))
+
+    infixl 8 _/_
+    _/_ : ∀ {m n} → Effects m → Sub T m n → Effects n
+    es / as = List.concat (List.map (flip _/e_ as) es)
+
+  effsSubst : TermSubst Effects
+  effsSubst = record { var = (λ n → List.[ evar n ]); app = EffectsApp._/_ }
+
+  open TermSubst effsSubst public
+
+  -- Shorthand for single-variable effect substitutions
+  infix 8 _[/_]
+  _[/_] : ∀ {n} → Effects (suc n) → Effects n → Effects n
+  a [/ b ] = a / (sub b)
 
 module TypeEffectSubst where
   module TypeEffectApp {T} (l : Lift T Effect) where
@@ -46,7 +69,7 @@ module TypeEffectSubst where
     _/_ : ∀ {ν m n} → Type ν m → Sub T m n → Type ν n
     unit     / σ = unit
     tvar x   / σ = tvar x
-    (a →[ e ] b) / σ = (a / σ) →[ e /e σ ] (b / σ)
+    (a →[ e ] b) / σ = (a / σ) →[ e /s σ ] (b / σ)
     (∀' a)   / σ = ∀' (a / σ)
     (H a)    / σ = H (a / σ ↑)
   
@@ -160,7 +183,7 @@ open TypeTypeSubst public using ()
   renaming (_/_ to _/tp_; weaken to tp-weaken; _[/_] to _[/tp_])
 open TypeEffectSubst public using ()
   renaming (_/_ to _tp/ef_; weaken to tp-ef-weaken)
-open EffectEffectSubst public using ()
+open EffectsEffectsSubst public using ()
   renaming (_/_ to _/ef_; weaken to ef-weaken; _[/_] to _[/ef_])
 open ContextTypeSubst public using ()
   renaming (_/_ to _ctx/tp_; weaken to ctx-tp-weaken)

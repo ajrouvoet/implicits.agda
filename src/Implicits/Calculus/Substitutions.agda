@@ -1,9 +1,9 @@
-module Implicits.Calculus.Substitutions where
+module Implicits.Calculus.Substitutions (TC : Set) where
 
 open import Prelude hiding (lift)
-open import Implicits.Calculus.Types
-open import Implicits.Calculus.Terms
-open import Implicits.Calculus.Contexts
+open import Implicits.Calculus.Types TC 
+open import Implicits.Calculus.Terms TC 
+open import Implicits.Calculus.Contexts TC 
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
 
@@ -14,6 +14,7 @@ module TypeSubst where
     infixl 8 _/_
 
     _/_ : ∀ {m n} → Type m → Sub T m n → Type n
+    tc c  / σ = tc c
     tvar x   / σ = lift (lookup x σ)
     (a →' b) / σ = (a / σ) →' (b / σ)
     (a ⇒ b)  / σ = (a / σ) ⇒ (b / σ)
@@ -30,6 +31,11 @@ module TypeSubst where
                (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
     ⇒-/✶-↑✶ k ε        = refl
     ⇒-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
+
+    tc-/✶-↑✶ : ∀ k {c m n} (ρs : Subs T m n) →
+               (tc c) /✶ ρs ↑✶ k ≡ tc c
+    tc-/✶-↑✶ k ε        = refl
+    tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
 
     postulate ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
                (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))
@@ -49,6 +55,7 @@ module TypeSubst where
   -- shorthand for type application
   infixl 8 _∙_
   _∙_ : ∀ {ν} → (a : Type ν) → {is∀ : is-∀' a} → Type ν → Type ν
+  _∙_ (tc c) b = tc c
   _∙_ (∀' x) b = x [/ b ]
   _∙_ (_ →' _) {is∀ = ()} _
   _∙_ (_ ⇒ _) {is∀ = ()} _
@@ -64,6 +71,7 @@ module TermTypeSubst where
 
     -- Apply a type substitution to a term
     _/_ : ∀ {ν μ n} → Term ν n → Sub T ν μ → Term μ n
+    new c      / σ = new c
     var x      / σ = var x
     Λ t        / σ = Λ (t / σ ↑)
     λ' a t     / σ = λ' (a /tp σ) (t / σ)

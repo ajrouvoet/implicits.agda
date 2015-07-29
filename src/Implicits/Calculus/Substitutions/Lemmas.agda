@@ -1,9 +1,9 @@
-module Implicits.Calculus.Substitutions.Lemmas where
+module Implicits.Calculus.Substitutions.Lemmas (TC : Set) where
 
 open import Prelude
-open import Implicits.Calculus.Types
-open import Implicits.Calculus.Terms
-open import Implicits.Calculus.Substitutions
+open import Implicits.Calculus.Types TC 
+open import Implicits.Calculus.Terms TC 
+open import Implicits.Calculus.Substitutions TC 
 open import Data.Fin.Substitution
 
 module TypeLemmas where
@@ -23,6 +23,12 @@ module TypeLemmas where
                           (∀ k x → tvar x /✶₁ σs₁ ↑✶₁ k ≡ tvar x /✶₂ σs₂ ↑✶₂ k) → 
                           ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
         /✶-↑✶ ρs₁ ρs₂ hyp k (tvar x) = hyp k x
+        /✶-↑✶ ρs₁ ρs₂ hyp k (tc c) = begin
+            (tc c) /✶₁ ρs₁ ↑✶₁ k
+          ≡⟨ TypeApp.tc-/✶-↑✶ _ k ρs₁ ⟩
+            (tc c)
+          ≡⟨ sym $ TypeApp.tc-/✶-↑✶ _ k ρs₂ ⟩
+            (tc c) /✶₂ ρs₂ ↑✶₂ k ∎
         /✶-↑✶ ρs₁ ρs₂ hyp k (a →' b) = begin
             (a →' b) /✶₁ ρs₁ ↑✶₁ k
           ≡⟨ TypeApp.→'-/✶-↑✶ _ k ρs₁ ⟩
@@ -62,10 +68,3 @@ module TypeLemmas where
          (∀ i x → tvar x /₁ ρ₁ ↑⋆₁ i ≡ tvar x /₂ ρ₂ ↑⋆₂ i) →
           ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
   /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
-
-open TypeSubst public using (_∙_)
-  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
-open TermTypeSubst public using ()
-  renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
-open KtxSubst public
-  renaming (_/_ to _ctx-/_; weaken to ktx-weaken)

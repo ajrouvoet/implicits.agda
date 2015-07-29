@@ -1,9 +1,9 @@
-module Implicits.Calculus.Contexts where
+module Implicits.Calculus.Contexts (TypeConstant : Set) where
 
 open import Prelude
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
-open import Implicits.Calculus.Types
+open import Implicits.Calculus.Types TypeConstant 
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (Type ν) n

@@ -32,7 +32,32 @@ lookup-evar (_ , evars) x = lookup x evars
 lookup-tvar : ∀ {ν η} → TCtx ν η → Fin ν → Fin (ν N+ η)
 lookup-tvar (tvars , _) x = lookup x tvars
 
--- the type constants
+-- the effect primitives
+data EC : Set where
+  read : EC
+  write : EC
+  throw : EC
+  io : EC
+
+_ec≟_ : Decidable {A = EC} _≡_
+read ec≟ read = yes refl
+read ec≟ write = no (λ ())
+read ec≟ throw = no (λ ())
+read ec≟ io = no (λ ())
+write ec≟ read = no (λ ())
+write ec≟ write = yes refl
+write ec≟ throw = no (λ ())
+write ec≟ io = no (λ ())
+throw ec≟ read = no (λ ())
+throw ec≟ write = no (λ ())
+throw ec≟ throw = yes refl
+throw ec≟ io = no (λ ())
+io ec≟ read = no (λ ())
+io ec≟ write = no (λ ())
+io ec≟ throw = no (λ ())
+io ec≟ io = yes refl
+
+-- the type primitives
 data TC : Set where
   unit : TC
   
@@ -41,7 +66,8 @@ data TC : Set where
   CanThrow : TC
   CanIO : TC
 
-open import Effects.WellTyped as E
+open import Effects.WellTyped EC _ec≟_ as E
+open import Effects.Substitutions EC _ec≟_ 
 
 -- make all calculus stuff available in the C._ namespace
 module C where
@@ -50,11 +76,9 @@ module C where
     renaming (id to cid)
 
 -- import the syntax of the calculus
-open import Implicits.Calculus.Terms
-open import Implicits.Calculus.Types
-
-bootstrap-len : ℕ
-bootstrap-len = 7
+open import Implicits.Calculus.Terms TC
+open import Implicits.Calculus.Types TC
+open import Implicits.Calculus.Substitutions TC
 
 fread : ∀ {ν n} → C.Term ν n
 fread = (ρ (tc CanRead) (new unit))
@@ -87,56 +111,48 @@ pair =
   -- grandpa's parens
   )))))
 
-fst : ∀ {ν n} → C.Term ν n
-fst = Λ (Λ (λ' (tvar (suc zero)) (λ' (tvar zero) (var (suc zero)))))
-
-snd : ∀ {ν n} → C.Term ν n
-snd = Λ (Λ (λ' (tvar (suc zero)) (λ' (tvar zero) (var zero))))
-
-bootstrap : C.Term 0 bootstrap-len → C.Term 0 0
-bootstrap t =
-  let' fread in'
-  let' fwrite in'
-  let' fprint in'
-  let' fthrow in'
-  implicit pair in'
-  implicit fst in'
-  implicit snd in' 
-    t
-
-postulate tm-weaken⋆ : ∀ {ν n} k → C.Term ν n → C.Term ν (k N+ n)
-
-⟦_,_⟧ef : ∀ {ν η} → E.Effect η → TCtx ν η → C.Type (ν N+ η)
-⟦ evar x , m ⟧ef = tvar (lookup-evar m x)
-⟦ IO , m ⟧ef = tc CanIO
-⟦ Reads , m ⟧ef = tc CanRead
-⟦ Writes , m ⟧ef = tc CanWrite
-⟦ Throws , m ⟧ef = tc CanThrow
-⟦ Pure , m ⟧ef = tc unit
-⟦ x ∪ y , m ⟧ef = ⟦ x , m ⟧ef C.×' ⟦ y , m ⟧ef
-⟦ H x , m ⟧ef = {!!} -- ∀' ⟦ x , m +evar ⟧ef
+⟦_,_⟧ef : ∀ {ν η} → E.Effects η → TCtx ν η → C.Type (ν N+ η)
+⟦_,_⟧ef {ν} {η} ef m = List.foldl (λ acc e → ⟦ e , m ⟧e C.×' acc) (C.tc unit) ef
+  where
+    ⟦_,_⟧e : ∀ {ν η} → E.Effect η → TCtx ν η → C.Type (ν N+ η)
+    ⟦ evar x , m ⟧e = tvar (lookup-evar m x)
+    ⟦ has read , m ⟧e = tc CanRead
+    ⟦ has write , m ⟧e = tc CanWrite
+    ⟦ has throw , m ⟧e = tc CanThrow
+    ⟦ has io , m ⟧e = tc CanIO
+    ⟦_,_⟧e {ν} {η} (H x) m  = ∀' (subst C.Type (+-suc ν η) (⟦ x , m +evar ⟧e))
 
 ⟦_,_⟧tp : ∀ {ν η} → E.Type ν η → TCtx ν η → C.Type (ν N+ η)
 ⟦ unit , m ⟧tp = tc unit
 ⟦_,_⟧tp {η = η} (tvar x) m = C.tvar (lookup-tvar m x)
 ⟦_,_⟧tp {ν = ν} (a →[ e ] b ) m = ⟦ a , m ⟧tp C.→' ((⟦ e , m ⟧ef) C.⇒ ⟦ b , m ⟧tp)
 ⟦ ∀' t , m ⟧tp = C.∀' ⟦ t , m +tvar ⟧tp
-⟦ H t , m ⟧tp = {!!} -- C.∀' ⟦ t , m +evar ⟧tp
+⟦_,_⟧tp {ν} {η} (H t) m  = C.∀' (subst C.Type (+-suc ν η) ⟦ t , m +evar ⟧tp)
+
+{-
+⟦_&_,_⟧tp : ∀ {ν η} → E.Type ν η → E.Effect η → TCtx ν η → C.Type (ν N+ η)
+⟦ a & e , m ⟧tp = {!e!}
 
 -- type driven translation of effect terms into
 -- terms from the implicit calculus
-⟦_,_⟧ : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} →
-      Γ E.⊢ t ∈ a & e → TCtx ν η → C.Term (ν N+ η) (n N+ bootstrap-len)
-⟦_,_⟧ {ν} {η} {n} read m = {!!}
-⟦_,_⟧ {ν} {η} {n} write m = {!!}
-⟦_,_⟧ {ν} {η} {n} throw m = {!!}
-⟦_,_⟧ {ν} {η} {n} print m = {!!}
+⟦_,_⟧ : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} → Γ E.⊢ t ∈ a & e → TCtx ν η → C.Term (ν N+ η) n
+⟦ does read , m ⟧ = fread
+⟦ does write , m ⟧ = fwrite
+⟦ does throw , m ⟧ = fthrow
+⟦ does io , m ⟧ = fprint
 ⟦ tt , m ⟧ = new unit
-⟦ var x , m ⟧ = C.var (inject+ bootstrap-len x)
+⟦ var x , m ⟧ = C.var x
 ⟦ λ' a wt , m ⟧ =  C.λ' ⟦ a , m ⟧tp ⟦ wt , m ⟧
 ⟦ wt₁ · wt₂ , m ⟧ = ⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧
 ⟦ Λ wt , m ⟧ = C.Λ ⟦ wt , m +tvar ⟧
 ⟦ wt [ b ] , m ⟧ = ⟦ wt , m ⟧ C.[ ⟦ b , m ⟧tp ]
-⟦ H wt , m ⟧ = {!!}
-⟦ wt ! f , m ⟧ = {!!}
+⟦_,_⟧ {ν} {η} {n} (H wt) m = C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧)
+⟦ wt ! f , m ⟧ = ⟦ wt , m ⟧ C.[ ⟦ f , m ⟧ef ]
 
+{-
+⟦⟧-preserves : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} →
+  (wt : Γ E.⊢ t ∈ a & e) → TCtx ν η → 
+  ⟦ Γ ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a & e ⟧
+  -}
+
+-}

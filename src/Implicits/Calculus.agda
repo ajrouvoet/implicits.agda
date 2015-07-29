@@ -1,8 +1,7 @@
-module Implicits.Calculus where
+module Implicits.Calculus (TC : Set) where
 
-open import Implicits.Calculus.Types public
-open import Implicits.Calculus.Types.Constructors public
-open import Implicits.Calculus.Terms public
-open import Implicits.Calculus.WellTyped public
-open import Implicits.Calculus.Substitutions.Lemmas public
+open import Implicits.Calculus.Types.Constructors TC public
+open import Implicits.Calculus.WellTyped TC public
+open import Implicits.Calculus.Substitutions.Lemmas TC public
+open import Implicits.Calculus.Substitutions TC public
 open TypeLemmas public

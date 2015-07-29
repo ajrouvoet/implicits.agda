@@ -1,13 +1,13 @@
 {-# OPTIONS --no-positivity-check #-}
-module Implicits.Calculus.WellTyped where
+module Implicits.Calculus.WellTyped (TC : Set) where
 
 open import Prelude hiding (id)
 open import Data.Fin.Substitution
-open import Implicits.Calculus.Types public
-open import Implicits.Calculus.Terms public
-open import Implicits.Calculus.Contexts public
+open import Implicits.Calculus.Types TC public
+open import Implicits.Calculus.Terms TC public
+open import Implicits.Calculus.Contexts TC public
 open import Extensions.ListFirst
-open import Implicits.Calculus.Substitutions
+open import Implicits.Calculus.Substitutions TC 
 open Rules
 
 infixl 4 _⊢_∈_
@@ -55,6 +55,7 @@ data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : Type ν → Type ν → Set where
 _Δ↝_ {ν = ν} K a = ∃ λ r → Δ⟨ K , a ⟩= r
 
 data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → Type ν → Set where
+  new : (c : TC) → K ⊢ new c ∈ tc c
   var : (x : Fin n) → K ⊢ var x ∈ (lookup x (proj₁ K))
   λ' : ∀ {t b} a → a ∷Γ K ⊢ t ∈ b → K ⊢ λ' a t ∈ (a →' b)
   Λ : ∀ {t} {a : Type (suc ν)} → ktx-weaken K ⊢ t ∈ a → K ⊢ Λ t ∈ ∀' a

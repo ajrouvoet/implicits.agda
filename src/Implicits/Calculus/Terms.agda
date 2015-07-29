@@ -1,12 +1,13 @@
-module Implicits.Calculus.Terms where
+module Implicits.Calculus.Terms (TypeConstant : Set) where
   
 open import Prelude hiding (lift; Fin′; subst)
 open import Data.Fin.Substitution
-open import Implicits.Calculus.Types
+open import Implicits.Calculus.Types TypeConstant
 
 infixl 9 _[_] _·_
 data Term (ν n : ℕ) : Set where
   var  : (x : Fin n) → Term ν n
+  new  : TypeConstant → Term ν n
   Λ    : Term (suc ν) n → Term ν n
   λ'   : Type ν → Term ν (suc n) → Term ν n
   _[_] : Term ν n → Type ν → Term ν n
