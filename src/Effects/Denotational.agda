@@ -105,6 +105,8 @@ fthrow = (ρ (tc CanThrow) (new unit))
     ⟦ has io , m ⟧e = tc CanIO
     ⟦_,_⟧e {ν} {η} (H x) m  = ∀' (subst C.Type (+-suc ν η) (⟦ x , m +evar ⟧e))
 
+postulate ⟦_,_⟧ctx : ∀ {ν η n} → E.Ctx ν η n → TCtx ν η → C.Ktx (ν N+ η) n
+
 ⟦_,_⟧tp : ∀ {ν η} → E.Type ν η → TCtx ν η → C.Type (ν N+ η)
 ⟦ unit , m ⟧tp = tc unit
 ⟦ tvar x , m ⟧tp = C.tvar (lookup-tvar m x)
@@ -112,28 +114,35 @@ fthrow = (ρ (tc CanThrow) (new unit))
 ⟦ ∀' t , m ⟧tp = C.∀' ⟦ t , m +tvar ⟧tp
 ⟦_,_⟧tp {ν} {η} (H t) m = C.∀' (subst C.Type (+-suc ν η) ⟦ t , m +evar ⟧tp)
 
-⟦_&_,_⟧tp : ∀ {ν η} → E.Type ν η → E.Effects η → TCtx ν η → C.Type (ν N+ η)
-⟦ a & e , m ⟧tp = ⟦ e , m ⟧ef ⇒ ⟦ a , m ⟧tp
+infixl 8 ⟦_+_,_⟧tpef
+⟦_+_,_⟧tpef : ∀ {ν η} → E.Type ν η → E.Effects η → TCtx ν η → C.Type (ν N+ η)
+⟦ a + List.[] , m ⟧tpef = ⟦ a , m ⟧tp
+⟦ a + e List.∷ es , m ⟧tpef = ⟦ e & es , m ⟧ef ⇒ ⟦ a , m ⟧tp
 
 -- type driven translation of effect terms into
 -- terms from the implicit calculus
-⟦_,_⟧ : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} → Γ E.⊢ t ∈ a & e → TCtx ν η → C.Term (ν N+ η) n
+⟦_,_⟧ : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} → Γ E.⊢ t ∈ a + e → TCtx ν η → C.Term (ν N+ η) n
 ⟦ does read , m ⟧ = fread
 ⟦ does write , m ⟧ = fwrite
 ⟦ does throw , m ⟧ = fthrow
 ⟦ does io , m ⟧ = fprint
 ⟦ tt , m ⟧ = new unit
 ⟦ var x , m ⟧ = C.var x
-⟦ λ' a wt , m ⟧ =  C.λ' ⟦ a , m ⟧tp ⟦ wt , m ⟧
+⟦ λ' {e = e} a wt , m ⟧ = C.ρ ⟦ e , m ⟧ef (C.λ' ⟦ a , m ⟧tp (tmtm-weaken ⟦ wt , m ⟧))
 ⟦ wt₁ · wt₂ , m ⟧ = ⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧
 ⟦ Λ wt , m ⟧ = C.Λ ⟦ wt , m +tvar ⟧
 ⟦ wt [ b ] , m ⟧ = ⟦ wt , m ⟧ C.[ ⟦ b , m ⟧tp ]
 ⟦_,_⟧ {ν} {η} {n} (H wt) m = C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧)
 ⟦ wt ! f , m ⟧ = ⟦ wt , m ⟧ C.[ ⟦ f , m ⟧ef ]
 
-{-
 ⟦⟧-preserves : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} →
-  (wt : Γ E.⊢ t ∈ a & e) → TCtx ν η → 
-  ⟦ Γ ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a & e ⟧
-
--}
+  (wt : Γ E.⊢ t ∈ a + e) → (m : TCtx ν η) → ⟦ Γ , m ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a + e , m ⟧tpef
+⟦⟧-preserves (var x) m = {!!}
+⟦⟧-preserves (λ' a wt) m = {!!}
+⟦⟧-preserves (wt · wt₁) m = {!!}
+⟦⟧-preserves (Λ wt) m = {!!}
+⟦⟧-preserves (wt [ b ]) m = {!!}
+⟦⟧-preserves (H wt) m = {!!}
+⟦⟧-preserves (wt ! f) m = {!!}
+⟦⟧-preserves (does c) m = {!!}
+⟦⟧-preserves tt m = C.new unit
