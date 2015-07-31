@@ -59,10 +59,10 @@ module EffectsEffectsSubst where
   _[/_] : ∀ {n} → Effects (suc n) → Effects n → Effects n
   a [/ b ] = a / (sub b)
 
-module TypeEffectSubst where
-  module TypeEffectApp {T} (l : Lift T Effect) where
+module TypeEffectsSubst where
+  module TypeEffectsApp {T} (l : Lift T Effects) where
     open Lift l hiding (var)
-    open EffectEffectSubst.EffectApp l renaming (_/_ to _/e_)
+    open EffectsEffectsSubst.EffectsApp l renaming (_/_ to _/s_)
 
     infixl 8 _/_
 
@@ -73,11 +73,11 @@ module TypeEffectSubst where
     (∀' a)   / σ = ∀' (a / σ)
     (H a)    / σ = H (a / σ ↑)
   
-  open EffectEffectSubst using (varLift; termLift; sub)
+  open EffectsEffectsSubst using (varLift; termLift; sub)
 
-  module Lifted {T} (lift : Lift T Effect) {ν} where
+  module Lifted {T} (lift : Lift T Effects) {ν} where
     application : Application (Type ν) T
-    application = record { _/_ = TypeEffectApp._/_ lift {ν = ν} }
+    application = record { _/_ = TypeEffectsApp._/_ lift {ν = ν} }
 
     open Application application public
 
@@ -86,11 +86,11 @@ module TypeEffectSubst where
   infix 8 _[/_]
 
   -- Shorthand for single-variable type substitutions
-  _[/_] : ∀ {ν η} → Type ν (suc η) → Effect η → Type ν η
+  _[/_] : ∀ {ν η} → Type ν (suc η) → Effects η → Type ν η
   a [/ b ] = a / sub b
 
   weaken : ∀ {ν η} → Type ν η → Type ν (suc η)
-  weaken a = a / EffectEffectSubst.wk
+  weaken a = a / EffectsEffectsSubst.wk
 
 module TypeTypeSubst where
   -- substitution that takes a Type ν η to a Type ν μ
@@ -138,7 +138,7 @@ module TypeTypeSubst where
 
   termLift : TypeLift Type
   termLift = record
-    { lift = id; _↑tp = _↑ ; _↑ef = λ ρ → map TypeEffectSubst.weaken ρ }
+    { lift = id; _↑tp = _↑ ; _↑ef = λ ρ → map TypeEffectsSubst.weaken ρ }
 
   private
     module ExpandSubst {η : ℕ} where
@@ -170,22 +170,22 @@ module ContextTypeSubst where
   weaken : ∀ {ν η n} → Ctx ν η n → Ctx (suc ν) η n
   weaken c = c / TypeTypeSubst.wk
 
-module ContextEffectSubst where
+module ContextEffectsSubst where
 
   infixl 8 _/_
-  _/_ : ∀ {ν η φ n} → Ctx ν η n → Sub Effect η φ → Ctx ν φ n
-  c / s = map (flip TypeEffectSubst._/_ s) c
+  _/_ : ∀ {ν η φ n} → Ctx ν η n → Sub Effects η φ → Ctx ν φ n
+  c / s = map (flip TypeEffectsSubst._/_ s) c
 
   weaken : ∀ {ν η n} → Ctx ν η n → Ctx ν (suc η) n
-  weaken c = c / EffectEffectSubst.wk
+  weaken c = c / EffectsEffectsSubst.wk
 
 open TypeTypeSubst public using ()
   renaming (_/_ to _/tp_; weaken to tp-weaken; _[/_] to _[/tp_])
-open TypeEffectSubst public using ()
-  renaming (_/_ to _tp/ef_; weaken to tp-ef-weaken)
+open TypeEffectsSubst public using ()
+  renaming (_/_ to _tp/ef_; _[/_] to _tp[/ef_]; weaken to tp-ef-weaken)
 open EffectsEffectsSubst public using ()
   renaming (_/_ to _/ef_; weaken to ef-weaken; _[/_] to _[/ef_])
 open ContextTypeSubst public using ()
   renaming (_/_ to _ctx/tp_; weaken to ctx-tp-weaken)
-open ContextEffectSubst public using ()
+open ContextEffectsSubst public using ()
   renaming (_/_ to _ctx/ef_; weaken to ctx-ef-weaken)
