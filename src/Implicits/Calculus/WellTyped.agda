@@ -80,3 +80,17 @@ _⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
 
 erase : ∀ {ν n} {K : Ktx ν n} {t a} → K ⊢ t ∈ a → Term ν n
 erase {t = t} _ = t
+
+-- Collections of typing derivations for well-typed terms.
+data _⊢ⁿ_∈_ {m n} (Γ : Ktx n m) :
+  ∀ {k} → Vec (Term n m) k → Vec (Type n) k → Set where
+    []  : Γ ⊢ⁿ [] ∈ []
+    _∷_ : ∀ {t a k} {ts : Vec (Term n m) k} {as : Vec (Type n) k} →
+          Γ ⊢ t ∈ a → Γ ⊢ⁿ ts ∈ as → Γ ⊢ⁿ t ∷ ts ∈ (a ∷ as)
+
+-- Lookup a well-typed term in a collection thereof.
+lookup-⊢ : ∀ {m n k} {Γ : Ktx n m} {ts : Vec (Term n m) k}
+             {as : Vec (Type n) k} →
+           (x : Fin k) → Γ ⊢ⁿ ts ∈ as → Γ ⊢ lookup x ts ∈ lookup x as
+lookup-⊢ zero    (⊢t ∷ ⊢ts) = ⊢t
+lookup-⊢ (suc x) (⊢t ∷ ⊢ts) = lookup-⊢ x ⊢ts
