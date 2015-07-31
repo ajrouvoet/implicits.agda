@@ -14,7 +14,7 @@ module ex₁ where
   f = λ' unit print
 
   -- a lazy print is pure, but has a latent effect IO
-  ⊢f : [] ⊢ f ∈ unit →[ List.[ has io ] ] unit & pure 
+  ⊢f : [] ⊢ f ∈ unit →[ has io & pure ] unit + pure 
   ⊢f = λ' unit (does io)
 
   -- when we apply the above term
@@ -22,7 +22,7 @@ module ex₁ where
   f·t : Term 0 0 0
   f·t = f · tt
 
-  ⊢f·t : [] ⊢ f·t ∈ unit & List.[ (has io) ]
+  ⊢f·t : [] ⊢ f·t ∈ unit + has io & pure
   ⊢f·t = ⊢f · tt
 
 -- effect abstraction
@@ -39,7 +39,7 @@ module ex₂ where
       tvar zero →[ evar zero & pure ] tvar (suc zero)) →[ pure ]
       (tvar zero →[ evar zero & pure ] (tvar (suc zero)))
     )))
-    & pure
+    + pure
   wt-f = H (Λ (Λ (λ' (tvar zero →[ evar zero & pure ] tvar (suc zero))
     (λ' (tvar zero) (var (suc zero) · var zero)))))
 
@@ -48,5 +48,5 @@ module ex₃ where
   eff = (has io) & (has read) & pure
 
   -- lists of effects transtlate to tuples of Can*
-  test : ⟦ eff , ([] , []) ⟧ef ≡ C.rec (tc CanIO ∷ tc CanRead ∷ [])
-  test = refl
+  test : ⟦ eff , ([] , []) ⟧efs ≡ C.rec (tc CanIO ∷ tc CanRead ∷ [])
+  test = {!!}

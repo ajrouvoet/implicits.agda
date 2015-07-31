@@ -24,8 +24,8 @@ data _⊢_∈_+_ {ν η n : ℕ} (Γ : Ctx ν η n) : Term ν η n → Type ν �
   _[_] : ∀ {f e a} → Γ ⊢ f ∈ ∀' a + e → (b : Type ν η) → Γ ⊢ f [ b ] ∈ a [/tp b ] + e
 
   -- effect abstraction + application
-  H : ∀ {t a e} → ctx-ef-weaken Γ ⊢ t ∈ a + e → Γ ⊢ H t ∈ H a + H' e
-  _!_ : ∀ {t a e} → Γ ⊢ t ∈ a + H' e → (f : Effects η) → Γ ⊢ (t ! f) ∈ a + e [/ef f ]
+  H : ∀ {t a} → ctx-ef-weaken Γ ⊢ t ∈ a + pure → Γ ⊢ H t ∈ H a + pure
+  _!_ : ∀ {t a e} → Γ ⊢ t ∈ H a + e → (f : Effects η) → Γ ⊢ (t ! f) ∈ a tp[/ef f ] + e
   
   -- the effectful primitives
   does : (c : EC) → Γ ⊢ print ∈ unit + List.[ has c ]
