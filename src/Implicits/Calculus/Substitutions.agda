@@ -185,22 +185,23 @@ module TermTermSubst where
 
 module KtxSubst where
 
-  _/_ : ∀ {ν μ n} → Ctx ν n → Sub Type ν μ → Ctx μ n
-  Γ / σ = map (λ s → s TypeSubst./ σ) Γ
+  ktx-map : ∀ {ν μ n} → (Type ν → Type μ) →  Ktx ν n → Ktx μ n
+  ktx-map f (Γ , Δ) = map f Γ , List.map f Δ
 
-  ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
-  ctx-weaken Γ = Γ / TypeSubst.wk
+  _/_ : ∀ {ν μ n} → Ktx ν n → Sub Type ν μ → Ktx μ n
+  K / σ = ktx-map (λ t → t TypeSubst./ σ) K
+
+  _/Var_ : ∀ {ν m n} → Sub Fin n m → Ktx ν m → Ktx ν n
+  σ /Var (Γ , Δ) = map (λ x → lookup x Γ) σ , Δ
 
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
-  weaken (Γ , Δ) = (
-    ctx-weaken Γ ,
-    List.map (λ t → t TypeSubst./ TypeSubst.wk) Δ)
+  weaken K = K / TypeSubst.wk
 
 open TypeSubst public using (_∙_)
   renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
 open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open TermTermSubst public using ()
-  renaming (_/_ to _tm/tm_; _[/_] to _tm[/tm_]; weaken to tmtm-weaken)
-open KtxSubst public
-  renaming (_/_ to _ctx-/_; weaken to ktx-weaken)
+  renaming (_/_ to _tm/tm_; _/Var_ to _tm/Var_; _[/_] to _tm[/tm_]; weaken to tmtm-weaken)
+open KtxSubst public using (ktx-map)
+  renaming (_/_ to _ktx/_; _/Var_ to _ktx/Var_; weaken to ktx-weaken)

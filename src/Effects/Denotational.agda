@@ -80,7 +80,6 @@ open import Implicits.Calculus.Terms TC
 open import Implicits.Calculus.Types TC
 open import Implicits.Calculus.Substitutions TC
 
-
 ⟦_,_⟧e : ∀ {ν η} → E.Effect η → TCtx ν η → C.Type (ν N+ η)
 ⟦ evar x , m ⟧e = tvar (lookup-evar m x)
 ⟦ has read , m ⟧e = tc CanRead
@@ -93,12 +92,21 @@ open import Implicits.Calculus.Substitutions TC
 ⟦ List.[] , m ⟧efs = C.tc unit
 ⟦ e List.∷ List.[] , m ⟧efs = ⟦ e , m ⟧e
 ⟦ e List.∷ d List.∷ ef , m ⟧efs = C.rec (fromList (List.map (λ e → ⟦ e , m ⟧e) ef))
-  -- effects can be combined using the record type constructor
+
+⇒-wrap : ∀ {ν η} → E.Effects η → TCtx ν η → C.Type (ν N+ η) → C.Type (ν N+ η)
+⇒-wrap List.[] m t = t
+⇒-wrap (e List.∷ List.[]) m t = ⟦ e , m ⟧e C.⇒ t
+⇒-wrap (e List.∷ d List.∷ es) m t = ⟦ e & d & es , m ⟧efs C.⇒ t
+
+ρ-wrap : ∀ {ν η n} → E.Effects η → TCtx ν η → C.Term (ν N+ η) n → C.Term (ν N+ η) n
+ρ-wrap List.[] m t = t
+ρ-wrap (e List.∷ List.[]) m t = ρ ⟦ e , m ⟧e (C.tmtm-weaken t)
+ρ-wrap (e List.∷ d List.∷ es) m t = ρ ⟦ e & d & es , m ⟧efs (C.tmtm-weaken t)
 
 ⟦_,_⟧tp : ∀ {ν η} → E.Type ν η → TCtx ν η → C.Type (ν N+ η)
 ⟦ unit , m ⟧tp = tc unit
 ⟦ tvar x , m ⟧tp = C.tvar (lookup-tvar m x)
-⟦ (a →[ e ] b ) , m ⟧tp = ⟦ a , m ⟧tp C.→' ⟦ b , m ⟧tp -- ((⟦ e , m ⟧efs) C.⇒ 
+⟦ a →[ es ] b , m ⟧tp = ⟦ a , m ⟧tp C.→' (⇒-wrap es m ⟦ b , m ⟧tp)
 ⟦ ∀' t , m ⟧tp = C.∀' ⟦ t , m +tvar ⟧tp
 ⟦_,_⟧tp {ν} {η} (H t) m = C.∀' (subst C.Type (+-suc ν η) ⟦ t , m +evar ⟧tp)
 
@@ -107,28 +115,30 @@ open import Implicits.Calculus.Substitutions TC
 
 infixl 8 ⟦_+_,_⟧tpef
 ⟦_+_,_⟧tpef : ∀ {ν η} → E.Type ν η → E.Effects η → TCtx ν η → C.Type (ν N+ η)
-⟦ a + List.[] , m ⟧tpef = ⟦ a , m ⟧tp
-⟦ a + e List.∷ List.[] , m ⟧tpef = ⟦ e , m ⟧e ⇒ ⟦ a , m ⟧tp
-⟦ a + e List.∷ d List.∷ es , m ⟧tpef = ⟦ e & es , m ⟧efs ⇒ ⟦ a , m ⟧tp
+⟦ a + es , m ⟧tpef = ⇒-wrap es m ⟦ a , m ⟧tp
 
 -- type driven translation of effect terms into
 -- terms from the implicit calculus
 ⟦_,_⟧ : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} → Γ E.⊢ t ∈ a + e → TCtx ν η → C.Term (ν N+ η) n
-⟦ does c , m ⟧ = C.ρ ⟦ has c , m ⟧e (C.new unit)
+-- pure
 ⟦ tt , m ⟧ = C.new unit
 ⟦ var x , m ⟧ = C.var x
-⟦ λ' {e = List.[]} a wt , m ⟧ =
-  C.λ' ⟦ a , m ⟧tp ⟦ wt , m ⟧
-⟦ λ' {e = e List.∷ List.[]} a wt , m ⟧ =
-  C.ρ ⟦ e , m ⟧e (C.λ' ⟦ a , m ⟧tp (tmtm-weaken ⟦ wt , m ⟧))
-⟦ λ' {e = e List.∷ d List.∷ es} a wt , m ⟧ =
-  C.ρ ⟦ e & d & es , m ⟧efs (C.λ' ⟦ a , m ⟧tp (tmtm-weaken ⟦ wt , m ⟧))
-⟦ wt₁ · wt₂ , m ⟧ = ⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧
-⟦ Λ wt , m ⟧ = C.Λ ⟦ wt , m +tvar ⟧
-⟦ wt [ b ] , m ⟧ = ⟦ wt , m ⟧ C.[ ⟦ b , m ⟧tp ]
-⟦_,_⟧ {ν} {η} {n} (H wt) m = C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧)
-⟦ wt ! f , m ⟧ = ⟦ wt , m ⟧ C.[ ⟦ f , m ⟧efs ]
+⟦ λ' {e = es} a wt , m ⟧ = C.λ' ⟦ a , m ⟧tp (ρ-wrap es m ⟦ wt , m ⟧)
+-- (potentially) effectful
+⟦ does c , m ⟧ =
+  ρ-wrap (has c & pure) m (C.new unit)
+⟦ wt₁ · wt₂ , m ⟧ =
+  ρ-wrap (effects $ wt₁ · wt₂) m (⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧)
+⟦ Λ wt , m ⟧ =
+  ρ-wrap (effects $ Λ wt) m (C.Λ ⟦ wt , m +tvar ⟧)
+⟦ wt [ b ] , m ⟧ =
+  ρ-wrap (effects $ wt [ b ]) m (⟦ wt , m ⟧ C.[ ⟦ b , m ⟧tp ])
+⟦_,_⟧ {ν} {η} {n} (H wt) m =
+  ρ-wrap (effects $ H wt) m (C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧))
+⟦ wt ! f , m ⟧ =
+  ρ-wrap (effects $ wt ! f) m (⟦ wt , m ⟧ C.[ ⟦ f , m ⟧efs ])
 
+{-
 module Lemmas where
   -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
   lookup⋆⟦⟧ctx : ∀ {ν η n} (C : Ctx ν η n) (m : TCtx ν η) x →
@@ -142,12 +152,17 @@ open Lemmas
 ⟦⟧-preserves {Γ = Γ} (var x) m =
   subst (λ u → _ C.⊢ C.var x ∈ u) (lookup⋆⟦⟧ctx Γ m x) (C.var x)
 ⟦⟧-preserves (λ' {e = List.[]} a wt) m = C.λ' ⟦ a , m ⟧tp (⟦⟧-preserves wt m)
-⟦⟧-preserves (λ' {e = e List.∷ List.[]} a wt) m = {!C.ρ ⟦ e , m ⟧e (C.λ' ⟦ a , m ⟧tp (⟦⟧-preserves wt m))!}
-⟦⟧-preserves (λ' {e = e List.∷ d List.∷ es} a wt) m = {!!}
-⟦⟧-preserves (wt · wt₁) m = {!!}
+⟦⟧-preserves (λ' {e = e List.∷ List.[]} a wt) m = C.λ' ⟦ a , m ⟧tp (C.ρ ⟦ e , m ⟧e {!!})
+  -- (C.TermTermLemmas.weaken (⟦⟧-preserves wt m))
+  -- this is a tough one: we bring necessary implicits in scope here through the rule
+  -- this has to be somehow represented in the context translation
+⟦⟧-preserves (λ' {e = e List.∷ d List.∷ es} a wt) m = C.λ' ⟦ a , m ⟧tp (C.ρ ⟦ e & d & es , m ⟧efs {!!})
+⟦⟧-preserves (wt₁ · wt₂) m = {!!}
 ⟦⟧-preserves (Λ wt) m = {!!}
 ⟦⟧-preserves (wt [ b ]) m = {!!}
 ⟦⟧-preserves (H wt) m = {!!}
 ⟦⟧-preserves (wt ! f) m = {!!}
 ⟦⟧-preserves (does c) m = C.ρ ⟦ has c , m ⟧e (C.new unit)
 ⟦⟧-preserves tt m = C.new unit
+
+-}
