@@ -11,7 +11,7 @@ open import Implicits.Calculus.Types
 module ex₁ where
 
   f : Term 0 0 0
-  f = λ' unit print
+  f = λ' unit (does io)
 
   -- a lazy print is pure, but has a latent effect IO
   ⊢f : [] ⊢ f ∈ unit →[ has io & pure ] unit + pure 
@@ -49,4 +49,30 @@ module ex₃ where
 
   -- lists of effects transtlate to tuples of Can*
   test : ⟦ eff , ([] , []) ⟧efs ≡ C.rec (tc CanIO ∷ tc CanRead ∷ [])
-  test = {!!}
+  test = refl
+
+module ex₄ where
+  f : Term 0 0 0
+  f = Λ (λ' unit (does io))
+
+  wt-f : [] ⊢ f ∈ (∀' (unit →[ has io & pure ] unit)) + pure
+  wt-f = Λ (λ' unit (does io))
+
+  test : ⟦ wt-f , ([] , []) ⟧ ≡
+    C.Λ (C.λ' (tc unit) ((C.ρ (tc CanIO) ((C.ρ (tc CanIO) (C.new unit)) C.⟨⟩))))
+  test = refl
+
+module ex₅ where
+  open ex₄
+
+  tapp : Term 0 0 0
+  tapp = f [ unit ]
+
+  wt-tapp : [] ⊢ tapp ∈ (unit →[ has io & pure ] unit) + pure
+  wt-tapp = wt-f [ unit ]
+
+  app : Term 0 0 0
+  app = tapp · tt
+
+  wt-app : [] ⊢ app ∈ unit + has io & pure
+  wt-app = wt-tapp · tt

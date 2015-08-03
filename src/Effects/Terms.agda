@@ -95,5 +95,8 @@ data Term (ν η n : ℕ) : Set where
   H   : Term ν (suc η) n → Term ν η n
   _!_ : Term ν η n → Effects η → Term ν η n
 
+  -- effectful primitives
+  does : EC → Term ν η n
+
 Ctx : ℕ → ℕ → ℕ → Set
 Ctx ν η n = Vec (Type ν η) n

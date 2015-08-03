@@ -28,7 +28,7 @@ data _⊢_∈_+_ {ν η n : ℕ} (Γ : Ctx ν η n) : Term ν η n → Type ν �
   _!_ : ∀ {t a e} → Γ ⊢ t ∈ H a + e → (f : Effects η) → Γ ⊢ (t ! f) ∈ a tp[/ef f ] + e
   
   -- the effectful primitives
-  does : (c : EC) → Γ ⊢ print ∈ unit + List.[ has c ]
+  does : (c : EC) → Γ ⊢ does c ∈ unit + List.[ has c ]
 
   -- primitive terms
   tt : Γ ⊢ tt ∈ unit + pure

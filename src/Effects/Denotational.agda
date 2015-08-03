@@ -91,7 +91,7 @@ open import Implicits.Calculus.Substitutions TC
 ⟦_,_⟧efs : ∀ {ν η} → E.Effects η → TCtx ν η → C.Type (ν N+ η)
 ⟦ List.[] , m ⟧efs = C.tc unit
 ⟦ e List.∷ List.[] , m ⟧efs = ⟦ e , m ⟧e
-⟦ e List.∷ d List.∷ ef , m ⟧efs = C.rec (fromList (List.map (λ e → ⟦ e , m ⟧e) ef))
+⟦ e List.∷ d List.∷ ef , m ⟧efs = C.rec (fromList (List.map (λ e → ⟦ e , m ⟧e) (e & d & ef)))
 
 ⇒-wrap : ∀ {ν η} → E.Effects η → TCtx ν η → C.Type (ν N+ η) → C.Type (ν N+ η)
 ⇒-wrap List.[] m t = t
@@ -102,6 +102,10 @@ open import Implicits.Calculus.Substitutions TC
 ρ-wrap List.[] m t = t
 ρ-wrap (e List.∷ List.[]) m t = ρ ⟦ e , m ⟧e (C.tmtm-weaken t)
 ρ-wrap (e List.∷ d List.∷ es) m t = ρ ⟦ e & d & es , m ⟧efs (C.tmtm-weaken t)
+
+ρ-unwrap : ∀ {ν η n} → E.Effects η → TCtx ν η → C.Term (ν N+ η) n → C.Term (ν N+ η) n
+ρ-unwrap List.[] m t = t
+ρ-unwrap (e List.∷ es) m t = t C.⟨⟩
 
 ⟦_,_⟧tp : ∀ {ν η} → E.Type ν η → TCtx ν η → C.Type (ν N+ η)
 ⟦ unit , m ⟧tp = tc unit
@@ -117,26 +121,45 @@ infixl 8 ⟦_+_,_⟧tpef
 ⟦_+_,_⟧tpef : ∀ {ν η} → E.Type ν η → E.Effects η → TCtx ν η → C.Type (ν N+ η)
 ⟦ a + es , m ⟧tpef = ⇒-wrap es m ⟦ a , m ⟧tp
 
+-- Effectful values (i.e.: as soon as evaluated they have an effect)
+-- require the implicit Can* to be in scope, or they won't typecheck.
+-- Delayed effects are represented by wrapping the bodies in rules that take implicit args.
+-- To make the types match, the application complement of the delaying constructor should
+-- 'unwrap' the body using implicit application.
+-- To make sure the required implicits are in scope, it wraps the whole thing in another rule.
+-- The operations that 'delay' effects are λ', Λ, H, but the bodies of Λ and H have to be pure
+-- and thus don't need to be wrapped.
+
 -- type driven translation of effect terms into
 -- terms from the implicit calculus
 ⟦_,_⟧ : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} → Γ E.⊢ t ∈ a + e → TCtx ν η → C.Term (ν N+ η) n
--- pure
+
+-- pure primitives
 ⟦ tt , m ⟧ = C.new unit
 ⟦ var x , m ⟧ = C.var x
-⟦ λ' {e = es} a wt , m ⟧ = C.λ' ⟦ a , m ⟧tp (ρ-wrap es m ⟦ wt , m ⟧)
--- (potentially) effectful
+
+-- effectful primitives
 ⟦ does c , m ⟧ =
-  ρ-wrap (has c & pure) m (C.new unit)
-⟦ wt₁ · wt₂ , m ⟧ =
-  ρ-wrap (effects $ wt₁ · wt₂) m (⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧)
+  (ρ-wrap (has c & pure) m (C.new unit)) ⟨⟩
+
+-- effect-delaying
+⟦ λ' {e = es} a wt , m ⟧ =
+  C.λ' ⟦ a , m ⟧tp
+    (ρ-wrap (effects wt) m ⟦ wt , m ⟧)
 ⟦ Λ wt , m ⟧ =
-  ρ-wrap (effects $ Λ wt) m (C.Λ ⟦ wt , m +tvar ⟧)
-⟦ wt [ b ] , m ⟧ =
-  ρ-wrap (effects $ wt [ b ]) m (⟦ wt , m ⟧ C.[ ⟦ b , m ⟧tp ])
+  C.Λ
+    ⟦ wt , m +tvar ⟧
 ⟦_,_⟧ {ν} {η} {n} (H wt) m =
-  ρ-wrap (effects $ H wt) m (C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧))
+  C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧)
+
+-- effectful unleashing
+⟦ wt₁ · wt₂ , m ⟧ =
+  ρ-wrap (effects $ wt₁ · wt₂) m
+    (ρ-unwrap (effects wt₁) m (⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧))
+⟦ wt [ b ] , m ⟧ =
+  ⟦ wt , m ⟧ C.[ ⟦ b , m ⟧tp ]
 ⟦ wt ! f , m ⟧ =
-  ρ-wrap (effects $ wt ! f) m (⟦ wt , m ⟧ C.[ ⟦ f , m ⟧efs ])
+  ⟦ wt , m ⟧ C.[ ⟦ f , m ⟧efs ]
 
 {-
 module Lemmas where
