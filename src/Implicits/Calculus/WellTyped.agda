@@ -12,16 +12,20 @@ open Rules
 
 infixl 4 _⊢_∈_
 
-infixl 4 _⊑_
-data _⊑_ {ν} : Type ν → Type ν → Set where
-  poly-equal : ∀ {a b : Type ν} → a ≡ b → a ⊑ b
-  poly-intro : ∀ {a : Type ν} {b : Type (suc ν)} →
-               tp-weaken a ⊑ b → a ⊑ ∀' b
-  poly-elim : ∀ {a : Type (suc ν)} c {b : Type ν} → 
-              a tp[/tp c ] ⊑ b → ∀' a ⊑ b
+module TypeOrdering where
 
-_⋢_ : ∀ {ν} → Type ν → Type ν → Set
-a ⋢ b = ¬ a ⊑ b
+  infixl 4 _⊑_
+  data _⊑_ {ν} : Type ν → Type ν → Set where
+    poly-equal : ∀ {a b : Type ν} → a ≡ b → a ⊑ b
+    poly-intro : ∀ {a : Type ν} {b : Type (suc ν)} →
+                 tp-weaken a ⊑ b → a ⊑ ∀' b
+    poly-elim : ∀ {a : Type (suc ν)} c {b : Type ν} → 
+                a tp[/tp c ] ⊑ b → ∀' a ⊑ b
+
+  _⋢_ : ∀ {ν} → Type ν → Type ν → Set
+  a ⋢ b = ¬ a ⊑ b
+
+open TypeOrdering public
 
 _Δ↝_ : ∀ {ν n} (K : Ktx ν n) → Type ν → Set
 

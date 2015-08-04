@@ -52,3 +52,33 @@ module ex₂ where
       p : ρ⟨ tnat ∷K K , tc unit ⇒ tc unit ⟩↝ (tc unit)
       p = (by-implication (by-value (tc unit ⇒ tc unit)) (rule (tc unit) (tc unit))
         (, there tnat (here (by-value (tc unit)) List.[])))
+
+-- higher order resolution
+module ex₃ where
+  r : Type zero
+  r = ∀' ((tc unit ⇒ tvar zero) ⇒ (tvar zero ×' tvar zero))
+
+  r' : Type zero
+  r' = (tc unit ⇒ tnat) ⇒ (tnat ×' tnat)
+
+  r-isrule : IsRule r
+  r-isrule = ∀'-rule (rule (tc unit ⇒ tvar zero) (tvar zero ×' tvar zero))
+
+  r'-isrule : IsRule r'
+  r'-isrule = rule (tc unit ⇒ tnat) (tnat ×' tnat)
+
+  K : Ktx 0 1
+  K = (tc unit ⇒ tnat) ∷K nil
+
+  -- the subsumption proof
+  sub : ∀' ((tc unit ⇒ tvar zero) ⇒ (tvar zero ×' tvar zero)) ⊑ (tc unit ⇒ tnat) ⇒ (tnat ×' tnat)
+  sub = poly-elim tnat (poly-equal refl)
+
+  -- we have trouble here, because the subsumption goes only on the result
+  -- it does not transform the domain of an implication
+  test : ρ⟨ K , r ⟩↝ (tnat ×' tnat)
+  test = by-implication
+    (by-subsumption (by-value r) sub)
+    r'-isrule
+    (, here (by-value (tc unit ⇒ tnat)) List.[])
+
