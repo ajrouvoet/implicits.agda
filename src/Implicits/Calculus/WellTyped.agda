@@ -65,7 +65,7 @@ data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → Type ν → Set where
   
   -- implicit abstract/application
   ρ : ∀ {t b} a → (a) ∷K K ⊢ t ∈ b → K ⊢ ρ a t ∈ (a ⇒ b)
-  _⟨⟩ : ∀ {t a b} → K ⊢ t ∈ (a ⇒ b) → K Δ↝ a → K ⊢ t ⟨⟩ ∈ b
+  _⟨_⟩ : ∀ {t a b} → K ⊢ t ∈ (a ⇒ b) → K Δ↝ a → K ⊢ t ⟨⟩ ∈ b
 
   -- ML style let-polymorphism
   let'_in'_ : ∀ {t u b} {a : Type ν} → K ⊢ t ∈ a → a ∷Γ K ⊢ u ∈ b → 

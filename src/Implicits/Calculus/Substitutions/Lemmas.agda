@@ -87,7 +87,7 @@ private
     a₁ ≡ a₂ → Γ ⊢ t ∈ a₁ → Γ ⊢ t ∈ a₂
   ⊢substTp refl hyp = hyp 
 
-module TermTermLemmas where
+module WtTermLemmas where
   postulate weaken : ∀ {ν n} {K : Ktx ν n} {t : Term ν n} {a b : Type ν} →
                      K ⊢ t ∈ a → b ∷Γ K ⊢ tmtm-weaken t ∈ a
   -- weaken {Γ = Γ} {b = b} ⊢t = Var.wk /Var ⊢substCtx (C.wkVar-/Var-∷ Γ b) ⊢t

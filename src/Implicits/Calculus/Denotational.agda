@@ -3,6 +3,7 @@ module Implicits.Calculus.Denotational (TypeConstant : Set) where
 open import Prelude
 
 open import Implicits.Calculus.WellTyped TypeConstant
+open import Implicits.Calculus.Substitutions TypeConstant
 open import Implicits.Calculus.Substitutions.Lemmas TypeConstant
 open import Implicits.SystemF TypeConstant as F using ()
 open import Extensions.ListFirst
@@ -66,7 +67,7 @@ private
 ⟦_,_⟧ (f [ b ]) m = F._[_] ⟦ f , m ⟧ ⟦ b ⟧tp
 ⟦_,_⟧ (f · e) m = ⟦ f , m ⟧ F.· ⟦ e , m ⟧
 ⟦_,_⟧ (ρ a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #ivar a m ⟧
-⟦_,_⟧ (_⟨⟩ f e∈Δ) m = ⟦ f , m ⟧ F.· (proj₁ ⟦ e∈Δ , m ⟧i)
+⟦_,_⟧ (f ⟨ e∈Δ ⟩) m = ⟦ f , m ⟧ F.· (proj₁ ⟦ e∈Δ , m ⟧i)
 ⟦_,_⟧ (let'_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #var a m ⟧) F.· ⟦ t , m ⟧
 ⟦_,_⟧ (implicit_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #ivar a m ⟧) F.· ⟦ t , m ⟧
 
@@ -178,7 +179,8 @@ module Lemmas where
     F.tp-weaken ⟦ tp ⟧tp ∎
 
   -- context weakening commutes with interpreting contexts
-  ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
+  postulate ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
+  {-
   ctx-weaken⋆⟦⟧ctx ([] , Δ) = refl
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) | ih = begin
@@ -189,6 +191,7 @@ module Lemmas where
     F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx ∎
     where
       xs = map ⟦_⟧tp $ map (λ s → s /tp TS.wk ) Γ
+      -}
 
   open Rules
 
@@ -292,8 +295,8 @@ private
 ⟦⟧-preserves-tp (wt-f · wt-e) m | ih | y = ih F.· y
 ⟦⟧-preserves-tp (ρ a wt-e) m with ⟦⟧-preserves-tp wt-e (#ivar a m)
 ⟦⟧-preserves-tp (ρ a wt-e) m | ih = F.λ' ⟦ a ⟧tp ih
-⟦⟧-preserves-tp (_⟨⟩ wt-r e) m with ⟦⟧-preserves-tp wt-r m
-⟦⟧-preserves-tp (_⟨⟩ wt-r e) m | f-wt-r = f-wt-r F.· (proj₂ ⟦ e , m ⟧i)
+⟦⟧-preserves-tp (wt-r ⟨ e ⟩) m with ⟦⟧-preserves-tp wt-r m
+⟦⟧-preserves-tp (wt-r ⟨ e ⟩) m | f-wt-r = f-wt-r F.· (proj₂ ⟦ e , m ⟧i)
 ⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ m | ⟦⟧-preserves-tp wt-e₂ (#var a m)
 ⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m | ih | y = (F.λ' ⟦ a ⟧tp y) F.· ih
 ⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ m | ⟦⟧-preserves-tp wt-e₂ (#ivar a m)
