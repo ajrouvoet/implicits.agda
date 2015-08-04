@@ -33,15 +33,18 @@ data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : Type ν → Type ν → Set where
   -- base case
   by-value : (a : Type ν) → ρ⟨ K , a ⟩↝ a
   -- induction steps
-  by-subsumption : {r a b : Type ν} →
+  by-subsumption : ∀ {r a b : Type ν} →
                    ρ⟨ K , r ⟩↝ a →
                    a ⊑ b →
                    ρ⟨ K , r ⟩↝ b
-  by-implication : {r a : Type ν} →
+  by-implication : ∀ {r a : Type ν} →
                    ρ⟨ K , r ⟩↝ a →
                    (a-rule : IsRule a) →
                    K Δ↝ (domain a-rule) → 
                    ρ⟨ K , r ⟩↝ codomain a-rule 
+  by-partial-implication : ∀ {b c : Type ν} a →
+                   ρ⟨ a ∷K K , b ⟩↝ c →
+                   ρ⟨ K , a ⇒ b ⟩↝ (a ⇒ c)
   -- it's easy to turn rules into functions
   -- by-conversion : {u r : Type ν} →
                   -- ρ⟨ K , u ⟩↝ r →
