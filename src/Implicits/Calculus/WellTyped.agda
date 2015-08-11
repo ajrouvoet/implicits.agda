@@ -82,8 +82,8 @@ data _⊢_∈_ {ν n} (K : Ktx ν n) : Term ν n → Type ν → Set where
   implicit_in'_ : ∀ {t u b} {a : Type ν} → K ⊢ t ∈ a → a ∷K K ⊢ u ∈ b → 
                   K ⊢ (implicit t in' u) ∈ b
   
-_⊢_∉_ : ∀ {ν n} → (K : Ktx ν n) → Term ν n → Type ν → Set
-_⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
+_⊢_∉_ : ∀ {ν n} → (K : Ktx ν n) → Term ν n → Type ν → Set
+_⊢_∉_ K t τ = ¬ K ⊢ t ∈ τ
 
 erase : ∀ {ν n} {K : Ktx ν n} {t a} → K ⊢ t ∈ a → Term ν n
 erase {t = t} _ = t

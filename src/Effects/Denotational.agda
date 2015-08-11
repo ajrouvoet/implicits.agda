@@ -72,21 +72,18 @@ open import Effects.Substitutions EC _ec≟_
 -- make all calculus stuff available in the C._ namespace
 module C where
   open import Implicits.Calculus TC public
+  open import Implicits.Calculus.Substitutions TC
   open import Implicits.Calculus.Terms.Constructors TC public
     renaming (id to cid)
-
--- import the syntax of the calculus
-open import Implicits.Calculus.Terms TC
-open import Implicits.Calculus.Types TC
-open import Implicits.Calculus.Substitutions TC
+  open import Implicits.Calculus.WellTyped TC hiding (Ctx)
 
 ⟦_,_⟧e : ∀ {ν η} → E.Effect η → TCtx ν η → C.Type (ν N+ η)
-⟦ evar x , m ⟧e = tvar (lookup-evar m x)
-⟦ has read , m ⟧e = tc CanRead
-⟦ has write , m ⟧e = tc CanWrite
-⟦ has throw , m ⟧e = tc CanThrow
-⟦ has io , m ⟧e = tc CanIO
-⟦_,_⟧e {ν} {η} (H x) m  = ∀' (subst C.Type (+-suc ν η) (⟦ x , m +evar ⟧e))
+⟦ evar x , m ⟧e = C.tvar (lookup-evar m x)
+⟦ has read , m ⟧e = C.tc CanRead
+⟦ has write , m ⟧e = C.tc CanWrite
+⟦ has throw , m ⟧e = C.tc CanThrow
+⟦ has io , m ⟧e = C.tc CanIO
+⟦_,_⟧e {ν} {η} (H x) m  = C.∀' (subst C.Type (+-suc ν η) (⟦ x , m +evar ⟧e))
 
 ⟦_,_⟧efs : ∀ {ν η} → E.Effects η → TCtx ν η → C.Type (ν N+ η)
 ⟦ List.[] , m ⟧efs = C.tc unit
@@ -100,15 +97,15 @@ open import Implicits.Calculus.Substitutions TC
 
 ρ-wrap : ∀ {ν η n} → E.Effects η → TCtx ν η → C.Term (ν N+ η) n → C.Term (ν N+ η) n
 ρ-wrap List.[] m t = t
-ρ-wrap (e List.∷ List.[]) m t = ρ ⟦ e , m ⟧e (C.tmtm-weaken t)
-ρ-wrap (e List.∷ d List.∷ es) m t = ρ ⟦ e & d & es , m ⟧efs (C.tmtm-weaken t)
+ρ-wrap (e List.∷ List.[]) m t = C.ρ ⟦ e , m ⟧e (C.tmtm-weaken t)
+ρ-wrap (e List.∷ d List.∷ es) m t = C.ρ ⟦ e & d & es , m ⟧efs (C.tmtm-weaken t)
 
 ρ-unwrap : ∀ {ν η n} → E.Effects η → TCtx ν η → C.Term (ν N+ η) n → C.Term (ν N+ η) n
 ρ-unwrap List.[] m t = t
 ρ-unwrap (e List.∷ es) m t = t C.⟨⟩
 
 ⟦_,_⟧tp : ∀ {ν η} → E.Type ν η → TCtx ν η → C.Type (ν N+ η)
-⟦ unit , m ⟧tp = tc unit
+⟦ unit , m ⟧tp = C.tc unit
 ⟦ tvar x , m ⟧tp = C.tvar (lookup-tvar m x)
 ⟦ a →[ es ] b , m ⟧tp = ⟦ a , m ⟧tp C.→' (⇒-wrap es m ⟦ b , m ⟧tp)
 ⟦ ∀' t , m ⟧tp = C.∀' ⟦ t , m +tvar ⟧tp
@@ -138,9 +135,9 @@ infixl 8 ⟦_+_,_⟧tpef
 ⟦ tt , m ⟧ = C.new unit
 ⟦ var x , m ⟧ = C.var x
 
--- effectful primitives
+-- effectful primitive values
 ⟦ does c , m ⟧ =
-  (ρ-wrap (has c & pure) m (C.new unit)) ⟨⟩
+  (ρ-wrap (has c & pure) m (C.new unit)) C.⟨⟩
 
 -- effect-delaying
 ⟦ λ' {e = es} a wt , m ⟧ =
@@ -152,7 +149,7 @@ infixl 8 ⟦_+_,_⟧tpef
 ⟦_,_⟧ {ν} {η} {n} (H wt) m =
   C.Λ (subst (flip C.Term n) (+-suc ν η) ⟦ wt , m +evar ⟧)
 
--- effectful unleashing
+-- unleashes the delayed effects
 ⟦ wt₁ · wt₂ , m ⟧ =
   ρ-wrap (effects $ wt₁ · wt₂) m
     (ρ-unwrap (effects wt₁) m (⟦ wt₁ , m ⟧ C.· ⟦ wt₂ , m ⟧))
@@ -161,31 +158,58 @@ infixl 8 ⟦_+_,_⟧tpef
 ⟦ wt ! f , m ⟧ =
   ⟦ wt , m ⟧ C.[ ⟦ f , m ⟧efs ]
 
-{-
 module Lemmas where
   -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
   lookup⋆⟦⟧ctx : ∀ {ν η n} (C : Ctx ν η n) (m : TCtx ν η) x →
                  lookup x (proj₁ ⟦ C , m ⟧ctx) ≡ ⟦ lookup x C , m ⟧tp
   lookup⋆⟦⟧ctx C m x = sym $ lookup⋆map C (flip ⟦_,_⟧tp m) x 
 
+  postulate tp-weaken⋆⟦⟧ctx : ∀ {ν η n} (C : Ctx ν η n) (m : TCtx ν η) →
+                              ⟦ ctx-tp-weaken C , (m +tvar) ⟧ctx ≡ C.ktx-weaken ⟦ C , m ⟧ctx
+  postulate ef-weaken⋆⟦⟧ctx : ∀ {ν η n} (C : Ctx ν η n) (m : TCtx ν η) →
+                    subst (flip C.Ktx n) (+-suc ν η) ⟦ ctx-ef-weaken C , (m +evar) ⟧ctx ≡
+                    (C.ktx-weaken ⟦ C , m ⟧ctx)
+  --ef-weaken⋆⟦⟧ctx c m = {!!}
+
 open Lemmas
 
+{-
 ⟦⟧-preserves : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} →
-  (wt : Γ E.⊢ t ∈ a + e) → (m : TCtx ν η) → ⟦ Γ , m ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a + e , m ⟧tpef
+  (wt : Γ E.⊢ t ∈ a + e) → (m : TCtx ν η) →
+  ⟦ Γ , m ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a + e , m ⟧tpef
 ⟦⟧-preserves {Γ = Γ} (var x) m =
   subst (λ u → _ C.⊢ C.var x ∈ u) (lookup⋆⟦⟧ctx Γ m x) (C.var x)
-⟦⟧-preserves (λ' {e = List.[]} a wt) m = C.λ' ⟦ a , m ⟧tp (⟦⟧-preserves wt m)
-⟦⟧-preserves (λ' {e = e List.∷ List.[]} a wt) m = C.λ' ⟦ a , m ⟧tp (C.ρ ⟦ e , m ⟧e {!!})
+⟦⟧-preserves (λ' {e = List.[]} a wt) m =
+  C.λ' ⟦ a , m ⟧tp (⟦⟧-preserves wt m)
+⟦⟧-preserves (λ' {e = e List.∷ List.[]} a wt) m =
+  C.λ' ⟦ a , m ⟧tp (C.ρ ⟦ e , m ⟧e {!!})
   -- (C.TermTermLemmas.weaken (⟦⟧-preserves wt m))
   -- this is a tough one: we bring necessary implicits in scope here through the rule
   -- this has to be somehow represented in the context translation
-⟦⟧-preserves (λ' {e = e List.∷ d List.∷ es} a wt) m = C.λ' ⟦ a , m ⟧tp (C.ρ ⟦ e & d & es , m ⟧efs {!!})
+⟦⟧-preserves (λ' {e = e List.∷ d List.∷ es} a wt) m =
+  C.λ' ⟦ a , m ⟧tp (C.ρ ⟦ e & d & es , m ⟧efs {!!})
 ⟦⟧-preserves (wt₁ · wt₂) m = {!!}
-⟦⟧-preserves (Λ wt) m = {!!}
+⟦⟧-preserves {Γ = Γ} (Λ wt) m with ⟦⟧-preserves wt (m +tvar)
+⟦⟧-preserves {Γ = Γ} (Λ {a = a} wt) m | ih =
+  C.Λ (subst (λ u → u C.⊢ C.erase ih ∈ ⟦ a , m +tvar ⟧tp) (tp-weaken⋆⟦⟧ctx Γ m) ih)
 ⟦⟧-preserves (wt [ b ]) m = {!!}
-⟦⟧-preserves (H wt) m = {!!}
-⟦⟧-preserves (wt ! f) m = {!!}
-⟦⟧-preserves (does c) m = C.ρ ⟦ has c , m ⟧e (C.new unit)
+⟦⟧-preserves {Γ = Γ} (H wt) m with ⟦⟧-preserves wt (m +evar)
+⟦⟧-preserves {ν = ν} {η = η} {n = n} {Γ = Γ} (H {a = a} wt) m | ih = C.Λ {!!} --res
+    where
+      Γ' = C.ktx-weaken ⟦ Γ , m ⟧ctx
+      t' = subst (flip C.Term n) (+-suc ν η) (C.erase ih)
+      a' = subst C.Type (+-suc ν η) ⟦ a , m +evar ⟧tp
+      res' : ⟦ ctx-ef-weaken Γ , m +evar ⟧ctx C.⊢ ⟦ wt , m +evar ⟧ ∈ ⟦ a , m +evar ⟧tp
+      res' = ih
+      -- l : C.ktx-weaken ⟦ Γ , m ⟧ctx C.⊢ ⟦ wt , m +evar ⟧ ∈ ⟦ a , m +evar ⟧tp
+      -- l = subst (flip C.Ktx n) (sym $ +-suc ν η) (C.ktx-weaken ⟦ C , m ⟧ctx)
+      -- l = subst (λ u → u C.⊢ _ ∈ _) (ef-weaken⋆⟦⟧ctx Γ (m +evar)) res'
+      -- res : C.ktx-weaken ⟦ Γ , m ⟧ctx C.⊢ t' ∈ a'
+      -- res = {!ih!}
+      -- res = subst₂ (λ u v → C._⊢_∈_ Γ' u v) (sym $ +-suc ν η) (ef-weaken⋆⟦⟧ctx Γ m)
+⟦⟧-preserves (wt ! f) m with ⟦⟧-preserves wt m
+⟦⟧-preserves (wt ! f) m | ih = {!ih C.[ ⟦ f , m ⟧efs ]!}
+⟦⟧-preserves (does c) m = (C.ρ ⟦ has c , m ⟧e (C.WtTermLemmas.weaken $ C.new unit))
 ⟦⟧-preserves tt m = C.new unit
 
 -}
