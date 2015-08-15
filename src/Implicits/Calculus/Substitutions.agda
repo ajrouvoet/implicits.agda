@@ -37,8 +37,10 @@ module TypeSubst where
     tc-/✶-↑✶ k ε        = refl
     tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
 
-    postulate ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
+    ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
                (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))
+    ∀'-/✶-↑✶ k ε = refl
+    ∀'-/✶-↑✶ k (x ◅ ρs) = cong₂ _/_ (∀'-/✶-↑✶ k ρs) refl
 
   typeSubst : TermSubst Type
   typeSubst = record { var = tvar; app = TypeApp._/_ }
