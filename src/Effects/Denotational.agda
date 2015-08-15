@@ -176,7 +176,7 @@ open Lemmas
 {-
 ⟦⟧-preserves : ∀ {ν η n} {Γ : E.Ctx ν η n} {t a e} →
   (wt : Γ E.⊢ t ∈ a + e) → (m : TCtx ν η) →
-  ⟦ Γ , m ⟧ctx C.⊢ ⟦ wt , m ⟧ ∈ ⟦ a + e , m ⟧tpef
+  ⟦ e , m ⟧efs C.∷K ⟦ Γ , m ⟧ctx C.⊢ C.tmtm-weaken ⟦ wt , m ⟧ ∈ ⟦ a , m ⟧tp
 ⟦⟧-preserves {Γ = Γ} (var x) m =
   subst (λ u → _ C.⊢ C.var x ∈ u) (lookup⋆⟦⟧ctx Γ m x) (C.var x)
 ⟦⟧-preserves (λ' {e = List.[]} a wt) m =
