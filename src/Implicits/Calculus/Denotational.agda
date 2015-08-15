@@ -179,19 +179,17 @@ module Lemmas where
     F.tp-weaken ⟦ tp ⟧tp ∎
 
   -- context weakening commutes with interpreting contexts
-  postulate ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
-  {-
+  ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
   ctx-weaken⋆⟦⟧ctx ([] , Δ) = refl
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
   ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) | ih = begin
     ⟦ ktx-weaken (x ∷ Γ , Δ) ⟧ctx ≡⟨ refl ⟩ 
     ⟦ x /tp TS.wk ⟧tp ∷ xs ≡⟨ cong (flip _∷_ xs) (/-wk⋆⟦⟧tp x) ⟩
-    ⟦ x ⟧tp F./ F.wk ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx ≡⟨ cong (_∷_ (⟦ x ⟧tp F./ F.wk)) ih ⟩
-    ⟦ x ⟧tp F./ F.wk ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx ≡⟨ refl ⟩
+    (⟦ x ⟧tp F./ F.wk) ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx ≡⟨ cong (_∷_ (⟦ x ⟧tp F./ F.wk)) ih ⟩
+    (⟦ x ⟧tp F./ F.wk) ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx ≡⟨ refl ⟩
     F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx ∎
     where
       xs = map ⟦_⟧tp $ map (λ s → s /tp TS.wk ) Γ
-      -}
 
   open Rules
 
@@ -259,6 +257,8 @@ private
   inst-ρ m (by-subsumption r↝a a⊑b) ⊢r = inst a⊑b (proj₂ $ inst-ρ m r↝a ⊢r)
   inst-ρ {K = K} m (by-implication {a = a} r↝a a-rule Δ↝arg) ⊢r =
     poly-· a-rule (proj₂ $ inst-ρ m r↝a ⊢r) (proj₂ $ ⟦ Δ↝arg , m ⟧i)
+  inst-ρ {K = K} m (by-partial-implication a b↝c) ⊢r =
+    , F.λ' ⟦ a ⟧tp (proj₂ $ inst-ρ (#ivar a m) b↝c ((F.⊢weaken ⊢r) F.· (F.var zero)))
 
 -- We can build an instance of type `a` of an implicit derivation of `a` (K Δ↝ a)
 -- ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧tp
