@@ -54,9 +54,9 @@ module TypeLemmas where
           ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
   /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
-open TypeSubst public using (_∙_; _i/_)
-  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
-open TermTypeSubst public using ()
-  renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
-open KtxSubst public
-  renaming (_/_ to _ctx-/_; weaken to ktx-weaken)
+module ImplicitLemmas where
+  open TypeSubst
+
+  totype⋆/ : ∀ {ν μ} x (σ : Sub Type ν μ) → (totype x) TypeSubst./ σ ≡ totype (x i/ σ)
+  totype⋆/ (rule {a} x) σ = refl
+  totype⋆/ (val x) σ = refl

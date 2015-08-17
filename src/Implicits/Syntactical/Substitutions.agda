@@ -119,22 +119,7 @@ module KtxSubst where
     ctx-weaken Γ ,
     List.map (λ t → t TypeSubst.i/ TypeSubst.wk) Δ)
 
-module ImplicitSubst where
-  infixl 8 _/_ _f/_
-  
-  _f/_ : ∀ {ν μ} {a : Type ν} → IsFunction a → (σ : Sub Type ν μ) →
-         IsFunction (a TypeSubst./ σ)
-  lambda a b f/ σ = lambda (a TypeSubst./ σ) (b TypeSubst./ σ)
-  ∀'-lambda fa f/ σ = ∀'-lambda (fa f/ σ TypeSubst.↑)
-
-  _/_ : ∀ {ν μ} → Implicit ν → Sub Type ν μ → Implicit μ
-  _/_ (rule {a} p) σ = rule (p f/ σ)
-  _/_ (val a) σ = val (a TypeSubst./ σ)
-
-  weaken : ∀ {ν} → Implicit ν → Implicit (suc ν)
-  weaken K = K / TypeSubst.wk
-
-open TypeSubst public using (_∙_; _i/_)
+open TypeSubst public using (_∙_; _i/_; _f/_)
   renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
 open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)

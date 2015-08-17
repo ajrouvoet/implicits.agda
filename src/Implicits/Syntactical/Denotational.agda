@@ -5,6 +5,7 @@ open import Prelude
 data TC : Set where
 
 open import Implicits.Syntactical.WellTyped
+open import Implicits.Syntactical.Substitutions
 open import Implicits.Syntactical.Substitutions.Lemmas
 open import Implicits.SystemF TC as F using ()
 open import Extensions.ListFirst
@@ -24,9 +25,8 @@ module RewriteContext where
   #tvar All.[] = All.[]
   #tvar {K = Γ , .x List.∷ .xs} (All._∷_ {x = x} {xs = xs} px K#K) = px' All.∷ (#tvar K#K)
     where
-      postulate eq : totype x tp/tp TypeLemmas.wk ≡ totype (x i/ TypeLemmas.wk)
       px' = let w = (flip _tp/tp_ TypeLemmas.wk) in
-        subst (λ s → s ∈ (map w Γ)) (eq) (∈⋆map px w)
+        subst (λ s → s ∈ (map w Γ)) (ImplicitLemmas.totype⋆/ x TypeLemmas.wk) (∈⋆map px w)
 
   #var : ∀ {ν n} {K : Ktx ν n} → (a : Type ν) → K# K → K# (a ∷Γ K)
   #var a All.[] = All.[]
