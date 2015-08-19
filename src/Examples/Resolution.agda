@@ -47,7 +47,7 @@ module ex₂ where
   K = tc unit ∷K nil
 
   test : ρ⟨ K , r ⟩↝ (tnat ⇒ tc unit)
-  test = by-partial-implication tnat p
+  test = by-composition r-isrule p
     where
       p : ρ⟨ tnat ∷K K , tc unit ⇒ tc unit ⟩↝ (tc unit)
       p = (by-implication (by-value (tc unit ⇒ tc unit)) (rule (tc unit) (tc unit))

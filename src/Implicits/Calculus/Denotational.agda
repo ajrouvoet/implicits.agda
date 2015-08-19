@@ -257,8 +257,12 @@ private
   inst-ρ m (by-subsumption r↝a a⊑b) ⊢r = inst a⊑b (proj₂ $ inst-ρ m r↝a ⊢r)
   inst-ρ {K = K} m (by-implication {a = a} r↝a a-rule Δ↝arg) ⊢r =
     poly-· a-rule (proj₂ $ inst-ρ m r↝a ⊢r) (proj₂ $ ⟦ Δ↝arg , m ⟧i)
-  inst-ρ {K = K} m (by-partial-implication a b↝c) ⊢r =
-    , F.λ' ⟦ a ⟧tp (proj₂ $ inst-ρ (#ivar a m) b↝c ((F.⊢weaken ⊢r) F.· (F.var zero)))
+  inst-ρ {K = K} m (by-composition {a = a} a-rule cod↝c) ⊢r =
+    , F.λ' ⟦ dom ⟧tp ih
+      
+    where
+      dom = (domain a-rule)
+      ih  = (proj₂ $ inst-ρ (#ivar dom m) cod↝c (proj₂ $ poly-· a-rule (F.⊢weaken ⊢r) (F.var zero)))
 
 -- We can build an instance of type `a` of an implicit derivation of `a` (K Δ↝ a)
 -- ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧tp

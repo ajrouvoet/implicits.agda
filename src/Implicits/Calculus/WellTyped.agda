@@ -46,9 +46,10 @@ data ρ⟨_,_⟩↝_ {ν n} (K : Ktx ν n) : Type ν → Type ν → Set where
                    (a-rule : IsRule a) →
                    K Δ↝ (domain a-rule) → 
                    ρ⟨ K , r ⟩↝ codomain a-rule 
-  by-partial-implication : ∀ {b c : Type ν} a →
-                   ρ⟨ a ∷K K , b ⟩↝ c →
-                   ρ⟨ K , a ⇒ b ⟩↝ (a ⇒ c)
+  by-composition : ∀ {b a : Type ν} →
+                   (a-rule : IsRule a) →
+                   ρ⟨ domain a-rule ∷K K , codomain a-rule ⟩↝ b →
+                   ρ⟨ K , a ⟩↝ (domain a-rule ⇒ b)
   -- it's easy to turn rules into functions
   -- by-conversion : {u r : Type ν} →
                   -- ρ⟨ K , u ⟩↝ r →
