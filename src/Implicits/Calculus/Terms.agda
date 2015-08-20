@@ -1,5 +1,5 @@
 module Implicits.Calculus.Terms (TypeConstant : Set) where
-  
+
 open import Prelude hiding (lift; Fin′; subst)
 open import Data.Fin.Substitution
 open import Implicits.Calculus.Types TypeConstant
@@ -12,12 +12,12 @@ data Term (ν n : ℕ) : Set where
   λ'   : Type ν → Term ν (suc n) → Term ν n
   _[_] : Term ν n → Type ν → Term ν n
   _·_  : Term ν n → Term ν n → Term ν n
-  
+
   -- rule abstraction and application
   ρ    : Type ν → Term ν (suc n) → Term ν n
   _⟨⟩  : Term ν n → Term ν n
 
-  -- put value in implicit scope
+  -- ml-style bindings
   let'_in'_ : Term ν n → Term ν (suc n) → Term ν n
   implicit_in'_ : Term ν n → Term ν (suc n) → Term ν n
 
