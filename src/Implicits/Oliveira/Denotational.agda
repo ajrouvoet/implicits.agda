@@ -61,18 +61,18 @@ mutual
 ⟦_,_⟧r : ∀ {ν n} {K : Ktx ν n} {a} → K ⊢ᵣ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧tp
 
 -- denotational semantics of well-typed terms
-⟦_,_⟧ : ∀ {ν n} {K : Ktx ν n} {t} {a : Type ν} → K ⊢ t ∈ a → K# K → F.Term ν n
-⟦_,_⟧ (new c) m = F.new c
-⟦_,_⟧ (var x) m = F.var x
-⟦_,_⟧ (Λ t) m = F.Λ ⟦ t , #tvar m ⟧
-⟦_,_⟧ (λ' a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #var a m ⟧
-⟦_,_⟧ (f [ b ]) m = F._[_] ⟦ f , m ⟧ ⟦ b ⟧tp
-⟦_,_⟧ (f · e) m = ⟦ f , m ⟧ F.· ⟦ e , m ⟧
-⟦_,_⟧ (ρ {a = a} unamb-a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #ivar a m ⟧
-⟦_,_⟧ (f ⟨ e ⟩) m = ⟦ f , m ⟧ F.· ⟦ e , m ⟧
-⟦_,_⟧ (¿ unamb-a K⊢ᵣa) m = proj₁ ⟦ K⊢ᵣa , m ⟧r
-⟦_,_⟧ (let'_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #var a m ⟧) F.· ⟦ t , m ⟧
-⟦_,_⟧ (implicit_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #ivar a m ⟧) F.· ⟦ t , m ⟧
+⟦_,_⟧t : ∀ {ν n} {K : Ktx ν n} {t} {a : Type ν} → K ⊢ t ∈ a → K# K → F.Term ν n
+⟦_,_⟧t (new c) m = F.new c
+⟦_,_⟧t (var x) m = F.var x
+⟦_,_⟧t (Λ t) m = F.Λ ⟦ t , #tvar m ⟧t
+⟦_,_⟧t (λ' a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #var a m ⟧t
+⟦_,_⟧t (f [ b ]) m = F._[_] ⟦ f , m ⟧t ⟦ b ⟧tp
+⟦_,_⟧t (f · e) m = ⟦ f , m ⟧t F.· ⟦ e , m ⟧t
+⟦_,_⟧t (ρ {a = a} unamb-a x) m = F.λ' ⟦ a ⟧tp ⟦ x , #ivar a m ⟧t
+⟦_,_⟧t (f ⟨ e ⟩) m = ⟦ f , m ⟧t F.· ⟦ e , m ⟧t
+⟦_,_⟧t (¿ unamb-a K⊢ᵣa) m = proj₁ ⟦ K⊢ᵣa , m ⟧r
+⟦_,_⟧t (let'_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #var a m ⟧t) F.· ⟦ t , m ⟧t
+⟦_,_⟧t (implicit_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #ivar a m ⟧t) F.· ⟦ t , m ⟧t
 
 module Lemmas where
 
@@ -188,7 +188,7 @@ module Lemmas where
 
   -- context weakening commutes with interpreting contexts
   -}
-  postulate ctx-weaken⋆⟦⟧ktx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
+  postulate ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
   {-
   ctx-weaken⋆⟦⟧ctx ([] , Δ) = refl
   xtx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
@@ -248,9 +248,11 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
         (sym $ ⟦sub⟧≡sub⟦⟧ r b)
         (⊢r F.[ ⟦ b ⟧tp ])) m
 
+-- declared above as:
+-- ⟦_,_⟧r : ∀ {ν n} {K : Ktx ν n} {a} → K ⊢ᵣ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧tp
 ⟦_,_⟧r (r-iabs a ⊢rb) m = , F.λ' ⟦ a ⟧tp (proj₂ (⟦ ⊢rb , #ivar a m ⟧r))
 ⟦_,_⟧r {K = K } (r-tabs ⊢ra) m =
-  , F.Λ (subst (λ K₁ → K₁ F.⊢ proj₁ ⊢body ∈ _) (ctx-weaken⋆⟦⟧ktx K) (proj₂ ⊢body))
+  , F.Λ (subst (λ K₁ → K₁ F.⊢ proj₁ ⊢body ∈ _) (ctx-weaken⋆⟦⟧ctx K) (proj₂ ⊢body))
   where
     ⊢body = ⟦ ⊢ra , #tvar m ⟧r
 ⟦_,_⟧r {K = K} (r-simp K⟨a⟩=r r↓a) m with first⟶∈ K⟨a⟩=r
@@ -264,85 +266,29 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
       ⟦ lookup i (proj₁ K) ⟧tp
         ≡⟨ cong ⟦_⟧tp lookup-i≡r ⟩
       ⟦ r ⟧tp ∎ 
-{-
-private
-  open Rules
-  
-  -- given a proof that some calculus type b is a specialization of a,
-  -- and an F-instance of a, we can build an F-instance of b
-  -- (it might seem simpler to first build a Calculus term
-  --    and keep the interpretation out of this,
-  --    but that gives termination checking problems,
-  --    since we could put more implicit applications in the constructed term)
-  inst : ∀ {ν n} {a b t} {Γ : F.Ctx ν n} → a ⊑ b → Γ F.⊢ t ∈ ⟦ a ⟧tp → ∃ λ t' → Γ F.⊢ t' ∈ ⟦ b ⟧tp
-  inst {t = t} {Γ = Γ} (poly-equal a≡b) tp =
-    , Prelude.subst (λ x → Γ F.⊢ t ∈ x) (cong ⟦_⟧tp a≡b) tp
-  inst {a = a} {t = t} {Γ = Γ} (poly-intro a⊑b) wt-a =
-    , F.Λ (proj₂ $ inst a⊑b wt-wk-a)
-    where
-      wt-wk-a = subst
-        (F._⊢_∈_ (F.ctx-weaken Γ) (F.tm-weaken t))
-        (sym $ weaken-tp⋆⟦⟧tp a)
-        (F.⊢tp-weaken wt-a)
-  inst {a = ∀' a} {t = t} {Γ = Γ} (poly-elim c a[c]⊑b) wt-a = , (proj₂ $ inst a[c]⊑b wt-a[c])
-    where
-      wt-a[c] : Γ F.⊢ t F.[ ⟦ c ⟧tp ] ∈ ⟦ a tp[/tp c ] ⟧tp
-      wt-a[c] = subst (F._⊢_∈_ Γ _) (sym $ ⟦sub⟧≡sub⟦⟧ a c) (wt-a F.[ ⟦ c ⟧tp ])
-
-  -- ρ⟨ K , r ⟩↝ a means that we can derive an instance of `a` using an instance of `r`
-  inst-ρ : ∀ {ν n} {K : Ktx ν n} {r a t} → K# K →
-           ρ⟨ K , r ⟩↝ a → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ r ⟧tp → ∃ λ t' → ⟦ K ⟧ctx F.⊢ t' ∈ ⟦ a ⟧tp
-  inst-ρ _ (by-value r) ⊢a = , ⊢a
-  inst-ρ m (by-subsumption r↝a a⊑b) ⊢r = inst a⊑b (proj₂ $ inst-ρ m r↝a ⊢r)
-  inst-ρ {K = K} m (by-implication {a = a} r↝a a-rule Δ↝arg) ⊢r =
-    poly-· a-rule (proj₂ $ inst-ρ m r↝a ⊢r) (proj₂ $ ⟦ Δ↝arg , m ⟧i)
-  inst-ρ {K = K} m (by-composition {a = a} a-rule cod↝c) ⊢r =
-    , F.λ' ⟦ dom ⟧tp ih
-      
-    where
-      dom = (domain a-rule)
-      ih  = (proj₂ $ inst-ρ (#ivar dom m) cod↝c (proj₂ $ poly-· a-rule (F.⊢weaken ⊢r) (F.var zero)))
-
--- We can build an instance of type `a` of an implicit derivation of `a` (K Δ↝ a)
--- ⟦_,_⟧i : ∀ {ν n} {K : Ktx ν n} {a} → K Δ↝ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧tp
-⟦_,_⟧i {K = K} (r , p) m with first⟶∈ p 
-⟦_,_⟧i {K = K} (r , p) m | r∈Δ , ρ↝r with ∈⟶index (All.lookup m r∈Δ)
-⟦_,_⟧i {K = K} (r , p) m | r∈Δ , ρ↝r | i , lookup-i≡r =
-  inst-ρ m ρ↝r (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i))
-  where
-    eq = begin 
-      lookup i ⟦ K ⟧ctx 
-        ≡⟨ lookup⋆⟦⟧ctx K i ⟩
-      ⟦ lookup i (proj₁ K) ⟧tp
-        ≡⟨ cong ⟦_⟧tp lookup-i≡r ⟩
-      ⟦ r ⟧tp ∎ 
 
 -- interpretation of well-typed terms in System F preserves type
-⟦⟧-preserves-tp : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → (m : K# K) →
-                  ⟦ K ⟧ctx F.⊢ ⟦ wt-t , m ⟧ ∈ ⟦ a ⟧tp
-⟦⟧-preserves-tp {K = K} (new c) m = F.new c
-⟦⟧-preserves-tp {K = K} (var x) m = subst-wt-var (lookup⋆⟦⟧ctx K x) (F.var x)
-  where
-    subst-wt-var = subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a)
-⟦⟧-preserves-tp {K = K} {a = ∀' a} (Λ wt-e) m with ⟦⟧-preserves-tp wt-e (#tvar m)
-... | ih = F.Λ (subst-wt-ctx (ctx-weaken⋆⟦⟧ctx K) ih)
-  where
-    subst-wt-ctx = subst (λ c → c F.⊢ ⟦ wt-e , #tvar m ⟧ ∈ ⟦ a ⟧tp)
-⟦⟧-preserves-tp (λ' a wt-e) m with ⟦⟧-preserves-tp wt-e (#var a m)
-⟦⟧-preserves-tp (λ' a wt-e) m | ih = F.λ' ⟦ a ⟧tp ih
-⟦⟧-preserves-tp {K = K} (_[_] {a = a} wt-tc b) m with ⟦⟧-preserves-tp wt-tc m
-... | ih = subst-tp (sym $ ⟦sub⟧≡sub⟦⟧ a b) (ih F.[ ⟦ b ⟧tp ])
-  where
-    subst-tp = subst (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] , m ⟧ ∈ c) 
-⟦⟧-preserves-tp (wt-f · wt-e) m with ⟦⟧-preserves-tp wt-f m | ⟦⟧-preserves-tp wt-e m
-⟦⟧-preserves-tp (wt-f · wt-e) m | ih | y = ih F.· y
-⟦⟧-preserves-tp (ρ a wt-e) m with ⟦⟧-preserves-tp wt-e (#ivar a m)
-⟦⟧-preserves-tp (ρ a wt-e) m | ih = F.λ' ⟦ a ⟧tp ih
-⟦⟧-preserves-tp (wt-r ⟨ e ⟩) m with ⟦⟧-preserves-tp wt-r m
-⟦⟧-preserves-tp (wt-r ⟨ e ⟩) m | f-wt-r = f-wt-r F.· (proj₂ ⟦ e , m ⟧i)
-⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ m | ⟦⟧-preserves-tp wt-e₂ (#var a m)
-⟦⟧-preserves-tp (let'_in'_ {a = a} wt-e₁ wt-e₂) m | ih | y = (F.λ' ⟦ a ⟧tp y) F.· ih
-⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m with ⟦⟧-preserves-tp wt-e₁ m | ⟦⟧-preserves-tp wt-e₂ (#ivar a m)
-⟦⟧-preserves-tp (implicit_in'_ {a = a} wt-e₁ wt-e₂) m | ih | y = (F.λ' ⟦ a ⟧tp y) F.· ih
-
--}
+⟦_,_⟧ : ∀ {ν n} {K : Ktx ν n} {t a} → (wt-t : K ⊢ t ∈ a) → (m : K# K) →
+        ⟦ K ⟧ctx F.⊢ ⟦ wt-t , m ⟧t ∈ ⟦ a ⟧tp
+⟦_,_⟧ {K = K} (new c) m = F.new c
+⟦_,_⟧ {K = K} (var x) m =
+  subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a) (lookup⋆⟦⟧ctx K x) (F.var x)
+⟦_,_⟧ {K = K} {a = ∀' a} (Λ wt-e) m =
+  F.Λ (
+    subst
+      (λ c → c F.⊢ ⟦ wt-e , #tvar m ⟧t ∈ ⟦ a ⟧tp)
+      (ctx-weaken⋆⟦⟧ctx K)
+      ⟦ wt-e , (#tvar m) ⟧)
+⟦ λ' a wt-e , m ⟧ = F.λ' ⟦ a ⟧tp ⟦ wt-e , #var a m ⟧
+⟦_,_⟧ {K = K} (_[_] {a = a} wt-tc b) m =
+  subst
+    (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] , m ⟧t ∈ c)
+    (sym $ ⟦sub⟧≡sub⟦⟧ a b)
+    (⟦ wt-tc , m ⟧ F.[ ⟦ b ⟧tp ])
+⟦ (wt-f · wt-e) , m ⟧ = ⟦ wt-f , m ⟧ F.· ⟦ wt-e , m ⟧
+⟦ (ρ {a = a} unamb-a wt-e) , m ⟧ = F.λ' ⟦ a ⟧tp ⟦ wt-e , (#ivar a m) ⟧
+⟦ (wt-r ⟨ e ⟩) , m ⟧ = ⟦ wt-r , m ⟧ F.· ⟦ e , m ⟧
+⟦ (¿ a K⊢ᵣa) , m ⟧ = proj₂ ⟦ K⊢ᵣa , m ⟧r
+⟦ (let'_in'_ {a = a} wt-e₁ wt-e₂) , m ⟧ = (F.λ' ⟦ a ⟧tp ⟦ wt-e₂ , (#var a m) ⟧) F.· ⟦ wt-e₁ , m ⟧
+⟦ (implicit_in'_ {a = a} wt-e₁ wt-e₂) , m ⟧ =
+  (F.λ' ⟦ a ⟧tp ⟦ wt-e₂ , (#ivar a m) ⟧) F.· ⟦ wt-e₁ , m ⟧ 
