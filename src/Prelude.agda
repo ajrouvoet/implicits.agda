@@ -1,5 +1,7 @@
 module Prelude where
 
+open import Data.Maybe public using (Maybe; nothing; just)
+open import Data.Bool public using (Bool; true; false)
 open import Data.Nat public
   using (ℕ; zero; suc; _⊔_)
   renaming ( _+_ to _N+_; _∸_ to _N-_
