@@ -14,10 +14,13 @@ module TypeSubst where
     infixl 8 _/_
 
     mutual 
+      _simple/_ : ∀ {m n} → SimpleType m → Sub T m n → Type n
+      tc c simple/ σ = simpl (tc c)
+      tvar x simple/ σ = lift (lookup x σ)
+      (a →' b) simple/ σ = simpl ((a / σ) →' (b / σ))
+
       _/_ : ∀ {m n} → Type m → Sub T m n → Type n
-      (simpl (tvar x)) / σ = lift (lookup x σ)
-      (simpl (tc c)) / σ = simpl (tc c)
-      (simpl (a →' b)) / σ = simpl ((a / σ) →' (b / σ))
+      (simpl c) / σ = (c simple/ σ)
       (a ⇒ b)  / σ = (a / σ) ⇒ (b / σ)
       (∀' a)   / σ = ∀' (a / σ ↑)
 
@@ -46,8 +49,8 @@ module TypeSubst where
   typeSubst : TermSubst Type
   typeSubst = record { var = simpl ∘ tvar; app = TypeApp._/_ }
 
-
   open TermSubst typeSubst public hiding (var)
+  open TypeApp termLift public using (_simple/_)
 
   infix 8 _[/_]
 
@@ -203,7 +206,7 @@ module KtxSubst where
   weaken K = K / TypeSubst.wk
 
 open TypeSubst public using (_∙_)
-  renaming (_/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
+  renaming (_simple/_ to _stp/tp_; _/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
 open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open TermTermSubst public using ()

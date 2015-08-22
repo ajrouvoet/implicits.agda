@@ -13,6 +13,7 @@ open Applicative.Morphism using (op-<$>)
 module TypeLemmas where
   open TypeSubst using (module Lifted; module TypeApp)
   open import Data.Fin.Substitution.Lemmas
+  open import Data.Fin.Substitution.Lemmas public using (module VarLemmas)
   open import Data.Star using (Star; ε; _◅_)
   
   typeLemmas : TermLemmas Type

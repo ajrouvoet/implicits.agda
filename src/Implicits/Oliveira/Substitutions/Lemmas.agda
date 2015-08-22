@@ -1,6 +1,9 @@
 module Implicits.Oliveira.Substitutions.Lemmas (TC : Set) where
 
 open import Prelude renaming (lift to finlift) hiding (id)
+open import Implicits.Oliveira.Types TC 
+open import Implicits.Oliveira.Terms TC 
+open import Implicits.Oliveira.Contexts TC 
 open import Implicits.Oliveira.WellTyped TC 
 open import Implicits.Oliveira.Substitutions TC
 open import Data.Fin.Substitution
@@ -12,9 +15,10 @@ open Applicative.Morphism using (op-<$>)
 
 module TypeLemmas where
   open import Data.Fin.Substitution.Lemmas
+  open import Data.Fin.Substitution.Lemmas public using (module VarLemmas)
   open TypeSubst
   open import Data.Star using (Star; ε; _◅_)
-  
+
   typeLemmas : TermLemmas Type
   typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑✶ = Lemma./✶-↑✶ }
     where

@@ -2,6 +2,9 @@ module Implicits.Oliveira.Denotational (TypeConstant : Set) where
 
 open import Prelude
 
+open import Implicits.Oliveira.Types TypeConstant
+open import Implicits.Oliveira.Terms TypeConstant
+open import Implicits.Oliveira.Contexts TypeConstant
 open import Implicits.Oliveira.WellTyped TypeConstant
 open import Implicits.Oliveira.Substitutions TypeConstant
 open import Implicits.Oliveira.Substitutions.Lemmas TypeConstant
@@ -33,13 +36,7 @@ module RewriteContext where
 private
   module TS = TypeLemmas
   open RewriteContext
-
-  -- saving characters here like a pro
-  _/tp_ = _tp/tp_
   
-  module TSS = Simple TS.simple
-  module FTSS = Simple F.simple
-
 mutual
   ⟦_⟧stp : ∀ {ν} → SimpleType ν → F.Type ν
   ⟦ tc c ⟧stp = F.tc c
@@ -75,91 +72,80 @@ mutual
 ⟦_,_⟧t (implicit_in'_ {a = a} t e) m = (F.λ' ⟦ a ⟧tp ⟦ e , #ivar a m ⟧t) F.· ⟦ t , m ⟧t
 
 module Lemmas where
+  ⟦a/var⟧≡⟦a⟧/var : ∀ {n m} a (σ : Sub Fin n m) → ⟦ a TS./Var σ ⟧tp ≡ ⟦ a ⟧tp F./Var σ
+  ⟦a/var⟧≡⟦a⟧/var (simpl (tc x)) σ = refl
+  ⟦a/var⟧≡⟦a⟧/var (simpl (tvar n)) σ = refl
+  ⟦a/var⟧≡⟦a⟧/var (simpl (a →' b)) σ = cong₂ F._→'_ (⟦a/var⟧≡⟦a⟧/var a σ) (⟦a/var⟧≡⟦a⟧/var b σ)
+  ⟦a/var⟧≡⟦a⟧/var (a ⇒ b) σ = cong₂ F._→'_ (⟦a/var⟧≡⟦a⟧/var a σ) (⟦a/var⟧≡⟦a⟧/var b σ)
+  ⟦a/var⟧≡⟦a⟧/var (∀' a) σ = cong F.∀' (⟦a/var⟧≡⟦a⟧/var a (σ TS.Var.↑))
 
-{-
-  ⟦wk⟧≡fwk : ∀ {n} → map ⟦_⟧tp (TS.wk {n}) ≡ F.wk {n}
-  ⟦⟧tps⋆↑ :  ∀ {ν n} (v : Vec (Type ν) n) → ⟦ v TS.↑ ⟧tps ≡ ⟦ v ⟧tps F.↑
+  ⟦weaken⟧≡fweaken : ∀ {ν} (a : Type ν) → ⟦ TS.weaken a ⟧tp ≡ F.weaken ⟦ a ⟧tp
+  ⟦weaken⟧≡fweaken x = begin
+    ⟦ x TS./Var (TS.Var.wk) ⟧tp
+      ≡⟨ (⟦a/var⟧≡⟦a⟧/var x (TS.Var.wk)) ⟩
+    F.weaken ⟦ x ⟧tp ∎
+
+  ⟦map-weaken⟧≡map-fweaken : ∀ {m n} (xs : Sub Type m n) → ⟦ map TS.weaken xs ⟧tps ≡ map F.weaken ⟦ xs ⟧tps
+  ⟦map-weaken⟧≡map-fweaken xs = begin 
+    (map ⟦_⟧tp ∘ map TS.weaken) xs
+        ≡⟨ sym $ map-∘ ⟦_⟧tp TS.weaken xs ⟩
+    map (⟦_⟧tp ∘ TS.weaken) xs
+        ≡⟨ map-cong ⟦weaken⟧≡fweaken xs ⟩
+    map (F.weaken ∘ ⟦_⟧tp) xs
+        ≡⟨ map-∘ F.weaken ⟦_⟧tp xs ⟩ 
+    map F.weaken (map ⟦_⟧tp xs) ∎
+
+  ⟦σ↑⟧≡⟦σ⟧↑ : ∀ {ν μ} (σ : Sub Type ν μ) → ⟦ σ TS.↑ ⟧tps ≡ ⟦ σ ⟧tps F.↑
+  ⟦σ↑⟧≡⟦σ⟧↑ σ = begin
+    (F.tvar zero) ∷ ⟦ map TS.weaken σ ⟧tps
+      ≡⟨ cong (λ u → (F.tvar zero) ∷ u) (⟦map-weaken⟧≡map-fweaken σ) ⟩
+    (F.tvar zero) ∷ map F.weaken ⟦ σ ⟧tps
+      ≡⟨ refl ⟩
+    ⟦ σ ⟧tps F.↑ ∎
+  
+  ⟦id⟧≡fid : ∀ {n} → ⟦ TS.id {n} ⟧tps ≡ F.id {n}
+  ⟦id⟧≡fid {zero} = refl
+  ⟦id⟧≡fid {suc n} = begin
+    F.tvar zero ∷ (map ⟦_⟧tp (map TS.weaken TS.id)) 
+      ≡⟨ cong (_∷_ (F.tvar zero)) (⟦map-weaken⟧≡map-fweaken TS.id) ⟩
+    F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp TS.id)) 
+      ≡⟨ cong (λ e → F.tvar zero ∷ (map F.weaken e)) ⟦id⟧≡fid ⟩
+    F.tvar zero ∷ (map F.weaken F.id) 
+      ≡⟨ refl ⟩
+    F.id ∎
+  
+  ⟦wk⟧≡fwk : ∀ {n} → ⟦ TS.wk {n} ⟧tps ≡ F.wk {n}
+  ⟦wk⟧≡fwk = begin
+    map ⟦_⟧tp TS.wk 
+      ≡⟨ ⟦map-weaken⟧≡map-fweaken TS.id ⟩
+    map F.weaken (map ⟦_⟧tp TS.id) 
+      ≡⟨ cong (map F.weaken) ⟦id⟧≡fid ⟩
+    F.wk ∎
 
   -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
-  -}
-  postulate lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧tp
-  {-
+  lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧tp
   lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧tp x
 
   -- type substitution commutes with interpreting types
-  /⋆⟦⟧tp : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp TS./ σ ⟧tp ≡ ⟦ tp ⟧tp F./ (map ⟦_⟧tp σ)
+  /⋆⟦⟧tp : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp tp/tp σ ⟧tp ≡ ⟦ tp ⟧tp F./ ⟦ σ ⟧tps
   /⋆⟦⟧tp (simpl (tc c)) σ = refl
   /⋆⟦⟧tp (simpl (tvar n)) σ = begin
     ⟦ lookup n σ ⟧tp 
       ≡⟨ lookup⋆map σ ⟦_⟧tp n ⟩
     ⟦ simpl $ tvar n ⟧tp F./ (map ⟦_⟧tp σ) ∎
-  /⋆⟦⟧tp (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
   /⋆⟦⟧tp (simpl (l →' r)) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
+  /⋆⟦⟧tp (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
   /⋆⟦⟧tp (∀' a) σ = begin
     F.∀' ⟦ (a TS./ σ TS.↑) ⟧tp
       ≡⟨ cong F.∀' (/⋆⟦⟧tp a (σ TS.↑)) ⟩
     F.∀' (⟦ a ⟧tp F./ ⟦ σ TS.↑ ⟧tps)
-      ≡⟨ cong (λ u → F.∀' (⟦ a ⟧tp F./ u)) ((⟦⟧tps⋆↑ σ)) ⟩
+      ≡⟨ cong (λ u → F.∀' (⟦ a ⟧tp F./ u)) ((⟦σ↑⟧≡⟦σ⟧↑ σ)) ⟩
     ⟦ ∀' a ⟧tp F./ (map ⟦_⟧tp σ) ∎
 
-  weaken⋆⟦_⟧tp : ∀ {ν} → _≗_ {A = Type ν} (⟦_⟧tp ∘ TS.weaken) (F.weaken ∘ ⟦_⟧tp)
-  weaken⋆⟦ x ⟧tp = begin
-    (⟦_⟧tp ∘ TS.weaken) x ≡⟨ refl ⟩
-    ⟦ TS.weaken x ⟧tp ≡⟨ cong ⟦_⟧tp (sym $ (TS./-wk {t = x})) ⟩
-    (⟦ x TS./ TS.wk ⟧tp) ≡⟨ /⋆⟦⟧tp x TS.wk ⟩
-    (⟦ x ⟧tp F./ (map ⟦_⟧tp TS.wk)) ≡⟨ cong (λ u → (⟦ x ⟧tp F./ u)) ⟦wk⟧≡fwk ⟩
-    (⟦ x ⟧tp F./ F.wk) ≡⟨ F./-wk {t = ⟦ x ⟧tp} ⟩
-    (F.weaken ∘ ⟦_⟧tp) x ∎
-
-  -- helper lemma on mapping type-semantics over weakend substitutions
-  ⟦⟧tps⋆weaken : ∀ {ν n} (xs : Vec (Type ν) n) → 
-                 ⟦ (map TS.weaken xs) ⟧tps ≡ (map F.weaken ⟦ xs ⟧tps)
-  ⟦⟧tps⋆weaken xs = begin
-    (map ⟦_⟧tp ∘ map TS.weaken) xs
-     ≡⟨ sym $ (map-∘ ⟦_⟧tp TS.weaken) xs ⟩
-    map (⟦_⟧tp ∘ TS.weaken) xs
-     ≡⟨ (map-cong weaken⋆⟦_⟧tp) xs ⟩
-    map (F.weaken ∘ ⟦_⟧tp) xs
-     ≡⟨ (map-∘ F.weaken ⟦_⟧tp) xs ⟩ 
-    map F.weaken (map ⟦_⟧tp xs) ∎
-     
-  -- the semantics of identity type-substitution is exactly 
-  -- system-f's identity type substitution
-  ⟦id⟧≡fid : ∀ {n} → map ⟦_⟧tp (TS.id {n}) ≡ F.id
-  ⟦id⟧≡fid {zero} = refl
-  ⟦id⟧≡fid {suc n} = begin
-    map ⟦_⟧tp (simpl (tvar zero) ∷ map TS.weaken (TS.id {n})) 
-      ≡⟨ refl ⟩
-    F.tvar zero ∷ (map ⟦_⟧tp (map TS.weaken (TS.id {n}))) 
-      ≡⟨ cong (_∷_ (F.tvar zero)) (⟦⟧tps⋆weaken (TS.id {n})) ⟩
-    F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp (TS.id {n}))) 
-      ≡⟨ cong (λ e → F.tvar zero ∷ (map F.weaken e)) ⟦id⟧≡fid ⟩
-    F.tvar zero ∷ (map F.weaken (F.id {n})) 
-      ≡⟨ refl ⟩
-    F.id ∎
-  
-  -- the semantics of type weakening is exactly system-f's type weakening
-  ⟦wk⟧≡fwk = begin
-    map ⟦_⟧tp TS.wk 
-      ≡⟨ ⟦⟧tps⋆weaken TS.id ⟩
-    map F.weaken (map ⟦_⟧tp TS.id) 
-      ≡⟨ cong (map F.weaken) ⟦id⟧≡fid ⟩
-    F.wk ∎
-
-  -- interpretation of contexts 
-  ⟦⟧tps⋆↑ xs = begin
-    F.tvar zero ∷ (map ⟦_⟧tp (map TS.weaken xs)) 
-      ≡⟨ cong (_∷_ (F.tvar zero)) (⟦⟧tps⋆weaken xs) ⟩
-    F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp xs)) 
-      ≡⟨ refl ⟩
-    (map ⟦_⟧tp xs) F.↑ ∎
-
   -- forall' application commutes with interpreting types
-  -}
-  postulate ⟦sub⟧≡sub⟦⟧ : ∀ {ν} (a : Type (suc ν)) b → ⟦ a /tp (TS.sub b) ⟧tp ≡ ⟦ a ⟧tp F./ (F.sub ⟦ b ⟧tp)
-  {-
+  ⟦sub⟧≡sub⟦⟧ : ∀ {ν} (a : Type (suc ν)) b → ⟦ a tp/tp (TS.sub b) ⟧tp ≡ ⟦ a ⟧tp F./ (F.sub ⟦ b ⟧tp)
   ⟦sub⟧≡sub⟦⟧ a b = begin
-    ⟦ a /tp (TS.sub b) ⟧tp
+    ⟦ a tp/tp (TS.sub b) ⟧tp
     ≡⟨ /⋆⟦⟧tp a (b ∷ TS.id) ⟩
     (⟦ a ⟧tp F./ (map ⟦_⟧tp (b ∷ TS.id)) )
     ≡⟨ refl ⟩
@@ -167,39 +153,26 @@ module Lemmas where
     ≡⟨ cong (λ s → ⟦ a ⟧tp F./ (⟦ b ⟧tp ∷ s)) ⟦id⟧≡fid ⟩
     (⟦ a ⟧tp F./ (F.sub ⟦ b ⟧tp)) ∎
 
-  /-wk⋆⟦⟧tp : ∀ {ν} (tp : Type ν) → ⟦ tp /tp TS.wk ⟧tp ≡ ⟦ tp ⟧tp F./ F.wk
-  /-wk⋆⟦⟧tp tp = begin
-    ⟦ tp /tp TS.wk ⟧tp
+  ⟦/wk⟧≡/wk : ∀ {ν} (tp : Type ν) → ⟦ tp tp/tp TS.wk ⟧tp ≡ ⟦ tp ⟧tp F./ F.wk
+  ⟦/wk⟧≡/wk tp = begin
+    ⟦ tp tp/tp TS.wk ⟧tp
       ≡⟨ /⋆⟦⟧tp tp TS.wk ⟩
     ⟦ tp ⟧tp F./ (map ⟦_⟧tp TS.wk) 
       ≡⟨ cong (λ e → ⟦ tp ⟧tp F./ e) ⟦wk⟧≡fwk ⟩
     ⟦ tp ⟧tp F./ F.wk ∎
 
-  -- type weakening commutes with interpreting types
-  weaken-tp⋆⟦⟧tp : ∀ {ν} (tp : Type ν) → ⟦ tp-weaken tp ⟧tp ≡ F.tp-weaken ⟦ tp ⟧tp
-  weaken-tp⋆⟦⟧tp tp = begin
-    ⟦ tp-weaken tp ⟧tp
-      ≡⟨ cong ⟦_⟧tp (sym $ TS./-wk {t = tp})⟩
-    ⟦ tp TS./ TS.wk ⟧tp
-      ≡⟨ /-wk⋆⟦⟧tp tp ⟩
-    ⟦ tp ⟧tp F./ F.wk
-      ≡⟨ F./-wk {t = ⟦ tp ⟧tp} ⟩
-    F.tp-weaken ⟦ tp ⟧tp ∎
-
   -- context weakening commutes with interpreting contexts
-  -}
-  postulate ctx-weaken⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
-  {-
-  ctx-weaken⋆⟦⟧ctx ([] , Δ) = refl
-  xtx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) with ctx-weaken⋆⟦⟧ctx (Γ , Δ)
-  ctx-weaken⋆⟦⟧ctx (x ∷ Γ , Δ) | ih = begin
+  ⟦ctx-weaken⟧≡ctx-weaken : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx ≡ F.ctx-weaken ⟦ K ⟧ctx
+  ⟦ctx-weaken⟧≡ctx-weaken ([] , Δ) = refl
+  ⟦ctx-weaken⟧≡ctx-weaken (x ∷ Γ , Δ) with ⟦ctx-weaken⟧≡ctx-weaken (Γ , Δ)
+  ⟦ctx-weaken⟧≡ctx-weaken (x ∷ Γ , Δ) | ih = begin
     ⟦ ktx-weaken (x ∷ Γ , Δ) ⟧ctx ≡⟨ refl ⟩ 
-    ⟦ x /tp TS.wk ⟧tp ∷ xs ≡⟨ cong (flip _∷_ xs) (/-wk⋆⟦⟧tp x) ⟩
+    ⟦ x tp/tp TS.wk ⟧tp ∷ xs ≡⟨ cong (flip _∷_ xs) (⟦/wk⟧≡/wk x) ⟩
     (⟦ x ⟧tp F./ F.wk) ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx ≡⟨ cong (_∷_ (⟦ x ⟧tp F./ F.wk)) ih ⟩
     (⟦ x ⟧tp F./ F.wk) ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx ≡⟨ refl ⟩
     F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx ∎
     where
-      xs = map ⟦_⟧tp $ map (λ s → s /tp TS.wk ) Γ
+      xs = map ⟦_⟧tp $ map (λ s → s tp/tp TS.wk ) Γ
 
   open Rules
 
@@ -233,7 +206,6 @@ module Lemmas where
       ⊢t = F.poly-·
              (⟦rule⟧⟶function a-rule) ⊢f -- function
              (subst (λ u → Γ F.⊢ _ ∈ u) (rule-domain⋆⟦⟧ a-rule) ⊢arg) -- argument
-             -}
 
 open Lemmas
 
@@ -252,7 +224,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
 -- ⟦_,_⟧r : ∀ {ν n} {K : Ktx ν n} {a} → K ⊢ᵣ a → K# K → ∃ λ t → ⟦ K ⟧ctx F.⊢ t ∈ ⟦ a ⟧tp
 ⟦_,_⟧r (r-iabs a ⊢rb) m = , F.λ' ⟦ a ⟧tp (proj₂ (⟦ ⊢rb , #ivar a m ⟧r))
 ⟦_,_⟧r {K = K } (r-tabs ⊢ra) m =
-  , F.Λ (subst (λ K₁ → K₁ F.⊢ proj₁ ⊢body ∈ _) (ctx-weaken⋆⟦⟧ctx K) (proj₂ ⊢body))
+  , F.Λ (subst (λ K₁ → K₁ F.⊢ proj₁ ⊢body ∈ _) (⟦ctx-weaken⟧≡ctx-weaken K) (proj₂ ⊢body))
   where
     ⊢body = ⟦ ⊢ra , #tvar m ⟧r
 ⟦_,_⟧r {K = K} (r-simp K⟨a⟩=r r↓a) m with first⟶∈ K⟨a⟩=r
@@ -277,7 +249,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
   F.Λ (
     subst
       (λ c → c F.⊢ ⟦ wt-e , #tvar m ⟧t ∈ ⟦ a ⟧tp)
-      (ctx-weaken⋆⟦⟧ctx K)
+      (⟦ctx-weaken⟧≡ctx-weaken K)
       ⟦ wt-e , (#tvar m) ⟧)
 ⟦ λ' a wt-e , m ⟧ = F.λ' ⟦ a ⟧tp ⟦ wt-e , #var a m ⟧
 ⟦_,_⟧ {K = K} (_[_] {a = a} wt-tc b) m =

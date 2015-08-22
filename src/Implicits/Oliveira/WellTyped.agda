@@ -2,9 +2,9 @@ module Implicits.Oliveira.WellTyped (TC : Set) where
 
 open import Prelude hiding (id)
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC public
-open import Implicits.Oliveira.Terms TC public
-open import Implicits.Oliveira.Contexts TC public
+open import Implicits.Oliveira.Types TC
+open import Implicits.Oliveira.Terms TC
+open import Implicits.Oliveira.Contexts TC
 open import Extensions.ListFirst
 open import Implicits.Oliveira.Substitutions TC 
 -- open Rules
