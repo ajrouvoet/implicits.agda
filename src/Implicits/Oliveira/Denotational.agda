@@ -123,30 +123,30 @@ module Lemmas where
     F.wk ∎
 
   -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
-  lookup⋆⟦⟧ctx : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧tp
-  lookup⋆⟦⟧ctx K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧tp x
+  ⟦lookup-ctx⟧≡lookup-⟦ctx⟧ : ∀ {ν n} (K : Ktx ν n) x → lookup x ⟦ K ⟧ctx ≡ ⟦ lookup x $ proj₁ K ⟧tp
+  ⟦lookup-ctx⟧≡lookup-⟦ctx⟧ K x = sym $ lookup⋆map (proj₁ K) ⟦_⟧tp x
 
   -- type substitution commutes with interpreting types
-  /⋆⟦⟧tp : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp tp/tp σ ⟧tp ≡ ⟦ tp ⟧tp F./ ⟦ σ ⟧tps
-  /⋆⟦⟧tp (simpl (tc c)) σ = refl
-  /⋆⟦⟧tp (simpl (tvar n)) σ = begin
+  ⟦a/s⟧≡⟦a⟧/⟦s⟧ : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp tp/tp σ ⟧tp ≡ ⟦ tp ⟧tp F./ ⟦ σ ⟧tps
+  ⟦a/s⟧≡⟦a⟧/⟦s⟧ (simpl (tc c)) σ = refl
+  ⟦a/s⟧≡⟦a⟧/⟦s⟧ (simpl (tvar n)) σ = begin
     ⟦ lookup n σ ⟧tp 
       ≡⟨ lookup⋆map σ ⟦_⟧tp n ⟩
     ⟦ simpl $ tvar n ⟧tp F./ (map ⟦_⟧tp σ) ∎
-  /⋆⟦⟧tp (simpl (l →' r)) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
-  /⋆⟦⟧tp (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp l σ) (/⋆⟦⟧tp r σ)
-  /⋆⟦⟧tp (∀' a) σ = begin
+  ⟦a/s⟧≡⟦a⟧/⟦s⟧ (simpl (l →' r)) σ = cong₂ F._→'_ (⟦a/s⟧≡⟦a⟧/⟦s⟧ l σ) (⟦a/s⟧≡⟦a⟧/⟦s⟧ r σ)
+  ⟦a/s⟧≡⟦a⟧/⟦s⟧ (l ⇒ r) σ = cong₂ F._→'_ (⟦a/s⟧≡⟦a⟧/⟦s⟧ l σ) (⟦a/s⟧≡⟦a⟧/⟦s⟧ r σ)
+  ⟦a/s⟧≡⟦a⟧/⟦s⟧ (∀' a) σ = begin
     F.∀' ⟦ (a TS./ σ TS.↑) ⟧tp
-      ≡⟨ cong F.∀' (/⋆⟦⟧tp a (σ TS.↑)) ⟩
+      ≡⟨ cong F.∀' (⟦a/s⟧≡⟦a⟧/⟦s⟧ a (σ TS.↑)) ⟩
     F.∀' (⟦ a ⟧tp F./ ⟦ σ TS.↑ ⟧tps)
       ≡⟨ cong (λ u → F.∀' (⟦ a ⟧tp F./ u)) ((⟦σ↑⟧≡⟦σ⟧↑ σ)) ⟩
     ⟦ ∀' a ⟧tp F./ (map ⟦_⟧tp σ) ∎
 
   -- forall' application commutes with interpreting types
-  ⟦sub⟧≡sub⟦⟧ : ∀ {ν} (a : Type (suc ν)) b → ⟦ a tp/tp (TS.sub b) ⟧tp ≡ ⟦ a ⟧tp F./ (F.sub ⟦ b ⟧tp)
-  ⟦sub⟧≡sub⟦⟧ a b = begin
+  ⟦sub⟧≡sub : ∀ {ν} (a : Type (suc ν)) b → ⟦ a tp/tp (TS.sub b) ⟧tp ≡ ⟦ a ⟧tp F./ (F.sub ⟦ b ⟧tp)
+  ⟦sub⟧≡sub a b = begin
     ⟦ a tp/tp (TS.sub b) ⟧tp
-    ≡⟨ /⋆⟦⟧tp a (b ∷ TS.id) ⟩
+    ≡⟨ ⟦a/s⟧≡⟦a⟧/⟦s⟧ a (b ∷ TS.id) ⟩
     (⟦ a ⟧tp F./ (map ⟦_⟧tp (b ∷ TS.id)) )
     ≡⟨ refl ⟩
     (⟦ a ⟧tp F./ (⟦ b ⟧tp ∷ (map ⟦_⟧tp TS.id)) )
@@ -156,7 +156,7 @@ module Lemmas where
   ⟦/wk⟧≡/wk : ∀ {ν} (tp : Type ν) → ⟦ tp tp/tp TS.wk ⟧tp ≡ ⟦ tp ⟧tp F./ F.wk
   ⟦/wk⟧≡/wk tp = begin
     ⟦ tp tp/tp TS.wk ⟧tp
-      ≡⟨ /⋆⟦⟧tp tp TS.wk ⟩
+      ≡⟨ ⟦a/s⟧≡⟦a⟧/⟦s⟧ tp TS.wk ⟩
     ⟦ tp ⟧tp F./ (map ⟦_⟧tp TS.wk) 
       ≡⟨ cong (λ e → ⟦ tp ⟧tp F./ e) ⟦wk⟧≡fwk ⟩
     ⟦ tp ⟧tp F./ F.wk ∎
@@ -217,7 +217,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
     inst↓ r[b]↓a (
       subst
         (λ u → ⟦ K ⟧ctx F.⊢ _ ∈ u)
-        (sym $ ⟦sub⟧≡sub⟦⟧ r b)
+        (sym $ ⟦sub⟧≡sub r b)
         (⊢r F.[ ⟦ b ⟧tp ])) m
 
 -- declared above as:
@@ -234,7 +234,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
   where
     eq = begin 
       lookup i ⟦ K ⟧ctx 
-        ≡⟨ lookup⋆⟦⟧ctx K i ⟩
+        ≡⟨ ⟦lookup-ctx⟧≡lookup-⟦ctx⟧ K i ⟩
       ⟦ lookup i (proj₁ K) ⟧tp
         ≡⟨ cong ⟦_⟧tp lookup-i≡r ⟩
       ⟦ r ⟧tp ∎ 
@@ -244,7 +244,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
         ⟦ K ⟧ctx F.⊢ ⟦ wt-t , m ⟧t ∈ ⟦ a ⟧tp
 ⟦_,_⟧ {K = K} (new c) m = F.new c
 ⟦_,_⟧ {K = K} (var x) m =
-  subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a) (lookup⋆⟦⟧ctx K x) (F.var x)
+  subst (λ a → ⟦ K ⟧ctx F.⊢ (F.var x) ∈ a) (⟦lookup-ctx⟧≡lookup-⟦ctx⟧ K x) (F.var x)
 ⟦_,_⟧ {K = K} {a = ∀' a} (Λ wt-e) m =
   F.Λ (
     subst
@@ -255,7 +255,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
 ⟦_,_⟧ {K = K} (_[_] {a = a} wt-tc b) m =
   subst
     (λ c → ⟦ K ⟧ctx F.⊢ ⟦ wt-tc [ b ] , m ⟧t ∈ c)
-    (sym $ ⟦sub⟧≡sub⟦⟧ a b)
+    (sym $ ⟦sub⟧≡sub a b)
     (⟦ wt-tc , m ⟧ F.[ ⟦ b ⟧tp ])
 ⟦ (wt-f · wt-e) , m ⟧ = ⟦ wt-f , m ⟧ F.· ⟦ wt-e , m ⟧
 ⟦ (ρ {a = a} unamb-a wt-e) , m ⟧ = F.λ' ⟦ a ⟧tp ⟦ wt-e , (#ivar a m) ⟧
