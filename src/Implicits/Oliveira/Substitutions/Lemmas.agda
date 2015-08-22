@@ -1,11 +1,12 @@
-module Implicits.Oliveira.Substitutions.Lemmas (TC : Set) where
-
 open import Prelude renaming (lift to finlift) hiding (id)
-open import Implicits.Oliveira.Types TC 
-open import Implicits.Oliveira.Terms TC 
-open import Implicits.Oliveira.Contexts TC 
-open import Implicits.Oliveira.WellTyped TC 
-open import Implicits.Oliveira.Substitutions TC
+
+module Implicits.Oliveira.Substitutions.Lemmas (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+
+open import Implicits.Oliveira.Types TC _tc≟_
+open import Implicits.Oliveira.Terms TC _tc≟_
+open import Implicits.Oliveira.Contexts TC _tc≟_
+open import Implicits.Oliveira.WellTyped TC _tc≟_
+open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
 open import Data.Vec.Properties

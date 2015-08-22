@@ -1,6 +1,7 @@
-module Implicits.Oliveira.Types (TC : Set) where
-
 open import Prelude hiding (lift; id)
+
+module Implicits.Oliveira.Types (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+
 open import Data.Fin.Substitution
 open import Data.Nat.Properties as NatProps
 open import Data.Star using (Star; ε; _◅_)
@@ -88,3 +89,60 @@ module Rules where
   to-function : ∀ {ν} {f : Type ν} → IsRule f → Type ν
   to-function (rule a b) = simpl (a →' b)
   to-function (∀'-rule f) = ∀' (to-function f)
+
+-- decidable equality on types
+_≟_ : ∀ {ν} → (a b : Type ν) → Dec (a ≡ b)
+simpl (tc x) ≟ simpl (tc y) with x tc≟ y
+simpl (tc x) ≟ simpl (tc y) | yes p = yes (cong (simpl ∘ tc) p)
+simpl (tc x) ≟ simpl (tc y) | no ¬p = no (λ x=y → ¬p $ helper x=y )
+  where
+    helper : ∀ {x y} → (simpl (tc x)) ≡ (simpl (tc y)) → x ≡ y
+    helper refl = refl
+simpl (tc x) ≟ simpl (tvar n) = no (λ ())
+simpl (tc x) ≟ simpl (x₁ →' x₂) = no (λ ())
+simpl (tvar n) ≟ simpl (tc x) = no (λ ())
+simpl (tvar n) ≟ simpl (tvar m) with n fin≟ m
+simpl (tvar n) ≟ simpl (tvar m) | yes n≡m = yes (cong (simpl ∘ tvar) n≡m)
+simpl (tvar n) ≟ simpl (tvar m) | no n≢m = no (λ x=y → n≢m $ helper x=y)
+  where
+    helper : ∀ {n m} → (simpl (tvar n)) ≡ (simpl (tvar m)) → n ≡ m
+    helper refl = refl
+simpl (tvar n) ≟ simpl (x →' x₁) = no (λ ())
+simpl (a →' b) ≟ simpl (tc x₂) = no (λ ())
+simpl (a →' b) ≟ simpl (tvar n) = no (λ ())
+simpl (a →' b) ≟ simpl (a' →' b') with a ≟ a' | b ≟ b'
+simpl (a →' b) ≟ simpl (a' →' b') | yes p | yes q = yes (cong₂ (λ u v → simpl $ u →' v) p q)
+simpl (a →' b) ≟ simpl (a' →' b') | yes p | no ¬q = no (λ x → ¬q (helper x) )
+   where
+     helper : ∀ {a b a' b'} → (simpl $ a →' b) ≡ (simpl $ a' →' b') → b ≡ b'
+     helper refl = refl
+simpl (a →' b) ≟ simpl (a' →' b') | no ¬p | _ = no (λ x → ¬p (helper x) )
+   where
+     helper : ∀ {a b a' b'} → (simpl $ a →' b) ≡ (simpl $ a' →' b') → a ≡ a'
+     helper refl = refl
+simpl (tc x) ≟ (b ⇒ b₁) = no (λ ())
+simpl (tvar n) ≟ (b ⇒ b₁) = no (λ ())
+simpl (x →' x₁) ≟ (b ⇒ b₁) = no (λ ())
+simpl (tc x) ≟ ∀' b = no (λ ())
+simpl (tvar n) ≟ ∀' b = no (λ ())
+simpl (x →' x₁) ≟ ∀' b = no (λ ())
+(a ⇒ b) ≟ simpl x = no (λ ())
+(a ⇒ b) ≟ (a' ⇒ b') with a ≟ a' | b ≟ b'
+(a ⇒ b) ≟ (a' ⇒ b') | yes p | yes q = yes (cong₂ (λ u v → u ⇒ v) p q)
+(a ⇒ b) ≟ (a' ⇒ b') | yes p | no ¬q = no (λ x → ¬q (helper x) )
+   where
+     helper : ∀ {a b a' b'} → (a ⇒ b) ≡ (a' ⇒ b') → b ≡ b'
+     helper refl = refl
+(a ⇒ b) ≟ (a' ⇒ b') | no ¬p | _ = no (λ x → ¬p (helper x) )
+   where
+     helper : ∀ {a b a' b'} → (a ⇒ b) ≡ (a' ⇒ b') → a ≡ a'
+     helper refl = refl
+(a ⇒ a₁) ≟ ∀' b = no (λ ())
+∀' a ≟ simpl x = no (λ ())
+∀' a ≟ (b ⇒ b₁) = no (λ ())
+∀' a ≟ ∀' b with a ≟ b
+∀' a ≟ ∀' b | yes p = yes (cong ∀' p)
+∀' a ≟ ∀' b | no ¬p = no (λ u → ¬p (helper u))
+    where
+      helper : ∀ {ν} {a b : Type (suc ν)} → ∀' a ≡ ∀' b → a ≡ b
+      helper refl = refl

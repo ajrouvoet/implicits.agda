@@ -1,9 +1,10 @@
-module Implicits.Oliveira.Contexts (TypeConstant : Set) where
-
 open import Prelude
+
+module Implicits.Oliveira.Contexts (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
-open import Implicits.Oliveira.Types TypeConstant 
+open import Implicits.Oliveira.Types TC _tc≟_
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (Type ν) n

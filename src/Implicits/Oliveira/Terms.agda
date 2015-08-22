@@ -1,8 +1,9 @@
-module Implicits.Oliveira.Terms (TC : Set) where
-
 open import Prelude hiding (lift; Fin′; subst)
+
+module Implicits.Oliveira.Terms (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC
+open import Implicits.Oliveira.Types TC _tc≟_
 
 infixl 9 _[_] _·_
 data Term (ν n : ℕ) : Set where

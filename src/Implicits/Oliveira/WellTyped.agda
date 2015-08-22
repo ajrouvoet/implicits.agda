@@ -1,12 +1,13 @@
-module Implicits.Oliveira.WellTyped (TC : Set) where
-
 open import Prelude hiding (id)
+
+module Implicits.Oliveira.WellTyped (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC
-open import Implicits.Oliveira.Terms TC
-open import Implicits.Oliveira.Contexts TC
+open import Implicits.Oliveira.Types TC _tc≟_
+open import Implicits.Oliveira.Terms TC _tc≟_
+open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Extensions.ListFirst
-open import Implicits.Oliveira.Substitutions TC 
+open import Implicits.Oliveira.Substitutions TC _tc≟_
 -- open Rules
 
 infixl 4 _⊢ᵣ_ _⊢_∈_ _⊢_↓_ _⟨_⟩=_
