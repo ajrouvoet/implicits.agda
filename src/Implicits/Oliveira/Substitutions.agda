@@ -52,6 +52,7 @@ module TypeSubst where
 
   open TermSubst typeSubst public hiding (var)
   open TypeApp termLift public using (_simple/_)
+  open TypeApp varLift public using () renaming (_simple/_ to _simple/Var_)
 
   infix 8 _[/_]
 
@@ -67,6 +68,11 @@ module TypeSubst where
   _∙_ (simpl (_ →' _)) {is∀ = ()} _
   _∙_ (∀' x) b = x [/ b ]
   _∙_ (_ ⇒ _) {is∀ = ()} _
+
+  stp-weaken : ∀ {ν} → SimpleType ν → SimpleType (suc ν)
+  stp-weaken (tc x) = tc x
+  stp-weaken (tvar n) = tvar (suc n)
+  stp-weaken (a →' b) = weaken a →' weaken b
 
 module TermTypeSubst where
 
@@ -206,7 +212,7 @@ module KtxSubst where
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
   weaken K = K / TypeSubst.wk
 
-open TypeSubst public using (_∙_)
+open TypeSubst public using (_∙_; stp-weaken)
   renaming (_simple/_ to _stp/tp_; _/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)
 open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)

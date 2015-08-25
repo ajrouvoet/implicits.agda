@@ -30,9 +30,9 @@ mutual
     i-tabs : ∀ {ρ a} b → K ⊢ ρ tp[/tp b ] ↓ a → K ⊢ ∀' ρ ↓ a
 
   data _⊢ᵣ_ {ν n} (K : Ktx ν n) : Type ν → Set where
+    r-simp : ∀ {τ ρ} → K ⟨ τ ⟩= ρ → K ⊢ ρ ↓ τ → K ⊢ᵣ simpl τ
     r-iabs : ∀ ρ₁ {ρ₂} → ρ₁ ∷K K ⊢ᵣ ρ₂ → K ⊢ᵣ ρ₁ ⇒ ρ₂
     r-tabs : ∀ {ρ} → ktx-weaken K ⊢ᵣ ρ → K ⊢ᵣ ∀' ρ
-    r-simp : ∀ {τ ρ} → K ⟨ τ ⟩= ρ → K ⊢ ρ ↓ τ → K ⊢ᵣ simpl τ
 
 data _⊢unamb_ {ν} : List (Fin ν) → Type ν → Set where
   ua-simp : ∀ {a l} → l List.⊆ fvars a → l ⊢unamb a
