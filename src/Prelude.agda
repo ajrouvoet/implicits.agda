@@ -21,7 +21,7 @@ open import Relation.Binary.PropositionalEquality public renaming ([_] to reveal
 open import Relation.Binary public using (Decidable)
 open ≡-Reasoning public
 open import Function public
-open import Data.Empty public using (⊥)
+open import Data.Empty public using (⊥; ⊥-elim)
 open import Data.Unit public using (⊤)
 
 open import Extensions.Vec public

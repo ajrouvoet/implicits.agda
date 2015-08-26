@@ -1,6 +1,6 @@
 module Implicits.SystemF.Terms.Constructors (TC : Set) where
 
-open import Prelude
+open import Prelude hiding (⊥-elim)
 open import Implicits.SystemF.WellTyped TC
 open import Implicits.SystemF.Substitutions.Lemmas TC
 open import Implicits.SystemF.Substitutions TC

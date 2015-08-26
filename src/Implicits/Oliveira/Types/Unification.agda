@@ -44,7 +44,7 @@ mutual
   -- subn {n} x a = id {n} [ x ]≔ a
 
   -- TODO : every substitution should remove a type variable
-  postulate mgu : ∀ {ν} → (a b : Type ν) → Dec (∃ λ σ → a / σ ≡ b)
+  postulate mgu : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Dec (∃ λ σ → a / σ ≡ b)
   {-
   mgu (simpl (tc x)) (simpl (tc y)) with x tc≟ y
   mgu (simpl (tc x)) (simpl (tc .x)) | yes refl = yes (id , TypeLemmas.id-vanishes (simpl $ tc x))

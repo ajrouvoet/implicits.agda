@@ -1,26 +1,29 @@
-module Implicits.Oliveira.Denotational (TypeConstant : Set) where
-
 open import Prelude
 
-open import Implicits.Oliveira.Types TypeConstant
-open import Implicits.Oliveira.Terms TypeConstant
-open import Implicits.Oliveira.Contexts TypeConstant
-open import Implicits.Oliveira.WellTyped TypeConstant
-open import Implicits.Oliveira.Substitutions TypeConstant
-open import Implicits.Oliveira.Substitutions.Lemmas TypeConstant
-open import Implicits.SystemF TypeConstant as F using ()
+module Implicits.Oliveira.Deterministic.Denotational
+  (TC : Set)
+  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+
+open import Implicits.Oliveira.Types TC _tc≟_
+open import Implicits.Oliveira.Terms TC _tc≟_
+open import Implicits.Oliveira.Contexts TC _tc≟_
+open import Implicits.Oliveira.WellTyped TC _tc≟_
+open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_
+open import Implicits.SystemF TC as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec.Properties
 
+open TypingRules _⊢ᵣ_
+open SubstLemmas _⊢ᵣ_
+
 module RewriteContext where
 
   -- rewrite context (relation between implicit and explicit context)
-  _#_ : ∀ {ν n} (Γ : Ctx ν n) (Δ : ICtx ν) → Set
-  Γ # Δ = All (λ i → i ∈ Γ) Δ
-
-  K# : ∀ {ν n} (K : Ktx ν n) → Set
-  K# (Γ , Δ) = Γ # Δ
+  K# : ∀ {ν n : ℕ} (K : Ktx ν n) → Set
+  K# (Γ , Δ) = All (λ i → i ∈ Γ) Δ
   
   #tvar : ∀ {ν n} {K : Ktx ν n} → K# K → K# (ktx-weaken K)
   #tvar All.[] = All.[]
