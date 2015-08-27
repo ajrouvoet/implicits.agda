@@ -7,7 +7,7 @@ open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
 open import Data.Vec.Properties
 open import Data.Fin.Substitution
-open TypeSubst
+open TypeSubst hiding (subst)
 
 {-
 module MguSubst where
@@ -40,11 +40,36 @@ open MguSubst
 
 mutual 
 
+  private
+    lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
+    lem zero zero = zero , refl
+    lem zero (suc ())
+    lem (suc x) zero = suc x , refl
+    lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
+
+    embed : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
+    embed {ν} α s = subst
+      (λ u → Sub Type u ν)
+      (sym eq)
+      (s ++ (drop (toℕ α) (subst (λ u → Vec (Type ν) u) eq (id {ν}))))
+        where
+            eq = proj₂ $ lem ν α
+
+  MGU : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Set 
+  MGU {ν} α a b = ∃ λ (s : Sub Type (toℕ α) ν) → a / (embed α s) ≡ b
+
+  apply-unifier : ∀ {ν} α {a b : Type ν} → MGU α a b → Type ν → Type ν
+  apply-unifier α u a = a / (embed α (proj₁ u))
+
   -- subn : ∀ {n} → Fin (suc n) → Type n → Sub Type (suc n) n
   -- subn {n} x a = id {n} [ x ]≔ a
 
   -- TODO : every substitution should remove a type variable
-  postulate mgu : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Dec (∃ λ σ → a / σ ≡ b)
+  postulate mgu : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Dec (MGU α a b)
+
+  mgu-unifies : ∀ {ν} {α : Fin (suc ν)} {a b} (u : (MGU α a b)) → apply-unifier α u a ≡ b
+  mgu-unifies u = proj₂ u
+
   {-
   mgu (simpl (tc x)) (simpl (tc y)) with x tc≟ y
   mgu (simpl (tc x)) (simpl (tc .x)) | yes refl = yes (id , TypeLemmas.id-vanishes (simpl $ tc x))

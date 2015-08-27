@@ -17,7 +17,7 @@ data _,_⊢_matches_ {ν} (ρs : List (Type ν)) : Fin (suc ν) → Type ν → 
   mtc-tabs : ∀ {r a α} → List.map tp-weaken ρs , suc α ⊢ r matches (stp-weaken a) →
              ρs , α ⊢ ∀' r matches a
   mtc-iabs : ∀ {α a b c} → (a List.∷ ρs) , α ⊢ b matches c → ρs , α ⊢ a ⇒ b matches c
-  mtc-simp : ∀ {α a b s} → (simpl a) tp/tp s ≡ simpl b → ρs , α ⊢ (simpl a) matches b
+  mtc-simp : ∀ {α a b} → MGU α (simpl a) (simpl b) → ρs , α ⊢ (simpl a) matches b
 
 _⊢match1st_ : ∀ {ν n} (K : Ktx ν n) → (a : SimpleType ν) → Set
 K ⊢match1st a  = ∃ λ r → first r ∈ proj₂ K ⇔ (λ r' → List.[] , zero ⊢ r' matches a)
@@ -29,8 +29,8 @@ _match1st_ : ∀ {ν n} (K : Ktx ν n) → (a : SimpleType ν) → Dec (K ⊢mat
     match : ∀ {ν} → (ρs : List (Type ν)) → (α : Fin (suc ν)) → (a : SimpleType ν) → (r : Type ν) →
             Dec (ρs , α ⊢ r matches a)
     match ρs α a (simpl x) with mgu α (simpl x) (simpl a)
-    match ρs α a (simpl x) | yes (s , p) = yes (mtc-simp p)
-    match ρs α a (simpl x) | no ¬p = no (λ{ (mtc-simp x) → ¬p (, x) })
+    match ρs α a (simpl x) | yes mgu = yes (mtc-simp mgu)
+    match ρs α a (simpl x) | no ¬p = no (λ{ (mtc-simp x) → ¬p x })
     match ρs α a (b ⇒ c) with match (b List.∷ ρs) α a c
     match ρs α a (b ⇒ c) | yes p = yes $ mtc-iabs p
     match ρs α a (b ⇒ c) | no ¬p = no (λ{ (mtc-iabs x) → ¬p x})
@@ -43,10 +43,11 @@ module Lemmas where
   lem-A3 : ∀ {ν n} (K : Ktx ν n) {a r} → K ⟨ a ⟩= r → r List.∈ (proj₂ K)
   lem-A3 _ = proj₁ ∘ first⟶∈
 
-  lem-A6 : ∀ {ν} {ρs} {r : Type ν} {a α} → ρs , α ⊢ r matches a → r ◁ a
+  lem-A6 : ∀ {ν} {ρs} {r : Type ν} {a α} → ρs , α ⊢ r matches a →
+           ∃₂ λ a' (u : MGU α r a') → (apply-unifier α u r) ◁ a
   lem-A6 (mtc-tabs p) = {!!}
   lem-A6 (mtc-iabs p) = {!!}
-  lem-A6 (mtc-simp x) = {!m-simp {a = ?}!}
+  lem-A6 (mtc-simp {b = b} x) rewrite mgu-unifies x = simpl b , x , {!refl!}
 
   lem-A6' : ∀ {ν} ρs {r : Type ν} {a α} → r ◁ a → ρs , α ⊢ r matches a
   lem-A6' x = {!!}
@@ -57,7 +58,7 @@ module Lemmas where
   -- [] ⊢ᵣ Nat ⇒ (Nat ⇒ Nat), etc; through recursion on r-iabs
 
   lem-A7 : ∀ {ν n} (K : Ktx ν n) {a} → K ⊢match1st a → ∃ λ r → K ⟨ a ⟩= r
-  lem-A7 (Δ , .(r List.∷ v)) (r , here p v) = , here (lem-A6 p) v
+  lem-A7 (Δ , .(r List.∷ v)) (r , here p v) = , here {!!} v
   lem-A7 (Δ , x List.∷ .ρs) (r , there {v = ρs} .x ¬px fst≡r) =
     , there
       x

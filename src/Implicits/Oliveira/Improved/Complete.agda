@@ -1,6 +1,6 @@
 open import Prelude hiding (id; Bool)
 
-module Implicits.Oliveira.Deterministic.Incomplete where
+module Implicits.Oliveira.Improved.Complete where
 
 data TC : Set where
   tc-int : TC
@@ -55,16 +55,3 @@ module Ambiguous where
   -- proof that Bool is derivable under the "Ambiguous" resolution rules
   p : K ⊢ᵣ Bool
   p = r-ivar (there (here refl))
-
--- just showing that the improved rules CAN derive Bool here
-module Improved where
-  open import Implicits.Oliveira.Improved.Resolution TC _tc≟_
-  open TypingRules _⊢ᵣ_
-
-  ¬r₁ : ¬ K ⊢ (Int ⇒ Bool) ↓ tc tc-bool
-  ¬r₁ (i-iabs (r-simp (here (i-iabs _ ()) ._)) _)
-  ¬r₁ (i-iabs (r-simp (there ._ _ (here () .List.[]))) _)
-  ¬r₁ (i-iabs (r-simp (there ._ _ (there ._ _ ()))) _)
-  
-  p : K ⊢ᵣ Bool
-  p = r-simp (there (Int ⇒ Bool) ¬r₁ (here (i-simp (tc tc-bool)) List.[]))
