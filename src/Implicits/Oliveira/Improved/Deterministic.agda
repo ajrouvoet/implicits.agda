@@ -48,11 +48,14 @@ private
   open import Implicits.Oliveira.Improved.Resolution TC _tc≟_
   open import Extensions.ListFirst
 
+
   Bool : Type 0
   Bool = simpl $ tc tc-bool
 
-  Int : Type 0
+  Int : ∀ {ν} → Type ν
   Int = simpl $ tc tc-int
+
+module Example₁ where
 
   K : Ktx 0 1
   K = (Int ⇒ Bool) ∷K nil
