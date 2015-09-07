@@ -37,6 +37,11 @@ _⊢ᵣ[_] K ρs = All (λ r → K ⊢ᵣ r) ρs
 
 module FirstLemmas where
 
+  first⟶∈ : ∀ {ν} {Δ : ICtx ν} {r a} → Δ ⟨ a ⟩= r → r List.∈ Δ × r ◁ a
+  first⟶∈ (l-head px _) = here refl , px
+  first⟶∈ (l-tail ¬px f) = (there (proj₁ px)) , proj₂ px
+    where px = first⟶∈ f
+
   first-unique : ∀ {ν} {K : ICtx ν} {r r' a} → K ⟨ a ⟩= r → K ⟨ a ⟩= r' → r ≡ r'
   first-unique {K = List.[]} () y
   first-unique {K = x List.∷ .K} (l-head x₁ K) (l-head x₂ .K) = refl

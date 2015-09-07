@@ -230,7 +230,7 @@ inst↓ {K = K} (i-tabs {ρ = r} b r[b]↓a) ⊢r m =
   , F.Λ (subst (λ K₁ → K₁ F.⊢ proj₁ ⊢body ∈ _) (⟦ctx-weaken⟧≡ctx-weaken K) (proj₂ ⊢body))
   where
     ⊢body = ⟦ ⊢ra , #tvar m ⟧r
-⟦_,_⟧r {K = K} (r-simp K⟨a⟩=r r↓a) m with first⟶∈ K⟨a⟩=r
+⟦_,_⟧r {K = K} (r-simp K⟨a⟩=r r↓a) m with FirstLemmas.first⟶∈ K⟨a⟩=r
 ⟦_,_⟧r {K = K} (r-simp K⟨a⟩=r r↓a) m | r∈Δ , r◁a with ∈⟶index (All.lookup m r∈Δ)
 ⟦_,_⟧r {K = K} (r-simp {ρ = r} K⟨a⟩=r r↓a) m | r∈Δ , r◁a | i , lookup-i≡r =
   inst↓ r↓a (subst (λ τ → ⟦ K ⟧ctx F.⊢ F.var i ∈ τ) eq (F.var i)) m

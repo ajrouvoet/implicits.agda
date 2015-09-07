@@ -12,7 +12,7 @@ open import Extensions.ListFirst
 
 data _⊢ᵣ_ {ν n} (K : Ktx ν n) : Type ν → Set where
   r-tabs : ∀ {r} → ktx-weaken K ⊢ᵣ r → K ⊢ᵣ ∀' r
-  r-tapp : ∀ {a r} → K ⊢ᵣ ∀' r → K ⊢ᵣ (r tp[/tp a ])
+  r-tapp : ∀ {r} a → K ⊢ᵣ ∀' r → K ⊢ᵣ (r tp[/tp a ])
   r-ivar : ∀ {r} → r List.∈ proj₂ K → K ⊢ᵣ r
   r-iabs : ∀ {a b} → (a ∷K K) ⊢ᵣ b → K ⊢ᵣ (a ⇒ b)
   r-iapp : ∀ {a b} → K ⊢ᵣ (a ⇒ b) → K ⊢ᵣ a → K ⊢ᵣ b
