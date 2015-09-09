@@ -1,4 +1,4 @@
-open import Prelude hiding (lift; Fin′; subst)
+open import Prelude hiding (lift; Fin′; subst; id)
 
 module Implicits.Oliveira.Substitutions (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
@@ -73,6 +73,30 @@ module TypeSubst where
   stp-weaken (tc x) = tc x
   stp-weaken (tvar n) = tvar (suc n)
   stp-weaken (a →' b) = weaken a →' weaken b
+
+
+  private
+    lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
+    lem zero zero = zero , refl
+    lem zero (suc ())
+    lem (suc x) zero = suc x , refl
+    lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
+
+  {-
+  embed' : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
+  embed' {zero} zero s = s
+  embed' {zero} (suc α) s = id
+  embed' {suc ν} zero [] = id
+  embed' {suc ν} (suc α) (x ∷ s) = x ∷ {!embed' ν α s!}
+  -}
+
+  embed : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
+  embed {ν} α s = Prelude.subst
+    (λ u → Sub Type u ν)
+    (sym eq)
+    (s ++ (drop (toℕ α) (Prelude.subst (λ u → Vec (Type ν) u) eq (id {ν}))))
+      where
+          eq = proj₂ $ lem ν α
 
 module TermTypeSubst where
 
@@ -156,7 +180,7 @@ module TermTermSubst where
   Fin′ _ m = Fin m
 
   varLift : TermLift Fin′
-  varLift = record { lift = var; _↑tm = VarSubst._↑; _↑tp = id }
+  varLift = record { lift = var; _↑tm = VarSubst._↑; _↑tp = Prelude.id }
 
   infixl 8 _/Var_
 
@@ -175,7 +199,7 @@ module TermTermSubst where
 
   termLift : TermLift Term
   termLift = record
-    { lift = id; _↑tm = _↑ ; _↑tp = λ ρ → map weakenTp ρ }
+    { lift = Prelude.id; _↑tm = _↑ ; _↑tp = λ ρ → map weakenTp ρ }
 
   private
     module ExpandSubst {ν : ℕ} where

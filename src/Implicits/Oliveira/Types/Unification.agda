@@ -1,59 +1,135 @@
-open import Prelude hiding (id)
+open import Prelude hiding (id; _>>=_)
 
 module Implicits.Oliveira.Types.Unification (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Implicits.Oliveira.Types TC _tc≟_
+open import Data.Vec.Properties
+open import Category.Monad
+
+open import Data.Maybe using (monad; functor)
+open import Level using () renaming (zero to level₀)
+open RawMonad {level₀} monad using (_>>=_; return)
+open import Category.Functor
+open RawFunctor {level₀} functor
+open import Data.Star hiding (_>>=_)
+
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Data.Vec.Properties
+
+module McBride where
+
+  thin : ∀ {n} → Fin (suc n) → Fin n → Fin (suc n)
+  thin zero y = suc y
+  thin (suc x) zero = zero
+  thin (suc x) (suc y) = suc (thin x y)
+
+  thick : ∀ {n} → (x y : Fin (suc n)) → Maybe (Fin n)
+  thick zero zero = nothing
+  thick zero (suc y) = just y
+  thick {zero} (suc ()) zero
+  thick {suc n} (suc x) zero = just zero
+  thick {zero} (suc ()) _ 
+  thick {suc n} (suc x) (suc y) = suc <$> (thick x y)
+
+  check : ∀ {n} → Fin (suc n) → Type (suc n) → Maybe (Type n)
+  check n (simpl (tvar m)) = (simpl ∘ tvar) <$> (thick n m)
+  check n (simpl (tc x)) = just (simpl (tc x))
+  check n (simpl (a →' b)) with check n a | check n b
+  check n (simpl (a →' b)) | just x | just y = just (simpl (x →' y))
+  check n (simpl (a →' b)) | _ | nothing = nothing
+  check n (simpl (a →' b)) | nothing | _ = nothing
+  check n (a ⇒ b) with check n a | check n b
+  check n (a ⇒ b) | just x | just y = just (simpl (x →' y))
+  check n (a ⇒ b) | _ | nothing = nothing
+  check n (a ⇒ b) | nothing | _ = nothing
+  check n (∀' t) with check (suc n) t
+  check n (∀' t) | just x = just (∀' x)
+  check n (∀' t) | nothing = nothing
+
+  substitute : {m n : ℕ} → (Fin m → Type n) → Type m → Type n
+  substitute f (simpl (tc x)) = simpl (tc x)
+  substitute f (simpl (tvar n)) = f n
+  substitute f (simpl (a →' b)) = simpl (substitute f a →' substitute f b)
+  substitute f (a ⇒ b) = substitute f a ⇒ substitute f b
+  substitute f (∀' a) =
+    ∀' (substitute (λ{
+      zero    → simpl (tvar zero);
+      (suc x) → tp-weaken $ f x }
+    ) a)
+
+  _for_ : ∀ {n} → Type n → Fin (suc n) → Fin (suc n) → Type n
+  _for_ t' x y with thick x y
+  _for_ t' x y | just y' = simpl $ tvar y'
+  _for_ t' x y | nothing = t'
+
+  data ASub : ℕ → ℕ → Set where
+    _//_ : ∀ {ν} → (t' : Type ν) → Fin (suc ν) → ASub ν (suc ν)
+
+  AList : ℕ → ℕ → Set
+  AList m n = Star (flip ASub) m n
+
+  _◇_ : ∀ {l m n} → (Fin m → Type n) → (Fin l → Type m) → (Fin l → Type n)
+  f ◇ g = substitute f ∘ g
+
+  asub : ∀ {m n} → (σ : AList m n) → Fin m → Type n
+  asub ε = simpl ∘ tvar
+  asub (t' // x ◅ y) =  asub y ◇ (t' for x)
+
+  flex-flex : ∀ {m} → (x y : Fin m) → ∃ (AList m)
+  flex-flex {zero} () y
+  flex-flex {suc m} x y with thick x y
+  flex-flex {suc m} x y | just z = m , simpl (tvar z) // x ◅ ε
+  flex-flex {suc m} x y | nothing = (suc m) , ε
+
+  flex-rigid : ∀ {m} → Fin m → Type m → Maybe (∃ (AList m))
+  flex-rigid {zero} () t
+  flex-rigid {suc m} x t with check x t
+  flex-rigid {suc m} x t | just y = just (m , y // x ◅ ε)
+  flex-rigid {suc m} x t | nothing = nothing
+
+  mgu : ∀ {ν} (s t : Type ν) → Maybe (∃ (AList ν))
+  mgu {ν} s t = amgu s t (ν , ε)
+    where
+      postulate amgu : ∀ {ν} (s t : Type ν) → ∃ (AList ν) → Maybe (∃ (AList ν))
+      {-
+      -- non-matching constructors
+      amgu (simpl (tc x)) (simpl (a →' b)) acc = nothing
+      amgu (simpl (a →' b)) (simpl (tc x)) acc = nothing
+      amgu (_ ⇒ _) (simpl (tc _)) acc = nothing
+      amgu (simpl (tc _)) (_ ⇒ _) acc = nothing
+      amgu (_ ⇒ _) (simpl (_ →' _)) acc = nothing
+      amgu (simpl (a →' b)) (t₁ ⇒ t₂) acc = nothing
+      amgu (_ ⇒ _) (∀' _) x = nothing
+      amgu (∀' _) (_ ⇒ _) x = nothing
+      amgu (simpl (_ →' _)) (∀' _) x = nothing
+      amgu (∀' _) (simpl (_ →' _)) x = nothing
+      amgu (∀' _) (simpl (tc _)) x = nothing
+      amgu (simpl (tc _)) (∀' _) x = nothing
+
+      -- matching
+      amgu (simpl (tc x)) (simpl (tc y)) acc = just acc
+      amgu (simpl (a →' b)) (simpl (a' →' b')) acc = amgu b b' acc >>= amgu a a'
+      amgu (a ⇒ b) (a' ⇒ b') acc = _>>=_ (amgu b b' acc) (amgu a a')
+      amgu (∀' a) (∀' b) acc = {!!}
+
+      -- var-var
+      amgu (simpl (tvar x)) (simpl (tvar y)) (m , ε) = just (flex-flex x y)
+
+      -- var-rigid / rigid-var
+      amgu t (simpl (tvar x)) (m , ε) = flex-rigid x t 
+      amgu (simpl (tvar x)) t  (m , ε) = flex-rigid x t 
+
+      amgu s t (m , t' // x ◅ us) with amgu (substitute σ s) (substitute σ t) (m , us)
+        where σ = (t' for x )
+      amgu s t (m , t' // x ◅ us) | just (m' , us') = just (m' , t' // x ◅ us')
+      amgu s t (m , t' // x ◅ us) | nothing = nothing
+      -}
+
+-- open McBride
 open import Data.Fin.Substitution
 open TypeSubst hiding (subst)
 
-{-
-module MguSubst where
-  open import Data.Fin.Substitution as S using ()
-  module TS = TypeSubst
-
-  Sub : ℕ → Set
-  Sub ν = Fin ν × Type ν
-
-  Subs : ℕ → Set
-  Subs ν = List (Sub ν)
-
-  id : ∀ {ν} → Subs ν
-  id = List.[] 
-
-  _⊙_ : ∀ {ν} → Sub ν → Subs ν → Subs ν
-  _⊙_ = List._∷_
-
-  _/_ : ∀ {ν} → Type ν → Subs ν → Type ν
-  a / ss = a TS./ (List.foldl (λ σ s → σ [ proj₁ s ]≔ proj₂ s) TS.id ss)
-
-  _∈'_ : ∀ {ν} → Fin ν → Subs ν → Set
-  n ∈' ss = ∃ λ a → (n , a) List.∈ ss
-
-  _∉'_ :  ∀ {ν} → Fin ν → Subs ν → Set
-  n ∉' ss = ¬ n ∈' ss
-
-open MguSubst
--}
-
 mutual 
-
-  private
-    lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
-    lem zero zero = zero , refl
-    lem zero (suc ())
-    lem (suc x) zero = suc x , refl
-    lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
-
-    embed : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
-    embed {ν} α s = subst
-      (λ u → Sub Type u ν)
-      (sym eq)
-      (s ++ (drop (toℕ α) (subst (λ u → Vec (Type ν) u) eq (id {ν}))))
-        where
-            eq = proj₂ $ lem ν α
 
   MGU : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Set 
   MGU {ν} α a b = ∃ λ (s : Sub Type (toℕ α) ν) → a / (embed α s) ≡ b
@@ -64,8 +140,12 @@ mutual
   -- subn : ∀ {n} → Fin (suc n) → Type n → Sub Type (suc n) n
   -- subn {n} x a = id {n} [ x ]≔ a
 
+  postulate mgu-id : ∀ {ν} {α} a → MGU {ν} α a a
+
   -- TODO : every substitution should remove a type variable
-  postulate mgu : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Dec (MGU α a b)
+  postulate mgu : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Maybe (MGU α a b)
+
+  postulate mgu-sound : ∀ {ν} {α} {a b : Type ν} → mgu α a b ≡ nothing → ¬ MGU α a b
 
   mgu-unifies : ∀ {ν} {α : Fin (suc ν)} {a b} (u : (MGU α a b)) → apply-unifier α u a ≡ b
   mgu-unifies u = proj₂ u
