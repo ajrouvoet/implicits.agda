@@ -63,10 +63,10 @@ module McBride where
   _for_ t' x y | nothing = t'
 
   data ASub : ℕ → ℕ → Set where
-    _//_ : ∀ {ν} → (t' : Type ν) → Fin (suc ν) → ASub ν (suc ν)
+    _//_ : ∀ {ν} → (t' : Type ν) → Fin (suc ν) → ASub (suc ν) ν
 
   AList : ℕ → ℕ → Set
-  AList m n = Star (flip ASub) m n
+  AList m n = Star ASub m n
 
   _◇_ : ∀ {l m n} → (Fin m → Type n) → (Fin l → Type m) → (Fin l → Type n)
   f ◇ g = substitute f ∘ g
