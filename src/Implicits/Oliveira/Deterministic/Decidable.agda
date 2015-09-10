@@ -25,6 +25,16 @@ data _⊢match1st_ {ν} : List (Type ν) → (a : SimpleType ν) → Set where
             ¬ List.[] , zero ⊢ r matches a → rs ⊢match1st a →
             (r List.∷ rs) ⊢match1st a
 
+gather : ∀ {ν} {ρs : List (Type ν)} {a} → ρs ⊢match1st a → List (Type ν)
+gather (m1-head x) = gather' x
+  where
+    gather' : ∀ {ν} {ρs : List (Type ν)} {α r a} → ρs , α ⊢ r matches a → List (Type ν)
+    gather' (mtc-tabs x) = {!!}
+    gather' (mtc-iabs x) = gather' x
+    gather' {ρs = ρs} {α = α} (mtc-simp {a = a} {b = b} u) =
+        List.map (apply-unifier α {simpl a} {simpl b} u) ρs
+gather (m1-tail ¬x xs) = gather xs
+
 match : ∀ {ν} → (ρs : List (Type ν)) → (α : Fin (suc ν)) → (a : SimpleType ν) → (r : Type ν) →
         Dec (ρs , α ⊢ r matches a)
 match ρs α a (simpl x) with mgu α (simpl x) (simpl a) | inspect (mgu α (simpl x)) (simpl a)
@@ -54,12 +64,10 @@ module Lemmas where
   lem-A6 : ∀ {ν} {ρs} {r : Type ν} {a α} → ρs , α ⊢ r matches a →
            ∃ λ u → (r tp/tp (TypeSubst.embed α u)) ◁ a
   lem-A6 (mtc-tabs {r = r} p) with lem-A6 p
-  lem-A6 (mtc-tabs {r = r} p) | u , q = {!!} -- TODO: this should be doable, just a bit tricky
+  lem-A6 (mtc-tabs {r = r} p) | u , q = ?
   lem-A6 (mtc-iabs p) with lem-A6 p
   lem-A6 (mtc-iabs p) | u , q = u , m-iabs q
   lem-A6 {a = a} (mtc-simp (u , eq)) = u , subst (λ e → e ◁ a) (sym eq) m-simp
-
-  -- postulate r◁a⟶r◁weaken-a : ∀ {ν} {r : Type ν} {a} → r ◁ a → r ◁ stp-weaken a
 
   lem-A6' : ∀ {ν} {ρs} {r : Type ν} {a α} → r ◁ a → ρs , α ⊢ r matches a
   lem-A6' {a = a} m-simp = mtc-simp (mgu-id (simpl a)) 
@@ -88,8 +96,6 @@ module Lemmas where
   lem-A7a (r List.∷ Δ) (m1-tail ¬pr y) =
     , (l-tail (λ r◁a → ¬pr $ lem-A6' r◁a) (proj₂ $ lem-A7a Δ y))
 
-  -- lem-A7a : ∀ {ν} (Δ : ICtx ν) {a} → Δ ⊢match1st a → ∃ λ r → Δ ⟨ a ⟩= r
-
 open Lemmas
 
 _⊢alg_ : ∀ {ν n} (K : Ktx ν n) → (a : Type ν) → Dec (K ⊢ᵣ a)
@@ -102,15 +108,3 @@ K ⊢alg (a ⇒ b) | no ¬p = no (λ{ (r-iabs .a x) → ¬p x })
 K ⊢alg ∀' a with (ktx-weaken K) ⊢alg a
 K ⊢alg ∀' a | yes p = yes (r-tabs p)
 K ⊢alg ∀' a | no ¬p = no (λ{ (r-tabs x) → ¬p x })
-{-
-K ⊢alg simpl x | yes (r , p) with K ⊢alg r
-K ⊢alg simpl x | yes (r , p) | yes K⊢ᵣr = yes (r-simp {!p!} {!!}) -- (r-simp p {!!})
-K ⊢alg simpl x | yes (r , p) | no ¬K⊢ᵣr = {!!}
-K ⊢alg simpl x | no ¬p = no {!!} -- (λ{ (r-simp fst r↓x) → ¬p (, fst) })
-K ⊢alg (a ⇒ b) with (a ∷K K) ⊢alg b
-K ⊢alg (a ⇒ b) | yes p = yes $ r-iabs a p
-K ⊢alg (a ⇒ b) | no ¬p = no (λ{ (r-iabs .a x) → ¬p x })
-K ⊢alg ∀' a with (ktx-weaken K) ⊢alg a
-K ⊢alg ∀' a | yes p = yes (r-tabs p)
-K ⊢alg ∀' a | no ¬p = no (λ{ (r-tabs x) → ¬p x })
--}

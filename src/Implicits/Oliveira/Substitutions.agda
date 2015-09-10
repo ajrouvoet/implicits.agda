@@ -82,14 +82,6 @@ module TypeSubst where
     lem (suc x) zero = suc x , refl
     lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
 
-  {-
-  embed' : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
-  embed' {zero} zero s = s
-  embed' {zero} (suc α) s = id
-  embed' {suc ν} zero [] = id
-  embed' {suc ν} (suc α) (x ∷ s) = x ∷ {!embed' ν α s!}
-  -}
-
   embed : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
   embed {ν} α s = Prelude.subst
     (λ u → Sub Type u ν)

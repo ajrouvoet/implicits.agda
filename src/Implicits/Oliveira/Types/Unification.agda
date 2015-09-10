@@ -4,6 +4,7 @@ module Implicits.Oliveira.Types.Unification (TC : Set) (_tc≟_ : (a b : TC) →
 
 open import Implicits.Oliveira.Types TC _tc≟_
 open import Data.Vec.Properties
+open import Data.Nat.Properties.Simple
 open import Category.Monad
 
 open import Data.Maybe using (monad; functor)
@@ -68,12 +69,20 @@ module McBride where
   AList : ℕ → ℕ → Set
   AList m n = Star ASub m n
 
-
   asub-weaken : ∀ {m n} → ASub m n → ASub (suc m) (suc n)
   asub-weaken (t' // x) = tp-weaken t' // (inject₁ x)
 
+  asub-weaken⋆ : ∀ {m n} α → ASub m n → ASub (m N+ α) (n N+ α)
+  asub-weaken⋆ {m} {n} zero x = subst₂ (λ u v → ASub u v)
+                                       (sym $ +-right-identity m) (sym $ +-right-identity n) x 
+  asub-weaken⋆ {m} {n} (suc α) x = subst₂ (λ u v → ASub u v)
+                                          (sym $ +-suc m α) (sym $ +-suc n α) (asub-weaken⋆ α (asub-weaken x))
+
   alist-weaken : ∀ {m n} → AList m n → AList (suc m) (suc n)
   alist-weaken s = gmap suc (λ x → asub-weaken x) s
+
+  alist-weaken⋆ : ∀ {m n} α → AList m n → AList (m N+ α) (n N+ α)
+  alist-weaken⋆ α s = gmap (λ n → n N+ α) (asub-weaken⋆ α) s
 
   _◇_ : ∀ {l m n} → (Fin m → Type n) → (Fin l → Type m) → (Fin l → Type n)
   f ◇ g = substitute f ∘ g
@@ -132,7 +141,19 @@ module McBride where
       amgu s t (m , t' // x ◅ us) | nothing = nothing
       -}
 
--- open McBride
+  {-
+  MGU : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Set
+  MGU {ν} α a b = ∃ λ (s : AList (toℕ α) zero) →
+    (substitute (asub $ alist-weaken⋆ (proj₁ eq) s)) (subst Type (proj₂ eq) a) ≡ b
+    where
+      lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
+      lem zero zero = zero , refl
+      lem zero (suc ())
+      lem (suc x) zero = suc x , refl
+      lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
+      eq = lem ν α
+      -}
+
 open import Data.Fin.Substitution
 open TypeSubst hiding (subst)
 
