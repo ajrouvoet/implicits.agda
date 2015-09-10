@@ -22,6 +22,9 @@ mutual
     _⇒_  : Type ν → Type ν → Type ν
     ∀'   : Type (suc ν) → Type ν
 
+TVar : ∀ {ν} → Fin ν → Type ν
+TVar = simpl ∘ tvar
+
 is-∀' : ∀ {ν} → Type ν → Set
 is-∀' (simpl x) = ⊥
 is-∀' (_ ⇒ _) = ⊥

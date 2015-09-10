@@ -68,6 +68,13 @@ module McBride where
   AList : ℕ → ℕ → Set
   AList m n = Star ASub m n
 
+
+  asub-weaken : ∀ {m n} → ASub m n → ASub (suc m) (suc n)
+  asub-weaken (t' // x) = tp-weaken t' // (inject₁ x)
+
+  alist-weaken : ∀ {m n} → AList m n → AList (suc m) (suc n)
+  alist-weaken s = gmap suc (λ x → asub-weaken x) s
+
   _◇_ : ∀ {l m n} → (Fin m → Type n) → (Fin l → Type m) → (Fin l → Type n)
   f ◇ g = substitute f ∘ g
 
