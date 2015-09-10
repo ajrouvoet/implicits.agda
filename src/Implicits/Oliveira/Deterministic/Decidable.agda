@@ -29,7 +29,7 @@ gather : ∀ {ν} {ρs : List (Type ν)} {a} → ρs ⊢match1st a → List (Typ
 gather (m1-head x) = gather' x
   where
     gather' : ∀ {ν} {ρs : List (Type ν)} {α r a} → ρs , α ⊢ r matches a → List (Type ν)
-    gather' (mtc-tabs x) = {!!}
+    gather' {ρs = ρs} (mtc-tabs x) = ρs
     gather' (mtc-iabs x) = gather' x
     gather' {ρs = ρs} {α = α} (mtc-simp {a = a} {b = b} u) =
         List.map (apply-unifier α {simpl a} {simpl b} u) ρs
@@ -64,7 +64,7 @@ module Lemmas where
   lem-A6 : ∀ {ν} {ρs} {r : Type ν} {a α} → ρs , α ⊢ r matches a →
            ∃ λ u → (r tp/tp (TypeSubst.embed α u)) ◁ a
   lem-A6 (mtc-tabs {r = r} p) with lem-A6 p
-  lem-A6 (mtc-tabs {r = r} p) | u , q = ?
+  lem-A6 (mtc-tabs {r = r} p) | u , q = {!!}
   lem-A6 (mtc-iabs p) with lem-A6 p
   lem-A6 (mtc-iabs p) | u , q = u , m-iabs q
   lem-A6 {a = a} (mtc-simp (u , eq)) = u , subst (λ e → e ◁ a) (sym eq) m-simp
