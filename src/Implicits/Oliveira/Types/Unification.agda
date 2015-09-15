@@ -160,14 +160,13 @@ module McBride where
       amgu s t (m , t' // x ◅ us) | nothing = nothing
 
 Unifiable : ∀ {m ν} (a b : MetaType m ν) → Set
-Unifiable {m} a b = ∃ λ u → McBride.mgu a b ≡ just (m , u)
+Unifiable {m} a b = ∃ λ u → McBride.mgu a b ≡ just (zero , u)
 
 -- Just a bit stricter than mcbride.mgu
 -- We require here as well that all meta variables are instantiated
 -- (this is equivalent to the ⊢unamb constraint in Oliveira)
 mgu : ∀ {m ν} (a b : MetaType m ν) → Maybe (Unifiable a b)
 mgu a b with McBride.mgu a b
-mgu {m} a b | just (m' , proj₂) with m N≟ m'
-mgu a b | just (m , u) | yes refl = just (u , refl)
-mgu a b | just (m' , u) | no ¬p = nothing
+mgu a b | just (zero , u) = just (u , refl)
+mgu a b | just (suc m , _) = nothing
 mgu a b | nothing = nothing

@@ -21,7 +21,6 @@ open import Implicits.Oliveira.Types.Unification TC _tc≟_
 open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
 open import Data.Star as S 
 open import Data.Maybe
-open McBride
 
 open import Level using () renaming (zero to level₀)
 open import Data.Maybe using (monad; functor)
@@ -37,17 +36,6 @@ Bool = simpl $ tc tc-bool
 
 Int : ∀ {n} → Type n
 Int = simpl $ tc tc-int
-
-module ex₁ where
-
-  s : AList zero (suc zero) (zero)
-  s = ((tc tc-int) // zero) ◅ ε
-
-  s' : AList (suc zero) (suc zero) zero
-  s' = alist-weaken s
-
-  t : MetaType zero (suc zero)
-  t = substitute (asub s') (fork rul (mvar zero) (mvar zero))
 
 module ex₂ where
   -- mgu test for simple 2 variable substitution
@@ -89,8 +77,8 @@ module ex₄ where
   b' : MetaType (suc zero) (suc (suc zero))
   b' = fork rul (∀' (tvar (suc zero))) (tc tc-int)
 
-  s : Unifiable a b
-  s = , mgu a b
+  s : mgu a b ≡ nothing
+  s = refl
 
   s' : is-just (mgu (T.weaken a) b') ≡ true
   s' = refl
