@@ -159,111 +159,15 @@ module McBride where
       amgu s t (m , t' // x ◅ us) | just (m' , us') = just (m' , t' // x ◅ us')
       amgu s t (m , t' // x ◅ us) | nothing = nothing
 
-  {-
-  MGU : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Set
-  MGU {ν} α a b = ∃ λ (s : AList (toℕ α) zero) →
-    (substitute (asub $ alist-weaken⋆ (proj₁ eq) s)) (subst Type (proj₂ eq) a) ≡ b
-    where
-      lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
-      lem zero zero = zero , refl
-      lem zero (suc ())
-      lem (suc x) zero = suc x , refl
-      lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
-      eq = lem ν α
-      -}
+Unifiable : ∀ {m ν} (a b : MetaType m ν) → Set
+Unifiable {m} a b = ∃ λ u → McBride.mgu a b ≡ just (m , u)
 
-{-}
-open import Data.Fin.Substitution
-open TypeSubst hiding (subst)
-
-mutual 
-
-  MGU : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Set 
-  MGU {ν} α a b = ∃ λ (s : Sub Type (toℕ α) ν) → a / (embed α s) ≡ b
-
-  apply-unifier : ∀ {ν} α {a b : Type ν} → MGU α a b → Type ν → Type ν
-  apply-unifier α u a = a / (embed α (proj₁ u))
-
-  -- subn : ∀ {n} → Fin (suc n) → Type n → Sub Type (suc n) n
-  -- subn {n} x a = id {n} [ x ]≔ a
-
-  postulate mgu-id : ∀ {ν} {α} a → MGU {ν} α a a
-
-  -- TODO : every substitution should remove a type variable
-  postulate mgu : ∀ {ν} → (α : Fin (suc ν)) → (a b : Type ν) → Maybe (MGU α a b)
-
-  postulate mgu-sound : ∀ {ν} {α} {a b : Type ν} → mgu α a b ≡ nothing → ¬ MGU α a b
-
-  mgu-unifies : ∀ {ν} {α : Fin (suc ν)} {a b} (u : (MGU α a b)) → apply-unifier α u a ≡ b
-  mgu-unifies u = proj₂ u
-
-  {-
-  mgu (simpl (tc x)) (simpl (tc y)) with x tc≟ y
-  mgu (simpl (tc x)) (simpl (tc .x)) | yes refl = yes (id , TypeLemmas.id-vanishes (simpl $ tc x))
-  mgu (simpl (tc x)) (simpl (tc y))  | no x≢y = no (λ{ (s , tc-x/s≡y) → x≢y (helper s tc-x/s≡y) }) 
-    where
-        helper : ∀ {c d n m} (s : Sub Type n m) → (simpl (tc c)) / s ≡ (simpl (tc d)) → c ≡ d
-        helper _ refl = refl
-  mgu (simpl (tvar n)) x = yes (id [ n ]≔ x , lookup∘update n id x)
-  mgu (simpl (a →' b)) (simpl (a' →' b')) with mgu a a' 
-  mgu (simpl (a →' b)) (simpl (a' →' b')) | no ¬p = no (λ{ (s , p) → ¬p (s , helper a b a' b' s p) })
-    where
-        helper : ∀ {n m} a b a' b' (σ : Sub Type n m) →
-                 (simpl $ a →' b) / σ ≡ (simpl $ a' →' b') → a / σ ≡ a'
-        helper _ _ _ _ _ refl = refl
-  mgu (simpl (a →' b)) (simpl (a' →' b')) | yes (s , p) with mgu b (b' / s)
-  mgu (simpl (a →' b)) (simpl (a' →' b')) | yes (s , p) | yes (s' , p') = yes (s ⊙ s' , helper)
-    where
-      helper : (simpl (a →' b)) / (s ⊙ s') ≡ (simpl (a' →' b'))
-      helper = begin
-        (simpl (a →' b)) / (s ⊙ s')
-          ≡⟨ refl ⟩
-        simpl ((a / (s ⊙ s')) →' (b / (s ⊙ s')))
-          ≡⟨ ? ⟩
-        simpl ((a / s / s') →' (b / (s ⊙ s')))
-          ≡⟨ ? ⟩
-        (simpl (a' →' b')) ∎
-  mgu (simpl (a →' b)) (simpl (a' →' b')) | yes (s , p) | no ¬p' = {!!}
-  mgu (a ⇒ b) (a' ⇒ b') = {!!}
-  mgu (∀' a) (∀' b) with mgu a b
-  mgu (∀' a) (∀' b) | yes ( s ∷ ss , p) with s ≟ (simpl (tvar zero))
-  mgu (∀' a) (∀' b) | yes ( s ∷ ss , p) | yes s≡zero = yes {!ss , ?!}
-  mgu (∀' a) (∀' b) | yes ( s ∷ ss , p) | no s≢zero = {!s!}
-  mgu (∀' a) (∀' b) | no ¬p = {!!}
-
-  -- obviously "no"
-  mgu (simpl (tc x)) (simpl (tvar n)) = no (λ{ (s  , ()) })
-  mgu (simpl (x →' x₁)) (simpl (tvar n)) =  no (λ{ (s  , ()) })
-  mgu (a ⇒ b) (simpl (tvar n)) = no (λ { (s , ()) })
-  mgu (∀' x) (simpl (tvar n)) = no (λ{ (s  , ()) })
-  mgu (simpl (tc x)) (simpl (x₁ →' x₂)) = no (λ { (s , ()) })
-  mgu (simpl (x →' x₁)) (simpl (tc x₂)) = no (λ { (s , ()) })
-  mgu (simpl a) (b ⇒ b₁) = no (λ { (s , ()) })
-  mgu (simpl a) (∀' b) = no (λ { (s , ()) })
-  mgu (a ⇒ a₁) (simpl x) = no (λ { (s , ()) })
-  mgu (a ⇒ a₁) (∀' b) = no (λ { (s , ()) })
-  mgu (∀' a) (simpl x) = no (λ { (s , ()) })
-  mgu (∀' a) (b ⇒ b₁) = no (λ { (s , ()) })
-  -}
-
-  {-
-  data MGU {ν} : (a b : Type ν) → Set where
-    uinst : ∀ n r → MGU r (simpl $ tvar n)
-    uvar : ∀ n → MGU (simpl $ tvar n) (simpl $ tvar n)
-    ufun : ∀ {a b a' b'} → (u₁ : MGU a a') → MGU b (apply-mgu u₁ b') →
-           MGU (simpl (a →' b)) (simpl (a' →' b'))
-    urul : ∀ {a b a' b'} → (u₁ : MGU a a') → MGU b (apply-mgu u₁ b') → MGU (a ⇒ b) (a' ⇒ b')
-    uabs : ∀ {a b} → MGU a b → MGU (∀' a) (∀' b)
-
-  apply-mgu : ∀ {ν} {a b : Type ν} → MGU a b → Type ν → Type ν
-  apply-mgu (uinst n r) a = a TypeSubst./ (id [ n ]≔ r)
-  apply-mgu (uvar n) a = a
-  apply-mgu (ufun u v) a = apply-mgu v $ apply-mgu u a
-  apply-mgu (urul u v) a = apply-mgu v $ apply-mgu u a
-  apply-mgu (uabs u) a = {!!}
-  -}
-
-  -- postulate unifier-unifies : ∀ {ν} {a b : Type ν} → (u : MGU a b) → apply-mgu u a ≡ b
-
--- mgu : ∀ {ν} → (a b : Type ν) → 
--}
+-- Just a bit stricter than mcbride.mgu
+-- We require here as well that all meta variables are instantiated
+-- (this is equivalent to the ⊢unamb constraint in Oliveira)
+mgu : ∀ {m ν} (a b : MetaType m ν) → Maybe (Unifiable a b)
+mgu a b with McBride.mgu a b
+mgu {m} a b | just (m' , proj₂) with m N≟ m'
+mgu a b | just (m , u) | yes refl = just (u , refl)
+mgu a b | just (m' , u) | no ¬p = nothing
+mgu a b | nothing = nothing

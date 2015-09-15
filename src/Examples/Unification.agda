@@ -30,6 +30,7 @@ open RawFunctor {level₀} functor
 open MetaTypeMetaSubst using (open-meta)
 
 module M = MetaTypeMetaSubst
+module T = MetaTypeTypeSubst
 
 Bool : ∀ {n} → Type n
 Bool = simpl $ tc tc-bool
@@ -72,6 +73,27 @@ module ex₃ where
 
   s : mgu a b ≡ nothing
   s = refl
+
+module ex₄ where
+  -- with ∀' in there somewhere
+
+  a : MetaType (suc zero) (suc zero)
+  a = fork rul (∀' (mvar zero)) (tc tc-int)
+
+  -- won't unify with a because we'd need to instantiate mvar zero with
+  -- a tvar that's not yet introduced
+  b : MetaType (suc zero) (suc zero)
+  b = fork rul (∀' (tvar zero)) (tc tc-int)
+
+  -- can unify with a
+  b' : MetaType (suc zero) (suc (suc zero))
+  b' = fork rul (∀' (tvar (suc zero))) (tc tc-int)
+
+  s : Unifiable a b
+  s = , mgu a b
+
+  s' : is-just (mgu (T.weaken a) b') ≡ true
+  s' = refl
 
 module ex₅ where
   -- renaming example
