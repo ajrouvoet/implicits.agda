@@ -3,6 +3,7 @@ open import Prelude hiding (lift; Fin′; subst; id)
 module Implicits.Oliveira.Substitutions (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Implicits.Oliveira.Types TC _tc≟_
+open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
 open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Data.Fin.Substitution
@@ -74,7 +75,6 @@ module TypeSubst where
   stp-weaken (tvar n) = tvar (suc n)
   stp-weaken (a →' b) = weaken a →' weaken b
 
-
   private
     lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
     lem zero zero = zero , refl
@@ -89,6 +89,138 @@ module TypeSubst where
     (s ++ (drop (toℕ α) (Prelude.subst (λ u → Vec (Type ν) u) eq (id {ν}))))
       where
           eq = proj₂ $ lem ν α
+
+module MetaTypeTypeSubst where
+
+  MetaSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
+  MetaSub T m ν μ = Sub (T m) ν μ
+
+  record MetaLift (T : ℕ → ℕ → Set) : Set where
+    infix 10 _↑tp
+    field
+      lift : ∀ {m ν} → T m ν → MetaType m ν
+      _↑tp : ∀ {m ν μ} → MetaSub T m ν μ → MetaSub T m (suc ν) (suc μ)
+  
+  module MetaTypeApp {T} (l : MetaLift T) where
+    open MetaLift l
+
+    infixl 8 _/_
+
+    _/_ : ∀ {m μ ν} → MetaType m ν → MetaSub T m ν μ → MetaType m μ
+    tc c / σ = tc c
+    tvar x / σ = lift (lookup x σ)
+    mvar x / σ = mvar x
+    (fork c a b) / σ = fork c (a / σ) (b / σ)
+    (∀' a)   / σ = ∀' (a / σ ↑tp)
+
+  Fin′ : ℕ → ℕ → Set
+  Fin′ m ν = Fin ν
+
+  varLift : MetaLift Fin′
+  varLift = record { lift = tvar; _↑tp = VarSubst._↑ }
+
+  infixl 8 _/Var_
+
+  _/Var_ : ∀ {m n k} → MetaType m n → Sub Fin n k → MetaType m k
+  _/Var_ = MetaTypeApp._/_ varLift
+
+  private
+    module ExpandSimple {m : ℕ} where
+      simple : Simple (MetaType m)
+      simple = record { var = tvar; weaken = λ t → t /Var VarSubst.wk }
+
+      open Simple simple public
+
+  open ExpandSimple  using (_↑; simple)
+
+  termLift : MetaLift MetaType
+  termLift = record { lift = Prelude.id; _↑tp = _↑ }
+
+  private
+    module ExpandSubst {n : ℕ} where
+      app : Application (MetaType n) (MetaType n)
+      app = record { _/_ = MetaTypeApp._/_ termLift }
+
+      subst : Subst (MetaType n)
+      subst = record
+        { simple      = simple
+        ; application = app
+        }
+
+      open Subst subst public
+
+  open ExpandSubst public hiding (var; simple)
+
+module MetaTypeMetaSubst where
+  MetaSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
+  MetaSub T ν m n = Sub (flip T ν) m n
+
+  record MetaLift (T : ℕ → ℕ → Set) : Set where
+    infix 10 _↑meta _↑tp
+    field
+      lift : ∀ {ν m} → T ν m → MetaType ν m
+      _↑meta : ∀ {ν m n} → MetaSub T ν m n → MetaSub T ν (suc m) (suc n)
+      _↑tp : ∀ {ν m n} → MetaSub T ν m n → MetaSub T (suc ν) m n
+
+  
+  module MetaTypeApp {T} (l : MetaLift T) where
+    open MetaLift l
+
+    infixl 8 _/_
+
+    mutual 
+      _/_ : ∀ {m n ν} → MetaType m ν → MetaSub T ν m n → MetaType n ν
+      tc c / σ = tc c
+      tvar x / σ = tvar x
+      mvar x / σ = lift (lookup x σ)
+      (fork c a b) / σ = fork c (a / σ) (b / σ)
+      (∀' a)   / σ = ∀' (a / σ ↑tp)
+
+  Fin′ : ℕ → ℕ → Set
+  Fin′ ν m = Fin ν
+
+  varLift : MetaLift Fin′
+  varLift = record { lift = mvar; _↑meta = VarSubst._↑; _↑tp = Prelude.id }
+
+  infixl 8 _/Var_
+
+  _/Var_ : ∀ {m n k} → MetaType m n → Sub Fin m k → MetaType k n
+  _/Var_ = MetaTypeApp._/_ varLift
+
+  private
+    module ExpandSimple {ν : ℕ} where
+      simple : Simple (flip MetaType ν)
+      simple = record { var = mvar; weaken = λ t → t /Var VarSubst.wk }
+
+      open Simple simple public
+
+  open ExpandSimple using (_↑; simple)
+  open MetaTypeTypeSubst using () renaming (weaken to weakenTp)
+  
+  termLift : MetaLift MetaType
+  termLift = record { lift = Prelude.id; _↑meta = _↑; _↑tp = λ x → map weakenTp x }
+
+  private
+    module ExpandSubst {n : ℕ} where
+      app : Application (flip MetaType n) (flip MetaType n)
+      app = record { _/_ = MetaTypeApp._/_ termLift }
+
+      subst : Subst (flip MetaType n)
+      subst = record
+        { simple      = simple
+        ; application = app
+        }
+
+      open Subst subst public
+
+  open ExpandSubst public hiding (var; simple)
+
+  open-meta : ∀ {m ν} → (a : MetaType m ν) → {p : is-m∀' a} → MetaType (suc m) ν
+  open-meta (tvar x) {()}
+  open-meta (mvar x) {()}
+  open-meta (fork x x₁ x₂) {()}
+  open-meta (∀' x) = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (mvar zero))
+  open-meta (tc c) {()}
 
 module TermTypeSubst where
 
