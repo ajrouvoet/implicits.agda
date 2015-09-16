@@ -17,14 +17,14 @@ open import Data.Star hiding (_>>=_)
 
 open import Data.Fin.Substitution
 open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
+open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_ public
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
 
-module McBride where
+private
+  module M = MetaTypeMetaSubst
+  module T = MetaTypeTypeSubst
 
-  private
-    module M = MetaTypeMetaSubst
-    module T = MetaTypeTypeSubst
+module McBride where
 
   thin : ∀ {n} → Fin (suc n) → Fin n → Fin (suc n)
   thin zero y = suc y
@@ -40,39 +40,48 @@ module McBride where
   thick {suc n} (suc x) (suc y) = suc <$> (thick x y)
 
   check : ∀ {ν n} → Fin (suc n) → MetaType (suc n) ν → Maybe (MetaType n ν)
-  check n (tvar m) = just (tvar m)
-  check n (mvar m) = mvar <$> (thick n m)
-  check n (tc x) = just (tc x)
-  check n (fork c a b) with check n a | check n b
-  check n (fork c a b) | just x | just y = just (fork c x y)
-  check n (fork c a b) | _ | nothing = nothing
-  check n (fork c a b) | nothing | _ = nothing
+  check n (simpl (tvar m)) = just (simpl (tvar m))
+  check n (simpl (mvar m)) = (λ n → simpl (mvar n)) <$> (thick n m)
+  check n (simpl (tc x)) = just (simpl (tc x))
+  check n (simpl (a →' b)) with check n a | check n b
+  check n (simpl (a →' b)) | just x | just y = just (simpl (x →' y))
+  check n (simpl (a →' b)) | _ | nothing = nothing
+  check n (simpl (a →' b)) | nothing | _ = nothing
+  check n (a ⇒ b) with check n a | check n b
+  check n (a ⇒ b) | just x | just y = just (x ⇒ y)
+  check n (a ⇒ b) | _ | nothing = nothing
+  check n (a ⇒ b) | nothing | _ = nothing
   check n (∀' t) with check n t
   check n (∀' t) | just x = just (∀' x)
   check n (∀' t) | nothing = nothing
 
   check' : ∀ {ν n} → Fin (suc ν) → MetaType n (suc ν) → Maybe (MetaType n ν)
-  check' n (tvar m) = tvar <$> (thick n m)
-  check' n (mvar m) = just (mvar m)
-  check' n (tc x) = just (tc x)
-  check' n (fork c a b) with check' n a | check' n b
-  check' n (fork c a b) | just x | just y = just (fork c x y)
-  check' n (fork c a b) | _ | nothing = nothing
-  check' n (fork c a b) | nothing | _ = nothing
+  check' n (simpl (tvar m)) = (λ n → simpl (tvar n)) <$> (thick n m)
+  check' n (simpl (mvar m)) = just (simpl (mvar m))
+  check' n (simpl (tc x)) = just (simpl (tc x))
+  check' n (simpl (a →' b)) with check' n a | check' n b
+  check' n (simpl (a →' b)) | just x | just y = just (simpl (x →' y))
+  check' n (simpl (a →' b)) | _ | nothing = nothing
+  check' n (simpl (a →' b)) | nothing | _ = nothing
+  check' n (a ⇒ b) with check' n a | check' n b
+  check' n (a ⇒ b) | just x | just y = just (x ⇒ y)
+  check' n (a ⇒ b) | _ | nothing = nothing
+  check' n (a ⇒ b) | nothing | _ = nothing
   check' n (∀' t) with check' (suc n) t
   check' n (∀' t) | just x = just (∀' x)
   check' n (∀' t) | nothing = nothing
 
   substitute : {ν m n : ℕ} → (Fin m → MetaType n ν) → MetaType m ν → MetaType n ν
-  substitute f (tc x) = tc x
-  substitute f (tvar n) = tvar n
-  substitute f (mvar n) = f n
-  substitute f (fork c a b) = fork c (substitute f a) (substitute f b)
+  substitute f (simpl (tc x)) = simpl (tc x)
+  substitute f (simpl (tvar n)) = simpl(tvar n)
+  substitute f (simpl (mvar n)) = f n
+  substitute f (simpl (a →' b)) = simpl ((substitute f a) →' (substitute f b))
+  substitute f (a ⇒ b) = (substitute f a) ⇒ (substitute f b)
   substitute f (∀' a) = ∀' (substitute (λ{ x → T.weaken $ f x }) a)
 
   _for_ : ∀ {n ν} → MetaType n ν → Fin (suc n) → Fin (suc n) → MetaType n ν
   _for_ t' x y with thick x y
-  _for_ t' x y | just y' = mvar y'
+  _for_ t' x y | just y' = simpl (mvar y')
   _for_ t' x y | nothing = t'
 
   data ASub (ν : ℕ) : ℕ → ℕ → Set where
@@ -91,13 +100,13 @@ module McBride where
   f ◇ g = substitute f ∘ g
 
   asub : ∀ {ν m n} → (σ : AList ν m n) → Fin m → MetaType n ν
-  asub ε = mvar
+  asub ε = λ n → simpl (mvar n)
   asub (t' // x ◅ y) =  asub y ◇ (t' for x)
 
   flex-flex : ∀ {m ν} → (x y : Fin m) → ∃ (AList ν m)
   flex-flex {zero} () y
   flex-flex {suc m} x y with thick x y
-  flex-flex {suc m} x y | just z = m , (mvar z) // x ◅ ε
+  flex-flex {suc m} x y | just z = m , (simpl (mvar z)) // x ◅ ε
   flex-flex {suc m} x y | nothing = (suc m) , ε
 
   flex-rigid : ∀ {m ν} → Fin m → MetaType m ν → Maybe (∃ (AList ν m))
@@ -111,30 +120,32 @@ module McBride where
     where
       amgu : ∀ {ν m} (s t : MetaType m ν) → ∃ (AList ν m) → Maybe (∃ (AList ν m))
       -- non-matching constructors
-      amgu (tc x) (fork _ _ _) acc = nothing
-      amgu (tc _) (∀' _) x = nothing
-      amgu (tc _) (tvar _) x = nothing
-      amgu (tc _) (mvar _) acc = nothing
-      amgu (fork _ _ _) (tc _) acc = nothing
-      amgu (fork _ _ _) (∀' _) x = nothing
-      amgu (fork _ _ _) (tvar _) x = nothing
-      amgu (fork _ _ _) (mvar _) acc = nothing
-      amgu (∀' _) (fork _ _ _) x = nothing
-      amgu (∀' _) (tc _) x = nothing
-      amgu (∀' _) (tvar _) x = nothing
-      amgu (∀' _) (mvar _) acc = nothing
-      amgu (tvar _) (fork _ _ _) x = nothing
-      amgu (tvar _) (∀' _) x = nothing
-      amgu (tvar _) (tc _) x = nothing
-      amgu (tvar _) (mvar _) acc = nothing
+      amgu (simpl (tc x)) (_ ⇒ _) acc = nothing
+      amgu (simpl (tc _)) (∀' _) x = nothing
+      amgu (simpl (tc x)) (simpl (_ →' _)) acc = nothing
+      amgu (simpl (tc _)) (simpl (tvar _)) x = nothing
+      amgu (simpl (tc _)) (simpl (mvar _)) acc = nothing
+      amgu (simpl (_ →' _)) (∀' _) x = nothing
+      amgu (simpl (_ →' _)) (_ ⇒ _) x = nothing
+      amgu (simpl (_ →' _)) (simpl (tc _)) acc = nothing
+      amgu (simpl (_ →' _)) (simpl (tvar _)) x = nothing
+      amgu (simpl (_ →' _)) (simpl (mvar _)) acc = nothing
+      amgu (_ ⇒ _) (simpl x) acc = nothing
+      amgu (_ ⇒ _) (∀' _) x = nothing
+      amgu (∀' _) (_ ⇒ _) x = nothing
+      amgu (∀' _) (simpl _) x = nothing
+      amgu (simpl (tvar _)) (_ ⇒ _) x = nothing
+      amgu (simpl (tvar _)) (∀' _) x = nothing
+      amgu (simpl (tvar _)) (simpl (tc _)) x = nothing
+      amgu (simpl (tvar _)) (simpl (mvar _)) acc = nothing
+      amgu (simpl (tvar _)) (simpl (_ →' _)) acc = nothing
 
       -- matching constructors
-      amgu (fork c _ _) (fork d _ _) acc with c fork≟ d
-      amgu (fork c a b) (fork d a' b') acc | yes p = _>>=_ (amgu b b' acc) (amgu a a')
-      amgu (fork c x x₁) (fork d x₂ x₃) acc | no ¬p = nothing 
-      amgu (tc x) (tc y) acc with x tc≟ y 
-      amgu (tc x) (tc y) acc | yes p = just (, ε)
-      amgu (tc x) (tc y) acc | no ¬p = nothing
+      amgu (a ⇒ b) (a' ⇒ b') acc = _>>=_ (amgu b b' acc) (amgu a a')
+      amgu (simpl (a →' b)) (simpl (a' →' b')) acc = _>>=_ (amgu b b' acc) (amgu a a')
+      amgu (simpl (tc x)) (simpl (tc y)) acc with x tc≟ y 
+      amgu (simpl (tc x)) (simpl (tc y)) acc | yes p = just (, ε)
+      amgu (simpl (tc x)) (simpl (tc y)) acc | no ¬p = nothing
       amgu (∀' a) (∀' b) (m , acc) = σ >>= strengthen'
         where
           σ = amgu a b (m , alist-weaken acc)
@@ -146,13 +157,13 @@ module McBride where
           strengthen' (m , t' // x ◅ acc) | nothing = nothing
 
       -- var-var
-      amgu (tvar x) (tvar y) (m , ε) with x fin≟ y
-      amgu (tvar x) (tvar y) (m , ε) | yes _ = just (, ε)
-      amgu (tvar x) (tvar y) (m , ε) | no _ = nothing 
+      amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) with x fin≟ y
+      amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) | yes _ = just (, ε)
+      amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) | no _ = nothing 
 
       -- var-rigid / rigid-var
-      amgu (mvar x) (mvar y) (m , ε) = just $ flex-flex x y
-      amgu (mvar x) t (m , ε) = flex-rigid x t 
+      amgu (simpl (mvar x)) (simpl (mvar y)) (m , ε) = just $ flex-flex x y
+      amgu (simpl (mvar x)) t (m , ε) = flex-rigid x t 
 
       amgu s t (m , t' // x ◅ us) with amgu (substitute σ s) (substitute σ t) (m , us)
         where σ = (t' for x )
@@ -170,3 +181,9 @@ mgu a b with McBride.mgu a b
 mgu a b | just (zero , u) = just (u , refl)
 mgu a b | just (suc m , _) = nothing
 mgu a b | nothing = nothing
+
+open McBride using (substitute; asub) public
+meta-weaken = M.weaken
+smeta-weaken = M.smeta-weaken
+metatp-weaken = T.weaken
+open-meta = M.open-meta

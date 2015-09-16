@@ -49,7 +49,7 @@ module TypeSubst where
     ∀'-/✶-↑✶ k (x ◅ ρs) = cong₂ _/_ (∀'-/✶-↑✶ k ρs) refl
 
   typeSubst : TermSubst Type
-  typeSubst = record { var = simpl ∘ tvar; app = TypeApp._/_ }
+  typeSubst = record { var = (λ n → simpl (tvar n)); app = TypeApp._/_ }
 
   open TermSubst typeSubst public hiding (var)
   open TypeApp termLift public using (_simple/_)
@@ -65,7 +65,7 @@ module TypeSubst where
   infixl 8 _∙_
   _∙_ : ∀ {ν} → (a : Type ν) → {is∀ : is-∀' a} → Type ν → Type ν
   _∙_ (simpl (tvar n)) {is∀ = ()} _
-  _∙_ (simpl (tc c)) b = simpl $ tc c
+  _∙_ (simpl (tc c)) b = simpl (tc c)
   _∙_ (simpl (_ →' _)) {is∀ = ()} _
   _∙_ (∀' x) b = x [/ b ]
   _∙_ (_ ⇒ _) {is∀ = ()} _
@@ -106,18 +106,23 @@ module MetaTypeTypeSubst where
 
     infixl 8 _/_
 
-    _/_ : ∀ {m μ ν} → MetaType m ν → MetaSub T m ν μ → MetaType m μ
-    tc c / σ = tc c
-    tvar x / σ = lift (lookup x σ)
-    mvar x / σ = mvar x
-    (fork c a b) / σ = fork c (a / σ) (b / σ)
-    (∀' a)   / σ = ∀' (a / σ ↑tp)
+    mutual
+      _s/_ : ∀ {m μ ν} → MetaSimpleType m ν → MetaSub T m ν μ → MetaType m μ
+      tvar x s/ σ = lift (lookup x σ)
+      mvar x s/ σ = simpl (mvar x)
+      (a →' b) s/ σ = simpl ((a / σ) →' (b / σ))
+      tc c s/ σ = simpl (tc c)
+
+      _/_ : ∀ {m μ ν} → MetaType m ν → MetaSub T m ν μ → MetaType m μ
+      simpl x / σ = (x s/ σ)
+      (a ⇒ b) / σ = (a / σ) ⇒ (b / σ)
+      (∀' a)   / σ = ∀' (a / σ ↑tp)
 
   Fin′ : ℕ → ℕ → Set
   Fin′ m ν = Fin ν
 
   varLift : MetaLift Fin′
-  varLift = record { lift = tvar; _↑tp = VarSubst._↑ }
+  varLift = record { lift = (λ n → simpl (tvar n)); _↑tp = VarSubst._↑ }
 
   infixl 8 _/Var_
 
@@ -127,7 +132,7 @@ module MetaTypeTypeSubst where
   private
     module ExpandSimple {m : ℕ} where
       simple : Simple (MetaType m)
-      simple = record { var = tvar; weaken = λ t → t /Var VarSubst.wk }
+      simple = record { var = (λ n → simpl (tvar n)) ; weaken = λ t → t /Var VarSubst.wk }
 
       open Simple simple public
 
@@ -169,18 +174,22 @@ module MetaTypeMetaSubst where
     infixl 8 _/_
 
     mutual 
+      _s/_  : ∀ {m n ν} → MetaSimpleType m ν → MetaSub T ν m n → MetaType n ν
+      tvar x s/ σ = simpl (tvar x)
+      mvar x s/ σ = lift (lookup x σ)
+      (a →' b) s/ σ = simpl ((a / σ) →' (b / σ))
+      tc c s/ σ = simpl (tc c)
+
       _/_ : ∀ {m n ν} → MetaType m ν → MetaSub T ν m n → MetaType n ν
-      tc c / σ = tc c
-      tvar x / σ = tvar x
-      mvar x / σ = lift (lookup x σ)
-      (fork c a b) / σ = fork c (a / σ) (b / σ)
+      simpl x / σ = (x s/ σ)
+      (a ⇒ b) / σ = (a / σ) ⇒ (b / σ)
       (∀' a)   / σ = ∀' (a / σ ↑tp)
 
   Fin′ : ℕ → ℕ → Set
   Fin′ ν m = Fin ν
 
   varLift : MetaLift Fin′
-  varLift = record { lift = mvar; _↑meta = VarSubst._↑; _↑tp = Prelude.id }
+  varLift = record { lift = (λ n → simpl (mvar n)); _↑meta = VarSubst._↑; _↑tp = Prelude.id }
 
   infixl 8 _/Var_
 
@@ -190,7 +199,7 @@ module MetaTypeMetaSubst where
   private
     module ExpandSimple {ν : ℕ} where
       simple : Simple (flip MetaType ν)
-      simple = record { var = mvar; weaken = λ t → t /Var VarSubst.wk }
+      simple = record { var = (λ n → simpl (mvar n)); weaken = λ t → t /Var VarSubst.wk }
 
       open Simple simple public
 
@@ -216,11 +225,15 @@ module MetaTypeMetaSubst where
   open ExpandSubst public hiding (var; simple)
 
   open-meta : ∀ {m ν} → (a : MetaType m ν) → {p : is-m∀' a} → MetaType (suc m) ν
-  open-meta (tvar x) {()}
-  open-meta (mvar x) {()}
-  open-meta (fork x x₁ x₂) {()}
-  open-meta (∀' x) = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (mvar zero))
-  open-meta (tc c) {()}
+  open-meta (simpl x) {()}
+  open-meta (a ⇒ b) {()}
+  open-meta (∀' x) = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (simpl (mvar zero)))
+
+  smeta-weaken : ∀ {m ν} → MetaSimpleType m ν → MetaSimpleType (suc m) ν
+  smeta-weaken (tc x) = tc x
+  smeta-weaken (tvar n) = tvar n
+  smeta-weaken (mvar m) = mvar (suc m)
+  smeta-weaken (a →' b) = weaken a →' weaken b
 
 module TermTypeSubst where
 

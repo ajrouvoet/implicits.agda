@@ -14,33 +14,47 @@ rul fork≟ fun = no (λ ())
 fun fork≟ rul = no (λ ())
 fun fork≟ fun = yes refl
 
-data MetaType (m ν : ℕ) : Set where
-  tvar : Fin ν → MetaType m ν
-  mvar : Fin m → MetaType m ν
-  fork : Fork → MetaType m ν → MetaType m ν → MetaType m ν
-  ∀'   : MetaType m (suc ν) → MetaType m ν
-  tc   : (c : TC) → MetaType m ν
+mutual
+  data MetaSimpleType (m ν : ℕ) : Set where
+    tvar : Fin ν → MetaSimpleType m ν
+    mvar : Fin m → MetaSimpleType m ν
+    _→'_ : (a b : MetaType m ν) → MetaSimpleType m ν
+    tc   : (c : TC) → MetaSimpleType m ν
 
--- [α,β⟩ is het interval of variables that are unification variables.
--- e.g. : [0, 3⟩ means the variables 0, 1 and 2 are unification variables 
-to-meta : ∀ {m ν} → Type ν → MetaType m ν
-to-meta (simpl (tc x)) = tc x
-to-meta (simpl (tvar n)) = tvar n
-to-meta (simpl (a →' b)) = fork rul (to-meta a) (to-meta b)
-to-meta (a ⇒ b) = fork fun (to-meta a) (to-meta b)
-to-meta (∀' a) = ∀' (to-meta a)
+  data MetaType (m ν : ℕ) : Set where
+    _⇒_ : (a b : MetaType m ν) → MetaType m ν
+    ∀'  : MetaType m (suc ν) → MetaType m ν
+    simpl : MetaSimpleType m ν → MetaType m ν
+
+s-tvar : ∀ {ν m} → Fin ν → MetaType m ν
+s-tvar n = simpl (tvar n)
+
+s-mvar : ∀ {ν m} → Fin m → MetaType m ν
+s-mvar n = simpl (mvar n)
+
+s-tc : ∀ {ν m} → TC → MetaType m ν
+s-tc c = simpl (tc c)
+
+mutual
+  to-smeta : ∀ {m ν} → SimpleType ν → MetaSimpleType m ν
+  to-smeta (tc x) = (tc x)
+  to-smeta (tvar n) = (tvar n)
+  to-smeta (a →' b) = (to-meta a) →' (to-meta b)
+
+  to-meta : ∀ {m ν} → Type ν → MetaType m ν
+  to-meta (simpl x) = simpl (to-smeta x)
+  to-meta (a ⇒ b) = (to-meta a) ⇒ (to-meta b)
+  to-meta (∀' a) = ∀' (to-meta a)
 
 from-meta : ∀ {ν} → MetaType zero ν → Type ν
-from-meta (tvar x) = simpl $ tvar x
-from-meta (mvar ())
-from-meta (fork rul a b) = from-meta a ⇒ from-meta b
-from-meta (fork fun a b) = simpl $ from-meta a →' from-meta b
+from-meta (simpl (tvar x)) = simpl (tvar x)
+from-meta (simpl (mvar ()))
+from-meta (simpl (tc c)) = simpl (tc c)
+from-meta (a ⇒ b) = from-meta a ⇒ from-meta b
+from-meta (simpl (a →' b)) = simpl (from-meta a →' from-meta b)
 from-meta (∀' x) = ∀' (from-meta x)
-from-meta (tc c) = simpl $ tc c
 
 is-m∀' : ∀ {m ν} → MetaType m ν → Set
-is-m∀' (tvar x) = ⊥
-is-m∀' (mvar x) = ⊥
-is-m∀' (fork x x₁ x₂) = ⊥
+is-m∀' (simpl x) = ⊥
+is-m∀' (a ⇒ b) = ⊥
 is-m∀' (∀' x) = ⊤
-is-m∀' (tc c) = ⊥
