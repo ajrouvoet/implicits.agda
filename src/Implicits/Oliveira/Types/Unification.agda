@@ -90,6 +90,12 @@ module McBride where
   AList : ℕ → ℕ → ℕ → Set
   AList ν m n = Star (ASub ν) m n
 
+  anil : ∀ {ν n} → AList ν n n
+  anil = ε
+
+  asnoc : ∀ {ν m n} → AList ν m n → MetaType m ν → Fin (suc m) → AList ν (suc m) n
+  asnoc l a n = a // n ◅ l
+
   asub-weaken : ∀ {ν m n} → ASub ν m n → ASub (suc ν) m n
   asub-weaken (t' // x) = T.weaken t' // x
 
@@ -170,20 +176,28 @@ module McBride where
       amgu s t (m , t' // x ◅ us) | just (m' , us') = just (m' , t' // x ◅ us')
       amgu s t (m , t' // x ◅ us) | nothing = nothing
 
-Unifiable : ∀ {m ν} (a b : MetaType m ν) → Set
-Unifiable {m} a b = ∃ λ u → McBride.mgu a b ≡ just (zero , u)
+Unifiable : ∀ {m ν} → (MetaType m ν) → SimpleType ν → Set
+Unifiable {m} a b = ∃ λ u → McBride.mgu a (simpl (to-smeta b))  ≡ just (zero , u)
 
 -- Just a bit stricter than mcbride.mgu
 -- We require here as well that all meta variables are instantiated
 -- (this is equivalent to the ⊢unamb constraint in Oliveira)
-mgu : ∀ {m ν} (a b : MetaType m ν) → Maybe (Unifiable a b)
-mgu a b with McBride.mgu a b
+mgu : ∀ {m ν} (a : MetaType m ν) → (b : SimpleType ν) → Maybe (Unifiable a b)
+mgu a b with McBride.mgu a (simpl (to-smeta b))
 mgu a b | just (zero , u) = just (u , refl)
 mgu a b | just (suc m , _) = nothing
 mgu a b | nothing = nothing
 
-open McBride using (substitute; asub) public
+open McBride using (substitute; asub; AList; _//_) public
 meta-weaken = M.weaken
 smeta-weaken = M.smeta-weaken
 metatp-weaken = T.weaken
 open-meta = M.open-meta
+
+postulate alist-zero-vanishes : ∀ {ν x} (u : AList ν zero zero) → from-meta (substitute (asub u) (to-meta x)) ≡ x
+postulate mgu-id : ∀ {ν} → (a : SimpleType ν) → Unifiable {m = zero} (simpl (to-smeta a)) a
+
+postulate mgu-sound : ∀ {m ν} → (a : MetaType m ν) → (b : SimpleType ν) →
+                      mgu a b ≡ nothing → ¬ Unifiable a b
+postulate mgu-unifies : ∀ {m ν} (a : MetaType m ν) (b : SimpleType ν) → (u : Unifiable a b) →
+                        from-meta (substitute (asub (proj₁ u)) a) ≡ (simpl b)

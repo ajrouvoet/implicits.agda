@@ -224,10 +224,8 @@ module MetaTypeMetaSubst where
 
   open ExpandSubst public hiding (var; simple)
 
-  open-meta : ∀ {m ν} → (a : MetaType m ν) → {p : is-m∀' a} → MetaType (suc m) ν
-  open-meta (simpl x) {()}
-  open-meta (a ⇒ b) {()}
-  open-meta (∀' x) = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (simpl (mvar zero)))
+  open-meta : ∀ {m ν} → (a : MetaType m (suc ν)) → MetaType (suc m) ν
+  open-meta x = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (simpl (mvar zero)))
 
   smeta-weaken : ∀ {m ν} → MetaSimpleType m ν → MetaSimpleType (suc m) ν
   smeta-weaken (tc x) = tc x
