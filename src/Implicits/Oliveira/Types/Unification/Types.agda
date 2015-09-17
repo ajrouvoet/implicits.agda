@@ -4,16 +4,6 @@ module Implicits.Oliveira.Types.Unification.Types (TC : Set) (_tc≟_ : (a b : T
 
 open import Implicits.Oliveira.Types TC _tc≟_
 
-data Fork : Set where
-  rul : Fork
-  fun : Fork
-
-_fork≟_ : (c d : Fork) → Dec (c ≡ d)
-rul fork≟ rul = yes refl
-rul fork≟ fun = no (λ ())
-fun fork≟ rul = no (λ ())
-fun fork≟ fun = yes refl
-
 mutual
   data MetaSimpleType (m ν : ℕ) : Set where
     tvar : Fin ν → MetaSimpleType m ν

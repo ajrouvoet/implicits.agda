@@ -79,7 +79,30 @@ module TypeLemmas where
           ∀ i a → a /₁ ρ₁ ↑⋆₁ i ≡ a /₂ ρ₂ ↑⋆₂ i
   /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
-  postulate embed-zero-vanishes : ∀ {ν} a s → a / embed {ν} zero s ≡ a
+module MetaTypeMetaLemmas where
+  open MetaTypeMetaSubst
+  open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
+
+  module ExpandSimple {ν : ℕ} where
+    private module V = VarLemmas
+
+    lemmas₂ : Lemmas₂ (flip MetaType ν)
+    lemmas₂ = record
+        { lemmas₁ = record
+            { lemmas₀ = record
+            { simple = simple {ν}
+            }
+            ; weaken-var = λ {_ x} → begin
+                (simpl (mvar x)) /Var V.wk      ≡⟨ refl ⟩
+                (simpl (mvar (lookup x V.wk)))  ≡⟨ cong (λ n → simpl (mvar n)) (V.lookup-wk x) ⟩
+                (simpl (mvar (suc x)))          ∎
+            }
+        ; application = Subst.application subst
+        ; var-/       = refl }
+
+    open Lemmas₂ lemmas₂ public
+
+  open ExpandSimple public
 
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
 
