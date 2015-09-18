@@ -368,6 +368,9 @@ module KtxSubst where
   _/Var_ : ∀ {ν m n} → Sub Fin n m → Ktx ν m → Ktx ν n
   σ /Var (Γ , Δ) = map (λ x → lookup x Γ) σ , Δ
 
+  ictx-weaken : ∀ {ν} → ICtx ν → ICtx (suc ν)
+  ictx-weaken Δ = List.map (flip TypeSubst._/_ TypeSubst.wk) Δ
+
   weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
   weaken K = K / TypeSubst.wk
 
@@ -377,5 +380,5 @@ open TermTypeSubst public using ()
   renaming (_/_ to _tm/tp_; _[/_] to _tm[/tp_]; weaken to tm-weaken)
 open TermTermSubst public using ()
   renaming (_/_ to _tm/tm_; _/Var_ to _tm/Var_; _[/_] to _tm[/tm_]; weaken to tmtm-weaken)
-open KtxSubst public using (ktx-map)
+open KtxSubst public using (ktx-map; ictx-weaken)
   renaming (_/_ to _ktx/_; _/Var_ to _ktx/Var_; weaken to ktx-weaken)

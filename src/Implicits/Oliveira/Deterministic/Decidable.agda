@@ -17,6 +17,10 @@ open import Data.Star hiding (map)
 MICtx : ℕ → ℕ → Set
 MICtx m ν = List (MetaType m ν)
 
+private
+  module M = MetaTypeMetaSubst
+  module T = MetaTypeTypeSubst
+
 {-
 {-# NO_TERMINATION_CHECK #-}
 _,_amatch_ : ∀ {m ν} → (MetaType m ν) → (ρs : MICtx m ν) → (τ : SimpleType ν) → Maybe (ICtx ν)

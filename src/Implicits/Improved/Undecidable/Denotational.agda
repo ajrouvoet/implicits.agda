@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Oliveira.Improved.Denotational
+module Implicits.Improved.Undecidable.Denotational
   (TC : Set)
   (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
@@ -10,7 +10,7 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.WellTyped TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Oliveira.Improved.Resolution TC _tc≟_
+open import Implicits.Improved.Undecidable.Resolution TC _tc≟_
 open import Implicits.SystemF TC as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution

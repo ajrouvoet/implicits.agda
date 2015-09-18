@@ -1,7 +1,7 @@
 {-# OPTIONS --no-positivity-check #-}
 open import Prelude
 
-module Implicits.Oliveira.Improved.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Undecidable.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Data.Fin.Substitution
 open import Implicits.Oliveira.Types TC _tc≟_

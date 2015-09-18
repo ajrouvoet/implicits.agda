@@ -18,6 +18,7 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.WellTyped TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Oliveira.Types.Unification.McBride TC _tc≟_ as McBride using ()
 open import Data.Star as S 
 open import Data.Maybe
 
@@ -38,14 +39,18 @@ Int = simpl (tc tc-int)
 module ex₂ where
   -- mgu test for simple 2 variable substitution
 
-  a : MetaType zero (suc (suc (suc zero)))
-  a = to-meta $ (∀' (∀' (simpl ((simpl (tvar zero)) →' (simpl (simpl (tvar (suc zero)) →' simpl (tvar (suc (suc zero)))))))))
+  a : MetaType (suc (suc zero)) (suc zero)
+  a = open-meta $ open-meta $ to-meta $ (simpl ((simpl (tvar zero)) →' (simpl (simpl (tvar (suc zero)) →' simpl (tvar (suc (suc zero)))))))
 
-  b : MetaType (suc (suc zero)) (suc (suc (suc zero)))
-  b = to-meta (simpl (Int →' (simpl (Int →' simpl (tvar zero)))))
+  b : SimpleType (suc zero)
+  b = Int →' (simpl (Int →' simpl (tvar zero)))
 
-  s : is-just (mgu (open-meta $ open-meta a) b) ≡ true
-  s = refl
+  s = mgu a b
+
+  u = asub (proj₁ $ from-just s)
+
+  unifies : a M./ u ≡ (simpl (to-smeta b))
+  unifies = refl
 
 module ex₃ where
   -- mgu test for simple 1 variable substitution
@@ -54,8 +59,8 @@ module ex₃ where
   a : MetaType (suc zero) (suc zero)
   a = open-meta (to-meta (∀' (simpl ((simpl (tvar zero)) →' simpl (tvar (suc zero))))))
 
-  b : MetaType (suc zero) (suc zero)
-  b = M.weaken $ to-meta (simpl (Int →' Int))
+  b : SimpleType (suc zero)
+  b = Int →' Int
 
   s : mgu a b ≡ nothing
   s = refl
@@ -64,32 +69,26 @@ module ex₄ where
   -- with ∀' in there somewhere
 
   a : MetaType (suc zero) (suc zero)
-  a = (∀' (s-mvar zero)) ⇒ (s-tc tc-int)
+  a = simpl ((∀' (s-mvar zero)) →' (s-tc tc-int))
 
   -- won't unify with a because we'd need to instantiate s-mvar zero with
   -- a s-tvar that's not yet introduced
-  b : MetaType (suc zero) (suc zero)
-  b = (∀' (s-tvar zero)) ⇒ (s-tc tc-int)
-
-  -- can unify with a
-  b' : MetaType (suc zero) (suc (suc zero))
-  b' = (∀' (s-tvar (suc zero))) ⇒ (s-tc tc-int)
+  b : SimpleType (suc zero)
+  b = (∀' (simpl (tvar zero))) →' Int
 
   s : mgu a b ≡ nothing
   s = refl
 
-  s' : is-just (mgu (T.weaken a) b') ≡ true
-  s' = refl
-
 module ex₅ where
   -- renaming example
 
-  a : MetaType (suc (suc zero)) zero
+  a : MetaType (suc (suc zero)) (suc zero)
   a = (s-mvar zero) ⇒ (s-mvar (suc zero))
 
-  b : MetaType (suc (suc zero)) zero
-  b = (s-mvar (suc zero)) ⇒ (s-mvar zero)
+  b : Type (suc zero)
+  b = (simpl (tvar (zero))) ⇒ (simpl (tvar zero))
 
-  s = mgu a b 
+  s : is-just (McBride.mgu a b) ≡ true
+  s = refl
 
 open ex₅

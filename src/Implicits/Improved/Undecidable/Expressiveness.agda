@@ -1,6 +1,6 @@
 open import Prelude hiding (id; Bool)
 
-module Implicits.Oliveira.Improved.Expressiveness TC _tc≟_ where
+module Implicits.Improved.Undecidable.Expressiveness TC _tc≟_ where
 
 open import Implicits.Oliveira.Types TC _tc≟_
 open import Implicits.Oliveira.Terms TC _tc≟_
@@ -11,7 +11,7 @@ open import Extensions.ListFirst
 
 open import Implicits.Oliveira.Ambiguous.Resolution TC _tc≟_ as A
 open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_ as D
-open import Implicits.Oliveira.Improved.Resolution TC _tc≟_ as I
+open import Implicits.Improved.Undecidable.Resolution TC _tc≟_ as I
   
 module Lemmas₀ where
   mutual
