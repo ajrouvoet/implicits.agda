@@ -20,3 +20,28 @@ module ⊇-oliveira-ambiguous where
   p (r-ivar x) = r-ivar x
   p (r-iabs x) = r-iabs (♯ (p x))
   p (r-iapp x y) = r-iapp (♯ (p x)) (♯ p y)
+
+module IdDerives where
+  open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
+  -- proof that polymorphic id derives every type
+  -- this corresponds to the non-terminating expression:
+  --   x : ∀ {a : Set} → a
+  --   x = x
+  --
+  -- together with ⊇-oliveira-ambiguous, this shows that the coinductive ambiguous rules
+  -- are more expressive then the inductive ambiguous rules.
+  -- We could easily prove it for simple types, because the empty implicit context
+  -- can only build rule types in the inductive case.
+
+  tid : ∀ {n} → Type n
+  tid = (∀' (simpl (tvar zero) ⇒ simpl (tvar zero)))
+
+  [tid]⊢a : ∀ {ν} {a : Type ν} → (tid List.∷ List.[]) ⊢ᵣ a
+  [tid]⊢a {a = a} = r-iapp (♯ (r-tapp a (♯ (r-ivar (here refl))))) (♯ [tid]⊢a)
+
+  -- we can even derive it from an empty context, because we can derive identity from nothing:
+  []⊢tid : ∀ {ν} → List.[] ⊢ᵣ tid {ν}
+  []⊢tid = r-tabs (♯ (r-iabs (♯ (r-ivar (here refl)))))
+
+  []⊢a : ∀ {ν} {a : Type ν} → List.[] ⊢ᵣ a
+  []⊢a {a} = r-iapp (♯ r-iabs (♯ [tid]⊢a)) (♯ []⊢tid)
