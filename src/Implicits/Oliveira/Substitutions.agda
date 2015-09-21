@@ -90,6 +90,23 @@ module TypeSubst where
       where
           eq = proj₂ $ lem ν α
 
+module KtxSubst where
+
+  ktx-map : ∀ {ν μ n} → (Type ν → Type μ) →  Ktx ν n → Ktx μ n
+  ktx-map f (Γ , Δ) = map f Γ , List.map f Δ
+
+  _/_ : ∀ {ν μ n} → Ktx ν n → Sub Type ν μ → Ktx μ n
+  K / σ = ktx-map (λ t → t TypeSubst./ σ) K
+
+  _/Var_ : ∀ {ν m n} → Sub Fin n m → Ktx ν m → Ktx ν n
+  σ /Var (Γ , Δ) = map (λ x → lookup x Γ) σ , Δ
+
+  ictx-weaken : ∀ {ν} → ICtx ν → ICtx (suc ν)
+  ictx-weaken Δ = List.map (flip TypeSubst._/_ TypeSubst.wk) Δ
+
+  weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
+  weaken K = K / TypeSubst.wk
+
 module MetaTypeTypeSubst where
 
   MetaSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
@@ -356,23 +373,6 @@ module TermTermSubst where
   -- Shorthand for single-variable term substitutions in terms
   _[/_] : ∀ {ν n} → Term ν (suc n) → Term ν n → Term ν n
   s [/ t ] = s / sub t
-
-module KtxSubst where
-
-  ktx-map : ∀ {ν μ n} → (Type ν → Type μ) →  Ktx ν n → Ktx μ n
-  ktx-map f (Γ , Δ) = map f Γ , List.map f Δ
-
-  _/_ : ∀ {ν μ n} → Ktx ν n → Sub Type ν μ → Ktx μ n
-  K / σ = ktx-map (λ t → t TypeSubst./ σ) K
-
-  _/Var_ : ∀ {ν m n} → Sub Fin n m → Ktx ν m → Ktx ν n
-  σ /Var (Γ , Δ) = map (λ x → lookup x Γ) σ , Δ
-
-  ictx-weaken : ∀ {ν} → ICtx ν → ICtx (suc ν)
-  ictx-weaken Δ = List.map (flip TypeSubst._/_ TypeSubst.wk) Δ
-
-  weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
-  weaken K = K / TypeSubst.wk
 
 open TypeSubst public using (_∙_; stp-weaken)
   renaming (_simple/_ to _stp/tp_; _/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)

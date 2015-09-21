@@ -48,3 +48,8 @@ module FirstLemmas where
   first-unique {K = x List.∷ .K} (l-head px K) (l-tail ¬px y) = ⊥-elim (¬px px)
   first-unique {K = r' List.∷ .K} (l-tail ¬px x₁) (l-head px K) = ⊥-elim (¬px px)
   first-unique {K = r₁ List.∷ Δ} (l-tail ¬px x) (l-tail ¬px' y) = first-unique x y
+
+r↓a⟶r◁a : ∀ {ν n} {K : Ktx ν n} {r a} → K ⊢ r ↓ a → r ◁ a
+r↓a⟶r◁a (i-simp a) = m-simp
+r↓a⟶r◁a (i-iabs _ x) = m-iabs (r↓a⟶r◁a x)
+r↓a⟶r◁a (i-tabs _ x) = m-tabs (r↓a⟶r◁a x)
