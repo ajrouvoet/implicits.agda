@@ -116,3 +116,6 @@ module SyntaxDirected⊆NotSyntaxDirected where
       lem (i-tabs b p) q = lem p (r-tapp b (♯ q))
   thm (r-iabs x) = r-iabs (♯ (thm (♭ x)))
   thm (r-tabs x) = r-tabs (♯ (thm (♭ x)))
+
+  -- the comment in the example above shows that SyntaxDirected is *not* complete wrt the
+  -- ambiguous non-syntax-directed rules

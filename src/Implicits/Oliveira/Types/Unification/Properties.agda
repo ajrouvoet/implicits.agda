@@ -9,9 +9,11 @@ open import Implicits.Oliveira.Types TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Types.Unification.McBride TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
+open import Data.Star
 
 open MetaTypeMetaSubst
 
+{-}
 for-zero≗sub : ∀ {m ν} (a : MetaType m ν) → _≗_ (a for zero) (flip lookup (sub a))
 for-zero≗sub a zero = refl
 for-zero≗sub a (suc n) = begin
@@ -20,4 +22,4 @@ for-zero≗sub a (suc n) = begin
   (simpl (mvar n))
     ≡⟨ sym $ MetaTypeMetaLemmas.lookup-sub-↑⋆ {t = a} zero n ⟩
   lookup (suc n) (sub a) ∎
-
+-}

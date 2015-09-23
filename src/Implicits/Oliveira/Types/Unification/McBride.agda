@@ -37,25 +37,8 @@ thick {suc n} (suc x) zero = just zero
 thick {zero} (suc ()) _ 
 thick {suc n} (suc x) (suc y) = suc <$> (thick x y)
 
-check : ∀ {ν n} → Fin (suc n) → MetaType (suc n) ν → Maybe (MetaType n ν)
-check n (simpl (tvar m)) = just (simpl (tvar m))
-check n (simpl (mvar m)) = (λ n → simpl (mvar n)) <$> (thick n m)
-check n (simpl (tc x)) = just (simpl (tc x))
-check n (simpl (a →' b)) with check n a | check n b
-check n (simpl (a →' b)) | just x | just y = just (simpl (x →' y))
-check n (simpl (a →' b)) | _ | nothing = nothing
-check n (simpl (a →' b)) | nothing | _ = nothing
-check n (a ⇒ b) with check n a | check n b
-check n (a ⇒ b) | just x | just y = just (x ⇒ y)
-check n (a ⇒ b) | _ | nothing = nothing
-check n (a ⇒ b) | nothing | _ = nothing
-check n (∀' t) with check n t
-check n (∀' t) | just x = just (∀' x)
-check n (∀' t) | nothing = nothing
-
-check' : ∀ {ν n} → Fin (suc ν) → MetaType n (suc ν) → Maybe (MetaType n ν)
+check' : ∀ {ν} → Fin (suc ν) → Type (suc ν) → Maybe (Type ν)
 check' n (simpl (tvar m)) = (λ n → simpl (tvar n)) <$> (thick n m)
-check' n (simpl (mvar m)) = just (simpl (mvar m))
 check' n (simpl (tc x)) = just (simpl (tc x))
 check' n (simpl (a →' b)) with check' n a | check' n b
 check' n (simpl (a →' b)) | just x | just y = just (simpl (x →' y))
@@ -70,70 +53,51 @@ check' n (∀' t) | just x = just (∀' x)
 check' n (∀' t) | nothing = nothing
 
 substitute : {ν m n : ℕ} → (Fin m → MetaType n ν) → MetaType m ν → MetaType n ν
-substitute f (simpl (tc x)) = simpl (tc x)
-substitute f (simpl (tvar n)) = simpl(tvar n)
-substitute f (simpl (mvar n)) = f n
-substitute f (simpl (a →' b)) = simpl ((substitute f a) →' (substitute f b))
-substitute f (a ⇒ b) = (substitute f a) ⇒ (substitute f b)
-substitute f (∀' a) = ∀' (substitute (λ{ x → T.weaken $ f x }) a)
+substitute f a = a M./ (tabulate f)
 
-_for_ : ∀ {n ν} → MetaType n ν → Fin (suc n) → Fin (suc n) → MetaType n ν
+_for_ : ∀ {n ν} → Type ν → Fin (suc n) → Fin (suc n) → MetaType n ν
 _for_ t' x y with thick x y
 _for_ t' x y | just y' = simpl (mvar y')
-_for_ t' x y | nothing = t'
+_for_ t' x y | nothing = to-meta t'
 
 data ASub (ν : ℕ) : ℕ → ℕ → Set where
-  _//_ : ∀ {m} → (t' : MetaType m ν) → Fin (suc m) → ASub ν (suc m) m
+  _//_ : ∀ {m} → (t' : Type ν) → Fin (suc m) → ASub ν (suc m) m
 
 AList : ℕ → ℕ → ℕ → Set
 AList ν m n = Star (ASub ν) m n
 
-anil : ∀ {ν n} → AList ν n n
-anil = ε
+asub-tp-weaken : ∀ {ν m n} → ASub ν m n → ASub (suc ν) m n
+asub-tp-weaken (t' // x) = tp-weaken t' // x
 
-asnoc : ∀ {ν m n} → AList ν m n → MetaType m ν → Fin (suc m) → AList ν (suc m) n
-asnoc l a n = a // n ◅ l
-
-asub-weaken : ∀ {ν m n} → ASub ν m n → ASub (suc ν) m n
-asub-weaken (t' // x) = T.weaken t' // x
+asub-weaken : ∀ {ν m n} → ASub ν m n → ASub ν (suc m) (suc n)
+asub-weaken (t' // x) = t' // (suc x)
 
 alist-weaken : ∀ {ν m n} → AList ν m n → AList (suc ν) m n
-alist-weaken s = gmap Prelude.id (λ x → asub-weaken x) s
+alist-weaken s = gmap Prelude.id (λ x → asub-tp-weaken x) s
 
 _◇_ : ∀ {l m n ν} → (Fin m → MetaType n ν) → (Fin l → MetaType m ν) → (Fin l → MetaType n ν)
 f ◇ g = substitute f ∘ g
 
-asub : ∀ {ν m n} → (σ : AList ν m n) → Fin m → MetaType n ν
-asub ε = λ n → simpl (mvar n)
-asub (t' // x ◅ y) =  asub y ◇ (t' for x)
+asub' : ∀ {ν m n} → (σ : AList ν m n) → Fin m → MetaType n ν
+asub' ε = λ n → simpl (mvar n)
+asub' (t' // x ◅ y) =  asub' y ◇ (t' for x)
 
-flex-flex : ∀ {m ν} → (x y : Fin m) → ∃ (AList ν m)
-flex-flex {zero} () y
-flex-flex {suc m} x y with thick x y
-flex-flex {suc m} x y | just z = m , (simpl (mvar z)) // x ◅ ε
-flex-flex {suc m} x y | nothing = (suc m) , ε
+asub : ∀ {ν m n} → (σ : AList ν m n) → Sub (flip MetaType ν) m n
+asub s = tabulate (asub' s)
 
-flex-rigid : ∀ {m ν} → Fin m → MetaType m ν → Maybe (∃ (AList ν m))
-flex-rigid {zero} () t
-flex-rigid {suc m} x t with check x t
-flex-rigid {suc m} x t | just y = just (m , y // x ◅ ε)
-flex-rigid {suc m} x t | nothing = nothing
-
-mgu : ∀ {m ν} (s t : MetaType m ν) → Maybe (∃ (AList ν m))
+mgu : ∀ {m ν} → MetaType m ν → Type ν → Maybe (∃ (AList ν m))
 mgu {ν} s t = amgu s t (ν , ε)
   where
-    amgu : ∀ {ν m} (s t : MetaType m ν) → ∃ (AList ν m) → Maybe (∃ (AList ν m))
+    amgu : ∀ {ν m} (s : MetaType m ν) → (t : Type ν)→ ∃ (AList ν m) → Maybe (∃ (AList ν m))
     -- non-matching constructors
     amgu (simpl (tc x)) (_ ⇒ _) acc = nothing
     amgu (simpl (tc _)) (∀' _) x = nothing
     amgu (simpl (tc x)) (simpl (_ →' _)) acc = nothing
     amgu (simpl (tc _)) (simpl (tvar _)) x = nothing
-    amgu (simpl (tc _)) (simpl (mvar _)) acc = nothing
     amgu (simpl (_ →' _)) (∀' _) x = nothing
     amgu (simpl (_ →' _)) (_ ⇒ _) x = nothing
     amgu (simpl (_ →' _)) (simpl (tc _)) acc = nothing
     amgu (simpl (_ →' _)) (simpl (tvar _)) x = nothing
-    amgu (simpl (_ →' _)) (simpl (mvar _)) acc = nothing
     amgu (_ ⇒ _) (simpl x) acc = nothing
     amgu (_ ⇒ _) (∀' _) x = nothing
     amgu (∀' _) (_ ⇒ _) x = nothing
@@ -141,7 +105,6 @@ mgu {ν} s t = amgu s t (ν , ε)
     amgu (simpl (tvar _)) (_ ⇒ _) x = nothing
     amgu (simpl (tvar _)) (∀' _) x = nothing
     amgu (simpl (tvar _)) (simpl (tc _)) x = nothing
-    amgu (simpl (tvar _)) (simpl (mvar _)) acc = nothing
     amgu (simpl (tvar _)) (simpl (_ →' _)) acc = nothing
 
     -- matching constructors
@@ -166,10 +129,9 @@ mgu {ν} s t = amgu s t (ν , ε)
     amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) | no _ = nothing 
 
     -- var-rigid / rigid-var
-    amgu (simpl (mvar x)) (simpl (mvar y)) (m , ε) = just $ flex-flex x y
-    amgu (simpl (mvar x)) t (m , ε) = flex-rigid x t 
+    amgu (simpl (mvar ())) t (zero , ε)
+    amgu (simpl (mvar x)) t (suc m , ε) = just (m , t // x ◅ ε)
 
-    amgu s t (m , t' // x ◅ us) with amgu (substitute σ s) (substitute σ t) (m , us)
-      where σ = (t' for x )
+    amgu s t (m , t' // x ◅ us) with amgu (substitute (t' for x) s) t (m , us)
     amgu s t (m , t' // x ◅ us) | just (m' , us') = just (m' , t' // x ◅ us')
     amgu s t (m , t' // x ◅ us) | nothing = nothing

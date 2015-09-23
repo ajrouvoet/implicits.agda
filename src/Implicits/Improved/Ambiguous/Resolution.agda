@@ -31,17 +31,30 @@ module SyntaxDirected where
       r-iabs : ∀ {ρ₁ ρ₂} → ∞ ((ρ₁ List.∷ Δ) ⊢ᵣ ρ₂) → Δ ⊢ᵣ (ρ₁ ⇒ ρ₂)
       r-tabs : ∀ {ρ} → ∞ (ictx-weaken Δ ⊢ᵣ ρ) → Δ ⊢ᵣ ∀' ρ
 
+  complexity : ∀ {ν} → Type ν → ℕ
+  complexity (simpl (tc x)) = 1
+  complexity (simpl (tvar n)) = 1
+  complexity (simpl (a →' b)) = complexity a N+ complexity b
+  complexity (a ⇒ b) = complexity a N+ complexity b
+  complexity (∀' x) = complexity x
+
+  data ⊢diverges {ν} {Δ : ICtx ν} : ∀ {a τ} → Δ ⊢ a ↓ τ → Set where
+
   open import Data.List.Any.Membership using (map-mono)
   open import Data.List.Any
   open Membership-≡
 
   mutual
 
+    -- extending contexts is safe: it preserves the r ↓ a relation
+    -- (this is not true for Oliveira's deterministic calculus)
     ⊆-r↓a : ∀ {ν} {Δ Δ' : ICtx ν} {a r} → Δ ⊢ r ↓ a → Δ ⊆ Δ' → Δ' ⊢ r ↓ a
     ⊆-r↓a (i-simp a) _ = i-simp a
     ⊆-r↓a (i-iabs x₁ x₂) f = i-iabs (♯ (⊆-Δ⊢a (♭ x₁) f)) (⊆-r↓a x₂ f)
     ⊆-r↓a (i-tabs b x₁) f = i-tabs b (⊆-r↓a x₁ f)
 
+    -- extending contexts is safe: it preserves the ⊢ᵣ a relation
+    -- (this is not true for Oliveira's deterministic calculus)
     ⊆-Δ⊢a : ∀ {ν} {Δ Δ' : ICtx ν} {a} → Δ ⊢ᵣ a → Δ ⊆ Δ' → Δ' ⊢ᵣ a
     ⊆-Δ⊢a (r-simp x₁ x₂) f = r-simp (f x₁) (⊆-r↓a x₂ f)
     ⊆-Δ⊢a (r-iabs x₁) f =

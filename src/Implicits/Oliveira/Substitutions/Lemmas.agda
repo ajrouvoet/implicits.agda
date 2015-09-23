@@ -104,6 +104,14 @@ module MetaTypeMetaLemmas where
 
   open ExpandSimple public
 
+  a/[]-vanishes : ∀ {ν} (a : MetaType zero ν) → a MetaTypeMetaSubst./ [] ≡ a
+  a/[]-vanishes (a ⇒ b) = cong₂ _⇒_ (a/[]-vanishes a) (a/[]-vanishes b)
+  a/[]-vanishes (∀' a) = cong ∀' (a/[]-vanishes a)
+  a/[]-vanishes (simpl (tvar x)) = refl
+  a/[]-vanishes (simpl (mvar ()))
+  a/[]-vanishes (simpl (a →' b)) = cong₂ (λ u v → simpl (u →' v)) (a/[]-vanishes a) (a/[]-vanishes b)
+  a/[]-vanishes (simpl (tc c)) = refl
+
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
 
   open TypingRules _⊢ᵣ_
