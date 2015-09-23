@@ -153,7 +153,7 @@ module MetaTypeTypeSubst where
 
       open Simple simple public
 
-  open ExpandSimple  using (_↑; simple)
+  open ExpandSimple  using (_↑; simple; _↑⋆_)
 
   termLift : MetaLift MetaType
   termLift = record { lift = Prelude.id; _↑tp = _↑ }
@@ -177,14 +177,16 @@ module MetaTypeMetaSubst where
   MetaSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
   MetaSub T ν m n = Sub (flip T ν) m n
 
+  MetaSubs : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
+  MetaSubs T ν = flip (Star (flip (MetaSub T ν )))
+
   record MetaLift (T : ℕ → ℕ → Set) : Set where
     infix 10 _↑meta _↑tp
     field
       lift : ∀ {ν m} → T ν m → MetaType ν m
       _↑meta : ∀ {ν m n} → MetaSub T ν m n → MetaSub T ν (suc m) (suc n)
       _↑tp : ∀ {ν m n} → MetaSub T ν m n → MetaSub T (suc ν) m n
-
-  
+    
   module MetaTypeApp {T} (l : MetaLift T) where
     open MetaLift l
 
@@ -221,6 +223,7 @@ module MetaTypeMetaSubst where
       open Simple simple public
 
   open ExpandSimple using (_↑; simple)
+
   open MetaTypeTypeSubst using () renaming (weaken to weakenTp)
   
   termLift : MetaLift MetaType

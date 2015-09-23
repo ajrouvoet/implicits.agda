@@ -76,7 +76,9 @@ mutual
       where
         lem : (∃ λ u → Δ ⊢ (from-meta ((open-meta a) M./ u)) ↓ τ) →
             ∃ λ u' → Δ ⊢ (from-meta (∀' a M./ u')) ↓ τ
-        lem x = {!!}
+        lem (u ∷ us , p) =
+          us , (i-tabs (from-meta u) (subst (λ v → Δ ⊢ v ↓ τ) {!!} p))
+            
 
     -- The only thing left to do is to try and unify τ and x.
     -- If we succeed, we use  i-simpl to return a result.
@@ -97,7 +99,7 @@ mutual
       eq : ∀ {ν} {a : Type ν} {s} → from-meta (to-meta {zero} a M./ s) ≡ a
       eq {a = a} {s = []} = begin
         from-meta (M._/_ (to-meta {zero} a) [])
-          ≡⟨ cong (λ q → from-meta q) (MetaTypeMetaLemmas.a/[]-vanishes (to-meta {zero} a)) ⟩
+          ≡⟨ cong (λ q → from-meta q) (MetaTypeMetaLemmas.id-vanishes (to-meta {zero} a)) ⟩
         from-meta (to-meta {zero} a)
           ≡⟨ to-meta-zero-vanishes ⟩
         a ∎

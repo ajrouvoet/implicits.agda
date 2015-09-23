@@ -80,7 +80,7 @@ module TypeLemmas where
   /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
 module MetaTypeMetaLemmas where
-  open MetaTypeMetaSubst
+  open MetaTypeMetaSubst 
   open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
 
   module ExpandSimple {ν : ℕ} where
@@ -89,9 +89,7 @@ module MetaTypeMetaLemmas where
     lemmas₂ : Lemmas₂ (flip MetaType ν)
     lemmas₂ = record
         { lemmas₁ = record
-            { lemmas₀ = record
-            { simple = simple {ν}
-            }
+            { lemmas₀ = record { simple = simple {ν}}
             ; weaken-var = λ {_ x} → begin
                 (simpl (mvar x)) /Var V.wk      ≡⟨ refl ⟩
                 (simpl (mvar (lookup x V.wk)))  ≡⟨ cong (λ n → simpl (mvar n)) (V.lookup-wk x) ⟩
@@ -102,15 +100,88 @@ module MetaTypeMetaLemmas where
 
     open Lemmas₂ lemmas₂ public
 
-  open ExpandSimple public
+  module Expand₃ {ν : ℕ} where
+    
+    MT = (flip MetaType ν)
+    open import Data.Star
 
-  a/[]-vanishes : ∀ {ν} (a : MetaType zero ν) → a MetaTypeMetaSubst./ [] ≡ a
-  a/[]-vanishes (a ⇒ b) = cong₂ _⇒_ (a/[]-vanishes a) (a/[]-vanishes b)
-  a/[]-vanishes (∀' a) = cong ∀' (a/[]-vanishes a)
-  a/[]-vanishes (simpl (tvar x)) = refl
-  a/[]-vanishes (simpl (mvar ()))
-  a/[]-vanishes (simpl (a →' b)) = cong₂ (λ u v → simpl (u →' v)) (a/[]-vanishes a) (a/[]-vanishes b)
-  a/[]-vanishes (simpl (tc c)) = refl
+    →'-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs MT m n) →
+               (simpl (a →' b)) /✶ ρs ↑✶ k ≡ simpl ((a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k))
+    →'-/✶-↑✶ k ε        = refl
+    →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
+
+    ⇒-/✶-↑✶ : ∀ k {m n a b} (ρs : Subs MT m n) →
+               (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
+    ⇒-/✶-↑✶ k ε        = refl
+    ⇒-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
+
+    tc-/✶-↑✶ : ∀ k {c m n} (ρs : Subs MT m n) →
+               (simpl (tc c)) /✶ ρs ↑✶ k ≡ simpl (tc c)
+    tc-/✶-↑✶ k ε        = refl
+    tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
+
+    tvar-/✶-↑✶ : ∀ k {c m n} (ρs : Subs MT m n) →
+               (simpl (tvar c)) /✶ ρs ↑✶ k ≡ simpl (tvar c)
+    tvar-/✶-↑✶ k ε        = refl
+    tvar-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tvar-/✶-↑✶ k ρs) refl 
+
+    postulate ∀'-/✶-↑✶ : ∀ {m n} (ρs₁ ρs₂ : Subs MT m n) →
+                        (∀ k x → (simpl (mvar x)) /✶ ρs₁ ↑✶ k ≡ (simpl (mvar x)) /✶ ρs₂ ↑✶ k) →
+                        ∀ k t → (∀' t) /✶ ρs₁ ↑✶ k ≡ (∀' t) /✶ ρs₂ ↑✶ k
+
+    /✶-↑✶ : ∀ {m n} (ρs₁ ρs₂ : Subs MT m n) →
+            (∀ k x → (simpl (mvar x)) /✶ ρs₁ ↑✶ k ≡ (simpl (mvar x)) /✶ ρs₂ ↑✶ k) →
+            ∀ k t → t /✶ ρs₁ ↑✶ k ≡ t /✶ ρs₂ ↑✶ k
+    /✶-↑✶ ρs₁ ρs₂ hyp k (a ⇒ b) = begin
+            (a ⇒ b) /✶ ρs₁ ↑✶ k
+         ≡⟨ ⇒-/✶-↑✶ k ρs₁ ⟩
+            ((a /✶ ρs₁ ↑✶ k) ⇒ (b /✶ ρs₁ ↑✶ k))
+         ≡⟨ cong₂ _⇒_ (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
+            (a /✶ ρs₂ ↑✶ k) ⇒ (b /✶ ρs₂ ↑✶ k)
+         ≡⟨ sym (⇒-/✶-↑✶ k ρs₂) ⟩
+            (a ⇒ b) /✶ ρs₂ ↑✶ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (∀' t) = ∀'-/✶-↑✶ ρs₁ ρs₂ hyp k t
+      
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (tvar c)) = begin
+            (simpl (tvar c)) /✶ ρs₁ ↑✶ k
+          ≡⟨ tvar-/✶-↑✶ k ρs₁ ⟩
+            (simpl (tvar c))
+          ≡⟨ sym $ tvar-/✶-↑✶ k ρs₂ ⟩
+            (simpl (tvar c)) /✶ ρs₂ ↑✶ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (mvar x)) = hyp k x
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (a →' b)) = begin
+            (simpl (a →' b)) /✶ ρs₁ ↑✶ k
+         ≡⟨ →'-/✶-↑✶ k ρs₁ ⟩
+            simpl ((a /✶ ρs₁ ↑✶ k) →' (b /✶ ρs₁ ↑✶ k))
+         ≡⟨ cong₂ (λ a b → simpl (a →' b)) (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
+            simpl ((a /✶ ρs₂ ↑✶ k) →' (b /✶ ρs₂ ↑✶ k))
+         ≡⟨ sym (→'-/✶-↑✶ k ρs₂) ⟩
+            (simpl (a →' b)) /✶ ρs₂ ↑✶ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (tc c)) = begin
+            (simpl (tc c)) /✶ ρs₁ ↑✶ k
+          ≡⟨ tc-/✶-↑✶ k ρs₁ ⟩
+            (simpl (tc c))
+          ≡⟨ sym $ tc-/✶-↑✶ k ρs₂ ⟩
+            (simpl (tc c)) /✶ ρs₂ ↑✶ k ∎
+
+    lemmas₃ : Lemmas₃ (flip MetaType ν)
+    lemmas₃ = record {
+        lemmas₂ = ExpandSimple.lemmas₂;
+        /✶-↑✶ = /✶-↑✶ }
+
+    open Lemmas₃ lemmas₃ public hiding (/✶-↑✶)
+
+  us↑-⊙-sub-u≡u∷us : ∀ {ν} u (us : MetaSub MetaType ν zero zero) → us ↑ ⊙ sub u ≡ u ∷ us
+  us↑-⊙-sub-u≡u∷us {ν} u us = begin
+    (u ∷ (map (λ t → t / wk ⊙ (sub u)) us))
+      ≡⟨ cong (λ v → u ∷ v) (map-cong (λ x → cong (_/_ x) (ExpandSimple.wk-⊙-sub {t = x})) us) ⟩
+    (u ∷ (map (λ t → t / id) us))
+      ≡⟨ cong (λ v → u ∷ v) (map-cong Expand₃.id-vanishes us) ⟩
+    (u ∷ (map Prelude.id us))
+      ≡⟨ cong (_∷_ u) (map-id us) ⟩
+    u ∷ us ∎
+
+  open Expand₃ public
 
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
 
