@@ -4,6 +4,8 @@ module Implicits.Improved.Ambiguous.PartialResolution (TC : Set) (_tc≟_ : (a b
 
 open import Coinduction
 open import Data.Fin.Substitution
+open import Data.List.Any
+open Membership-≡
 open import Implicits.Oliveira.Types TC _tc≟_
 open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
@@ -16,31 +18,11 @@ open SyntaxDirected
 open import Category.Monad
 open import Category.Functor
 open import Category.Monad.Partiality as P
-open import Data.List.Any
-open Membership-≡
-
-open P.Equality
--- open P.Equivalence
-private module PM {f} = RawMonad (P.monad {f})
 
 open import Data.Maybe using (monad; functor)
 private module MaybeF {f} = RawFunctor (functor {f})
+
 open MaybeF
-
-{-}
-mutual
-  match : ∀ {ν} (Δ : ICtx ν) → (a : Type ν) → (τ : SimpleType ν) → Δ ⊢ a ↓ τ
-  match a τ = {!!}
-
-  resolve : ∀ {ν} (Δ : ICtx ν) (a : Type ν) → (Δ ⊢ᵣ a) ?⊥
-  resolve List.[] a = fail
-  resolve (x List.∷ Δ) (simpl x₁) = {!!}
-  resolve (x List.∷ Δ) (a ⇒ b₁) = {!!}
-  resolve (x List.∷ Δ) (∀' a) =
-    (resolve (ictx-weaken (x List.∷ Δ)) a) >>= (λ r → return (r-tabs (♯ r)))
-
--}
-
 open P.Workaround
 
 _?⊥P : ∀ (A : Set) → Set₁
@@ -68,6 +50,10 @@ mutual
     ResM' : ∀ {m ν} → (ICtx ν) → MetaType m ν → SimpleType ν → Set₁
     ResM' Δ r τ = (∃ λ u → Δ ⊢ from-meta (r M./ u) ↓ τ) ?⊥P
 
+    -- match' uses MetaType m ν instead of Type ν to be able to distinguish unification variables
+    -- from other, non-unifiable tvars.
+    -- The difference is subtle but the gist is that we can only unify variables that we open
+    -- during matching. Any variables that are already open in the context are fixed.
     match' : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r' : MetaType m ν) → ResM' Δ r' τ 
     -- For rule types we first check if b matches our query τ.
     -- If this is the case, we use the unifier to instantiate the unification vars in a and
@@ -102,6 +88,9 @@ mutual
       ))
     match' Δ τ (simpl x) | nothing = now nothing
 
+  -- match defers to match', which concerns itself with MetaTypes.
+  -- If match' finds a match, we can use the fact that we have zero unification variables open here
+  -- to show that we found the right thing.
   match : ∀ {ν} (Δ : ICtx ν) → (r : Type ν) → (τ : SimpleType ν) → ResM Δ r τ 
   match Δ a τ = (match' Δ τ (to-meta {zero} a)) >>= (λ x → now (lem <$> x))
     where
