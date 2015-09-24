@@ -113,11 +113,10 @@ module MetaTypeTypeSubst where
   MetaSub T m ν μ = Sub (T m) ν μ
 
   record MetaLift (T : ℕ → ℕ → Set) : Set where
-    infix 10 _↑tp
     field
+      simple : ∀ {m} → Simple (T m)
       lift : ∀ {m ν} → T m ν → MetaType m ν
-      _↑tp : ∀ {m ν μ} → MetaSub T m ν μ → MetaSub T m (suc ν) (suc μ)
-  
+
   module MetaTypeApp {T} (l : MetaLift T) where
     open MetaLift l
 
@@ -133,30 +132,66 @@ module MetaTypeTypeSubst where
       _/_ : ∀ {m μ ν} → MetaType m ν → MetaSub T m ν μ → MetaType m μ
       simpl x / σ = (x s/ σ)
       (a ⇒ b) / σ = (a / σ) ⇒ (b / σ)
-      (∀' a)   / σ = ∀' (a / σ ↑tp)
+      (∀' a)   / σ = ∀' (a / σ ↑)
+        where
+          open Simple simple
+
+    module _ {m : ℕ} where
+      open Application (record { _/_ = _/_ {m = m} }) public using (_/✶_)
+      open Simple (simple {m})
+
+      →'-/✶-↑✶ : ∀ k {n n' a b} (ρs : Subs (T m) n n') →
+              (simpl (a →' b)) /✶ ρs ↑✶ k ≡ simpl ((a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k))
+      →'-/✶-↑✶ k ε        = refl
+      →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
+
+      ⇒-/✶-↑✶ : ∀ k {n n' a b} (ρs : Subs (T m) n n') →
+              (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
+      ⇒-/✶-↑✶ k ε        = refl
+      ⇒-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
+
+      tc-/✶-↑✶ : ∀ k {c n n'} (ρs : Subs (T m) n n') →
+              (simpl (tc c)) /✶ ρs ↑✶ k ≡ simpl (tc c)
+      tc-/✶-↑✶ k ε        = refl
+      tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
+
+      mvar-/✶-↑✶ : ∀ k {n n' c} (ρs : Subs (T m) n n') →
+              (simpl (mvar c)) /✶ ρs ↑✶ k ≡ simpl (mvar c)
+      mvar-/✶-↑✶ k ε        = refl
+      mvar-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (mvar-/✶-↑✶ k ρs) refl 
+
+      ∀'-/✶-↑✶ : ∀ k {n n' a} (ρs : Subs (T m) n n') →
+              (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))
+      ∀'-/✶-↑✶ k ε = refl
+      ∀'-/✶-↑✶ k (x ◅ ρs) = cong₂ _/_ (∀'-/✶-↑✶ k ρs) refl
 
   Fin′ : ℕ → ℕ → Set
   Fin′ m ν = Fin ν
 
+  module Lifted {m} {T} (lift : MetaLift T) where
+    application : Application (MetaType m) (T m)
+    application = record { _/_ = MetaTypeApp._/_ lift }
+
+    open MetaLift lift public
+    open Application application public
+    open Simple (simple {m}) public
+
   varLift : MetaLift Fin′
-  varLift = record { lift = (λ n → simpl (tvar n)); _↑tp = VarSubst._↑ }
+  varLift = record {
+      simple = record { var = Prelude.id ; weaken = suc }
+      ; lift = (λ n → simpl (tvar n))
+    }
 
   infixl 8 _/Var_
 
   _/Var_ : ∀ {m n k} → MetaType m n → Sub Fin n k → MetaType m k
   _/Var_ = MetaTypeApp._/_ varLift
 
-  private
-    module ExpandSimple {m : ℕ} where
-      simple : Simple (MetaType m)
-      simple = record { var = (λ n → simpl (tvar n)) ; weaken = λ t → t /Var VarSubst.wk }
-
-      open Simple simple public
-
-  open ExpandSimple  using (_↑; simple; _↑⋆_)
+  simple : ∀ {m} → Simple (MetaType m)
+  simple = record { var = λ x → simpl (tvar x); weaken = λ x → x /Var VarSubst.wk }
 
   termLift : MetaLift MetaType
-  termLift = record { lift = Prelude.id; _↑tp = _↑ }
+  termLift = record { simple = simple; lift = Prelude.id }
 
   private
     module ExpandSubst {n : ℕ} where
