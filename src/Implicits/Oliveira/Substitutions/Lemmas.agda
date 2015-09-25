@@ -181,6 +181,114 @@ module MetaTypeTypeLemmas where
 
     open Lemmas₅ lemmas₅ public hiding (lemmas₃)
 
+module MetaTypeMetaLemmas' where
+  open MetaTypeMetaSubst hiding (_/✶_)
+  open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
+  open import Data.Star
+
+  private module V = VarLemmas
+
+  module _ {T₁ T₂} {lift₁ : MetaLift T₁} {lift₂ : MetaLift T₂} where
+
+    open MetaTypeApp hiding (_/_)
+
+    open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
+    open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
+
+    postulate letstry : ∀ {ν n n'} (ρs₁ : Subs (flip T₁ ν) n n') (ρs₂ : Subs (flip T₂ ν) n n') →
+                        (∀ k x → (simpl (mvar x)) /✶₁ ρs₁ ↑✶₁ k ≡ (simpl (mvar x)) /✶₂ ρs₂ ↑✶₂ k) →  
+                        (∀ k x → (simpl (mvar x)) /✶₁ (tpweaken-subs lift₁ ρs₁) ↑✶₁ k ≡ (simpl (mvar x)) /✶₂ (tpweaken-subs lift₂ ρs₂) ↑✶₂ k)
+    -- letstry ρs₁ ρs₂ hyp k x = {!!}
+
+    /✶-↑✶ : ∀ {ν n n'} (ρs₁ : Subs (flip T₁ ν) n n') (ρs₂ : Subs (flip T₂ ν) n n') →
+            (∀ k x → (simpl (mvar x)) /✶₁ ρs₁ ↑✶₁ k ≡ (simpl (mvar x)) /✶₂ ρs₂ ↑✶₂ k) → 
+            ∀ k t → t /✶₁ ρs₁ ↑✶₁ k ≡ t /✶₂ ρs₂ ↑✶₂ k
+    /✶-↑✶ ρs₁ ρs₂ hyp k (a ⇒ b) = begin
+            (a ⇒ b) /✶₁ ρs₁ ↑✶₁ k
+        ≡⟨ ⇒-/✶-↑✶ lift₁ k ρs₁ ⟩
+            ((a /✶₁ ρs₁ ↑✶₁ k) ⇒ (b /✶₁ ρs₁ ↑✶₁ k))
+        ≡⟨ cong₂ _⇒_ (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
+            (a /✶₂ ρs₂ ↑✶₂ k) ⇒ (b /✶₂ ρs₂ ↑✶₂ k)
+        ≡⟨ sym (⇒-/✶-↑✶ lift₂ k ρs₂) ⟩
+            (a ⇒ b) /✶₂ ρs₂ ↑✶₂ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (∀' t) = begin
+            (∀' t) /✶₁ ρs₁ ↑✶₁ k
+        ≡⟨ ∀'-/✶-↑✶ lift₁ k ρs₁ ⟩
+            (∀' (t /✶₁ (tpweaken-subs lift₁ ρs₁) ↑✶₁ k))
+        ≡⟨ cong ∀' (/✶-↑✶ (tpweaken-subs lift₁ ρs₁) (tpweaken-subs lift₂ ρs₂) (letstry ρs₁ ρs₂ hyp) k t ) ⟩
+            (∀' (t /✶₂ (tpweaken-subs lift₂ ρs₂) ↑✶₂ k))
+        ≡⟨ sym $ ∀'-/✶-↑✶ lift₂ k ρs₂ ⟩
+            (∀' t) /✶₂ ρs₂ ↑✶₂ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (mvar c)) = hyp k c
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (tvar x)) = begin
+            (simpl (tvar x)) /✶₁ ρs₁ ↑✶₁ k
+        ≡⟨ tvar-/✶-↑✶ lift₁ k ρs₁ ⟩
+            (simpl (tvar x))
+        ≡⟨ sym $ tvar-/✶-↑✶ lift₂ k ρs₂ ⟩
+            (simpl (tvar x)) /✶₂ ρs₂ ↑✶₂ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (a →' b)) = begin
+            (simpl (a →' b)) /✶₁ ρs₁ ↑✶₁ k
+        ≡⟨ →'-/✶-↑✶ lift₁ k ρs₁ ⟩
+            simpl ((a /✶₁ ρs₁ ↑✶₁ k) →' (b /✶₁ ρs₁ ↑✶₁ k))
+        ≡⟨ cong₂ (λ a b → simpl (a →' b)) (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
+            simpl ((a /✶₂ ρs₂ ↑✶₂ k) →' (b /✶₂ ρs₂ ↑✶₂ k))
+        ≡⟨ sym (→'-/✶-↑✶ lift₂ k ρs₂) ⟩
+            (simpl (a →' b)) /✶₂ ρs₂ ↑✶₂ k ∎
+    /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (tc c)) = begin
+            (simpl (tc c)) /✶₁ ρs₁ ↑✶₁ k
+        ≡⟨ tc-/✶-↑✶ lift₁ k ρs₁ ⟩
+            (simpl (tc c))
+        ≡⟨ sym $ tc-/✶-↑✶ lift₂ k ρs₂ ⟩
+            (simpl (tc c)) /✶₂ ρs₂ ↑✶₂ k ∎
+
+  module _ {ν : ℕ} where
+
+    MT : ℕ → Set
+    MT = flip MetaType ν
+
+    lemmas₃ : Lemmas₃ (flip MetaType ν)
+    lemmas₃ = record
+        { lemmas₂ = record
+        { lemmas₁ = record
+            { lemmas₀ = record
+            { simple = simple
+            }
+            ; weaken-var = λ {_ x} → begin
+                (simpl (mvar x)) /Var V.wk      ≡⟨ refl ⟩
+                (simpl (mvar (lookup x V.wk)))  ≡⟨ cong (λ x → simpl (mvar x)) (V.lookup-wk x) ⟩
+                (simpl (mvar (suc x)))          ∎
+            }
+        ; application = Subst.application subst
+        ; var-/       = refl
+        }
+        ; /✶-↑✶ = /✶-↑✶
+        }
+
+    private module L₃ = Lemmas₃ lemmas₃
+
+    lemmas₅ : Lemmas₅ (flip MetaType ν)
+    lemmas₅ = record
+        { lemmas₄ = record
+        { lemmas₃ = lemmas₃
+        ; /-wk    = λ {_ t} → begin
+            t / wk       ≡⟨ /✶-↑✶ (ε ▻ wk) (ε ▻ V.wk)
+                                (λ k x → begin
+                                (simpl (mvar x)) / wk ↑⋆ k
+                                  ≡⟨ L₃.var-/-wk-↑⋆ k x ⟩
+                                (simpl (mvar (finlift k suc x)))
+                                  ≡⟨ cong (λ x → (simpl (mvar x))) (sym (V.var-/-wk-↑⋆ k x)) ⟩
+                                (simpl (mvar (lookup x (V._↑⋆_ V.wk k))))
+                                  ≡⟨ refl ⟩
+                                (simpl (mvar x)) /Var V._↑⋆_ V.wk k        ∎)
+                                zero t ⟩
+            t /Var V.wk  ≡⟨ refl ⟩
+            weaken t     ∎
+        }
+        }
+
+    open Lemmas₅ lemmas₅ public hiding (lemmas₃)
+
+{-}
 module MetaTypeMetaLemmas where
   open MetaTypeMetaSubst 
   open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
@@ -310,6 +418,7 @@ module MetaTypeMetaLemmas where
   -}
 
   open Expand₃ public
+-}
 
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
 

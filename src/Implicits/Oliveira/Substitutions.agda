@@ -7,7 +7,7 @@ open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
 open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Data.Fin.Substitution
-open import Data.Star hiding (map)
+open import Data.Star as Star hiding (map)
 
 module TypeSubst where
   module TypeApp {T} (l : Lift T Type) where
@@ -209,25 +209,36 @@ module MetaTypeTypeSubst where
   open ExpandSubst public hiding (var; simple)
 
 module MetaTypeMetaSubst where
-  MetaSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
-  MetaSub T ν m n = Sub (flip T ν) m n
 
-  MetaSubs : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
-  MetaSubs T ν = flip (Star (flip (MetaSub T ν )))
+  MetaSub : (ℕ → ℕ → Set) → ℕ → ℕ → ℕ → Set
+  MetaSub T ν m m' = Sub (flip T ν) m m'
+
+  record ExpandSimple (T : ℕ → ℕ → Set) : Set where
+    field
+      simple : ∀ {ν} → Simple (flip T ν)
+
+    module _ {ν : ℕ} where
+      open Simple (simple {ν}) public
+
+  record ExpandApp (T : ℕ → ℕ → Set) : Set where
+    field
+      app : ∀ {ν} → Application (flip MetaType ν) (flip T ν)
+    
+    module _ {ν : ℕ} where
+      open Application (app {ν}) public
 
   record MetaLift (T : ℕ → ℕ → Set) : Set where
-    infix 10 _↑meta _↑tp
     field
-      lift : ∀ {ν m} → T ν m → MetaType ν m
-      _↑meta : ∀ {ν m n} → MetaSub T ν m n → MetaSub T ν (suc m) (suc n)
-      _↑tp : ∀ {ν m n} → MetaSub T ν m n → MetaSub T (suc ν) m n
-    
+      exp-simple : ExpandSimple T 
+      lift : ∀ {m ν} → T m ν → MetaType m ν
+      _↑tp : ∀ {m m' ν} → MetaSub T ν m m' → MetaSub T (suc ν) m m'
+
   module MetaTypeApp {T} (l : MetaLift T) where
     open MetaLift l
 
     infixl 8 _/_
 
-    mutual 
+    mutual
       _s/_  : ∀ {m n ν} → MetaSimpleType m ν → MetaSub T ν m n → MetaType n ν
       tvar x s/ σ = simpl (tvar x)
       mvar x s/ σ = lift (lookup x σ)
@@ -239,30 +250,75 @@ module MetaTypeMetaSubst where
       (a ⇒ b) / σ = (a / σ) ⇒ (b / σ)
       (∀' a)   / σ = ∀' (a / σ ↑tp)
 
+    open ExpandApp (record { app = record { _/_ = _/_ } }) hiding (_/_)
+    open ExpandSimple exp-simple
+
+    →'-/✶-↑✶ : ∀ k {ν n n' a b} (ρs : Subs (flip T ν) n n') →
+            (simpl (a →' b)) /✶ ρs ↑✶ k ≡ simpl ((a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k))
+    →'-/✶-↑✶ k ε        = refl
+    →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
+
+    ⇒-/✶-↑✶ : ∀ k {ν n n' a b} (ρs : Subs (flip T ν) n n') →
+            (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
+    ⇒-/✶-↑✶ k ε        = refl
+    ⇒-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
+
+    tc-/✶-↑✶ : ∀ k {ν c n n'} (ρs : Subs (flip T ν) n n') →
+            (simpl (tc c)) /✶ ρs ↑✶ k ≡ simpl (tc c)
+    tc-/✶-↑✶ k ε        = refl
+    tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
+
+    tvar-/✶-↑✶ : ∀ k {ν n n' c} (ρs : Subs (flip T ν) n n') →
+            (simpl (tvar c)) /✶ ρs ↑✶ k ≡ simpl (tvar c)
+    tvar-/✶-↑✶ k ε        = refl
+    tvar-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tvar-/✶-↑✶ k ρs) refl 
+
+    tpweaken-subs : ∀ {ν n n'} (ρs : Subs (flip T ν) n n') → Subs (flip T (suc ν)) n n'
+    tpweaken-subs ρs = Star.map (λ x → x ↑tp) ρs
+
+    postulate tpweaken⋆↑✶ : ∀ k {ν n n'} (ρs : Subs (flip T ν) n n') →
+                            (tpweaken-subs ρs) ↑✶ k ≡ tpweaken-subs (ρs ↑✶ k)
+
+    ∀'-/✶-↑✶ : ∀ k {ν n n' a} (ρs : Subs (flip T ν) n n') →
+               (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ (tpweaken-subs ρs) ↑✶ k)
+    ∀'-/✶-↑✶ k {a = a} ε = refl
+    ∀'-/✶-↑✶ k {a = a} (x ◅ ρs) = begin
+        (∀' a) /✶ (x  ◅ ρs) ↑✶ k 
+          ≡⟨ cong (flip _/_ (x ↑⋆ k)) (∀'-/✶-↑✶ k ρs) ⟩
+        (∀' (a /✶ (tpweaken-subs ρs) ↑✶ k)) / (x ↑⋆ k)
+          ≡⟨ cong (λ u → ∀' (a /✶ u / _↑tp (x ↑⋆ k))) (tpweaken⋆↑✶ k ρs) ⟩
+        ∀' (a /✶ (tpweaken-subs ((x ◅ ρs) ↑✶ k)))
+          ≡⟨ sym $ cong (λ u → ∀' (a /✶ u)) (tpweaken⋆↑✶ k (x ◅ ρs)) ⟩
+        ∀' (a /✶ (tpweaken-subs (x ◅ ρs)) ↑✶ k) ∎
+        
   Fin′ : ℕ → ℕ → Set
-  Fin′ ν m = Fin ν
+  Fin′ m ν = Fin m
+
+  module Lifted {T} (lift : MetaLift T) where
+    open ExpandApp (record { app = record { _/_ = MetaTypeApp._/_ lift }}) public hiding (_/_)
+    open MetaLift lift public
+    open ExpandSimple exp-simple public
 
   varLift : MetaLift Fin′
-  varLift = record { lift = (λ n → simpl (mvar n)); _↑meta = VarSubst._↑; _↑tp = Prelude.id }
+  varLift = record {
+      _↑tp = Prelude.id
+      ; exp-simple = record { simple = record { var = Prelude.id ; weaken = suc }}
+      ; lift = (λ n → simpl (mvar n))
+    }
 
   infixl 8 _/Var_
 
-  _/Var_ : ∀ {m n k} → MetaType m n → Sub Fin m k → MetaType k n
+  _/Var_ : ∀ {m m' ν} → MetaType m ν → Sub Fin m m' → MetaType m' ν
   _/Var_ = MetaTypeApp._/_ varLift
 
-  private
-    module ExpandSimple {ν : ℕ} where
-      simple : Simple (flip MetaType ν)
-      simple = record { var = (λ n → simpl (mvar n)); weaken = λ t → t /Var VarSubst.wk }
+  simple : ∀ {ν} → Simple (flip MetaType ν)
+  simple = record { var = λ x → simpl (mvar x); weaken = λ x → x /Var VarSubst.wk }
 
-      open Simple simple public
-
-  open ExpandSimple using (_↑; simple)
-
-  open MetaTypeTypeSubst using () renaming (weaken to weakenTp)
-  
   termLift : MetaLift MetaType
-  termLift = record { lift = Prelude.id; _↑meta = _↑; _↑tp = λ x → map weakenTp x }
+  termLift = record {
+    _↑tp = λ x → map MetaTypeTypeSubst.weaken x
+    ; exp-simple = record { simple = simple }
+    ; lift = Prelude.id }
 
   private
     module ExpandSubst {n : ℕ} where
@@ -277,7 +333,7 @@ module MetaTypeMetaSubst where
 
       open Subst subst public
 
-  open ExpandSubst public hiding (var)
+  open ExpandSubst public hiding (var; simple)
 
   open-meta : ∀ {m ν} → (a : MetaType m (suc ν)) → MetaType (suc m) ν
   open-meta x = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (simpl (mvar zero)))
