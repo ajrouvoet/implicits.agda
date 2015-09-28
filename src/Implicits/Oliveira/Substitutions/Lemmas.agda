@@ -182,18 +182,83 @@ module MetaTypeTypeLemmas where
     open Lemmas₅ lemmas₅ public hiding (lemmas₃)
 
 module MetaTypeMetaLemmas' where
-  open MetaTypeMetaSubst hiding (_/✶_)
+  open MetaTypeMetaSubst using (module Lifted; MetaLift)
   open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
-  open import Data.Star
+  open import Data.Star as Star
+  open import Data.Star.Properties
 
   private module V = VarLemmas
 
-  module _ {T₁ T₂} {lift₁ : MetaLift T₁} {lift₂ : MetaLift T₂} where
+  module MetaTypeAppLemmas {T} (l : MetaLift T) where
+    open Lifted l
 
-    open MetaTypeApp hiding (_/_)
+    →'-/✶-↑✶ : ∀ k {ν n n' a b} (ρs : Subs (flip T ν) n n') →
+            (simpl (a →' b)) /✶ ρs ↑✶ k ≡ simpl ((a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k))
+    →'-/✶-↑✶ k ε        = refl
+    →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
+
+    ⇒-/✶-↑✶ : ∀ k {ν n n' a b} (ρs : Subs (flip T ν) n n') →
+            (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
+    ⇒-/✶-↑✶ k ε        = refl
+    ⇒-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
+
+    tc-/✶-↑✶ : ∀ k {ν c n n'} (ρs : Subs (flip T ν) n n') →
+            (simpl (tc c)) /✶ ρs ↑✶ k ≡ simpl (tc c)
+    tc-/✶-↑✶ k ε        = refl
+    tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
+
+    tvar-/✶-↑✶ : ∀ k {ν n n' c} (ρs : Subs (flip T ν) n n') →
+            (simpl (tvar c)) /✶ ρs ↑✶ k ≡ simpl (tvar c)
+    tvar-/✶-↑✶ k ε        = refl
+    tvar-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tvar-/✶-↑✶ k ρs) refl 
+
+    tpweaken-subs : ∀ {ν n n'} (ρs : Subs (flip T ν) n n') → Subs (flip T (suc ν)) n n'
+    tpweaken-subs ρs = Star.map (λ x → x ↑tp) ρs
+
+    mutual
+      comm-↑⋆-↑tp : ∀ k {ν n n'} (s : Sub (flip T ν) n n') → (s ↑⋆ k) ↑tp ≡ (s ↑tp) ↑⋆ k
+      comm-↑⋆-↑tp zero s = refl
+      comm-↑⋆-↑tp (suc k) s = begin
+        ((s ↑⋆ k) ↑) ↑tp
+          ≡⟨ comm-↑-↑tp (s ↑⋆ k) ⟩
+        ((s ↑⋆ k) ↑tp) ↑
+          ≡⟨ cong _↑ (comm-↑⋆-↑tp k s) ⟩
+        (s ↑tp) ↑⋆ (suc k) ∎
+
+    comm-tpweaken-↑✶ : ∀ k {ν n n'} (ρs : Subs (flip T ν) n n') →
+                     (tpweaken-subs ρs) ↑✶ k ≡ tpweaken-subs (ρs ↑✶ k)
+    comm-tpweaken-↑✶ k ρs = begin
+       (tpweaken-subs ρs) ↑✶ k
+         ≡⟨ refl ⟩
+       Star.gmap (_N+_ k) (λ ρ → ρ ↑⋆ k) (Star.map _↑tp ρs)
+         ≡⟨ gmap-∘ (_N+_ k) (λ ρ₁ → ρ₁ ↑⋆ k) Prelude.id _↑tp ρs ⟩
+       Star.gmap (_N+_ k) (λ ρ → (ρ ↑tp) ↑⋆ k) ρs
+       ≡⟨ gmap-cong (_N+_ k) (λ ρ₁ → _↑tp ρ₁ ↑⋆ k) (λ ρ₁ → _↑tp (ρ₁ ↑⋆ k))
+           (λ s → sym $ comm-↑⋆-↑tp k s) ρs ⟩
+       Star.gmap (_N+_ k) (λ ρ → (ρ ↑⋆ k) ↑tp) ρs
+         ≡⟨ sym $ gmap-∘ Prelude.id _↑tp (_N+_ k) (λ ρ₁ → ρ₁ ↑⋆ k) ρs ⟩
+       Star.map _↑tp (Star.gmap (_N+_ k) (λ ρ → ρ ↑⋆ k) ρs)
+         ≡⟨ refl ⟩
+       tpweaken-subs (ρs ↑✶ k) ∎
+
+    ∀'-/✶-↑✶ : ∀ k {ν n n' a} (ρs : Subs (flip T ν) n n') →
+               (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ (tpweaken-subs ρs) ↑✶ k)
+    ∀'-/✶-↑✶ k {a = a} ε = refl
+    ∀'-/✶-↑✶ k {a = a} (x ◅ ρs) = begin
+        (∀' a) /✶ (x  ◅ ρs) ↑✶ k 
+          ≡⟨ cong (flip _/_ (x ↑⋆ k)) (∀'-/✶-↑✶ k ρs) ⟩
+        (∀' (a /✶ (tpweaken-subs ρs) ↑✶ k)) / (x ↑⋆ k)
+          ≡⟨ cong (λ u → ∀' (a /✶ u / _↑tp (x ↑⋆ k))) (comm-tpweaken-↑✶ k ρs) ⟩
+        ∀' (a /✶ (tpweaken-subs ((x ◅ ρs) ↑✶ k)))
+          ≡⟨ sym $ cong (λ u → ∀' (a /✶ u)) (comm-tpweaken-↑✶ k (x ◅ ρs)) ⟩
+        ∀' (a /✶ (tpweaken-subs (x ◅ ρs)) ↑✶ k) ∎
+
+  module _ {T₁ T₂} {lift₁ : MetaLift T₁} {lift₂ : MetaLift T₂} where
 
     open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
     open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
+
+    open MetaTypeAppLemmas
 
     postulate letstry : ∀ {ν n n'} (ρs₁ : Subs (flip T₁ ν) n n') (ρs₂ : Subs (flip T₂ ν) n n') →
                         (∀ k x → (simpl (mvar x)) /✶₁ ρs₁ ↑✶₁ k ≡ (simpl (mvar x)) /✶₂ ρs₂ ↑✶₂ k) →  
@@ -242,6 +307,7 @@ module MetaTypeMetaLemmas' where
             (simpl (tc c)) /✶₂ ρs₂ ↑✶₂ k ∎
 
   module _ {ν : ℕ} where
+    open MetaTypeMetaSubst
 
     MT : ℕ → Set
     MT = flip MetaType ν

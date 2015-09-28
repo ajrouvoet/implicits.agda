@@ -8,6 +8,7 @@ open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
+open import Data.Star.Properties
 
 module TypeSubst where
   module TypeApp {T} (l : Lift T Type) where
@@ -223,15 +224,20 @@ module MetaTypeMetaSubst where
   record ExpandApp (T : ℕ → ℕ → Set) : Set where
     field
       app : ∀ {ν} → Application (flip MetaType ν) (flip T ν)
-    
+
     module _ {ν : ℕ} where
       open Application (app {ν}) public
 
   record MetaLift (T : ℕ → ℕ → Set) : Set where
     field
-      exp-simple : ExpandSimple T 
+      exp-simple : ExpandSimple T
       lift : ∀ {m ν} → T m ν → MetaType m ν
       _↑tp : ∀ {m m' ν} → MetaSub T ν m m' → MetaSub T (suc ν) m m'
+
+    open ExpandSimple exp-simple using (simple; _↑)
+    
+    field
+      comm-↑-↑tp : ∀ {ν n n'} (s : Sub (flip T ν) n n') → (s ↑) ↑tp ≡ (s ↑tp) ↑
 
   module MetaTypeApp {T} (l : MetaLift T) where
     open MetaLift l
@@ -253,49 +259,11 @@ module MetaTypeMetaSubst where
     open ExpandApp (record { app = record { _/_ = _/_ } }) hiding (_/_)
     open ExpandSimple exp-simple
 
-    →'-/✶-↑✶ : ∀ k {ν n n' a b} (ρs : Subs (flip T ν) n n') →
-            (simpl (a →' b)) /✶ ρs ↑✶ k ≡ simpl ((a /✶ ρs ↑✶ k) →' (b /✶ ρs ↑✶ k))
-    →'-/✶-↑✶ k ε        = refl
-    →'-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (→'-/✶-↑✶ k ρs) refl
-
-    ⇒-/✶-↑✶ : ∀ k {ν n n' a b} (ρs : Subs (flip T ν) n n') →
-            (a ⇒ b) /✶ ρs ↑✶ k ≡ (a /✶ ρs ↑✶ k) ⇒ (b /✶ ρs ↑✶ k)
-    ⇒-/✶-↑✶ k ε        = refl
-    ⇒-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (⇒-/✶-↑✶ k ρs) refl
-
-    tc-/✶-↑✶ : ∀ k {ν c n n'} (ρs : Subs (flip T ν) n n') →
-            (simpl (tc c)) /✶ ρs ↑✶ k ≡ simpl (tc c)
-    tc-/✶-↑✶ k ε        = refl
-    tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
-
-    tvar-/✶-↑✶ : ∀ k {ν n n' c} (ρs : Subs (flip T ν) n n') →
-            (simpl (tvar c)) /✶ ρs ↑✶ k ≡ simpl (tvar c)
-    tvar-/✶-↑✶ k ε        = refl
-    tvar-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tvar-/✶-↑✶ k ρs) refl 
-
-    tpweaken-subs : ∀ {ν n n'} (ρs : Subs (flip T ν) n n') → Subs (flip T (suc ν)) n n'
-    tpweaken-subs ρs = Star.map (λ x → x ↑tp) ρs
-
-    postulate tpweaken⋆↑✶ : ∀ k {ν n n'} (ρs : Subs (flip T ν) n n') →
-                            (tpweaken-subs ρs) ↑✶ k ≡ tpweaken-subs (ρs ↑✶ k)
-
-    ∀'-/✶-↑✶ : ∀ k {ν n n' a} (ρs : Subs (flip T ν) n n') →
-               (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ (tpweaken-subs ρs) ↑✶ k)
-    ∀'-/✶-↑✶ k {a = a} ε = refl
-    ∀'-/✶-↑✶ k {a = a} (x ◅ ρs) = begin
-        (∀' a) /✶ (x  ◅ ρs) ↑✶ k 
-          ≡⟨ cong (flip _/_ (x ↑⋆ k)) (∀'-/✶-↑✶ k ρs) ⟩
-        (∀' (a /✶ (tpweaken-subs ρs) ↑✶ k)) / (x ↑⋆ k)
-          ≡⟨ cong (λ u → ∀' (a /✶ u / _↑tp (x ↑⋆ k))) (tpweaken⋆↑✶ k ρs) ⟩
-        ∀' (a /✶ (tpweaken-subs ((x ◅ ρs) ↑✶ k)))
-          ≡⟨ sym $ cong (λ u → ∀' (a /✶ u)) (tpweaken⋆↑✶ k (x ◅ ρs)) ⟩
-        ∀' (a /✶ (tpweaken-subs (x ◅ ρs)) ↑✶ k) ∎
-        
   Fin′ : ℕ → ℕ → Set
   Fin′ m ν = Fin m
 
   module Lifted {T} (lift : MetaLift T) where
-    open ExpandApp (record { app = record { _/_ = MetaTypeApp._/_ lift }}) public hiding (_/_)
+    open ExpandApp (record { app = record { _/_ = MetaTypeApp._/_ lift }}) public
     open MetaLift lift public
     open ExpandSimple exp-simple public
 
@@ -304,6 +272,7 @@ module MetaTypeMetaSubst where
       _↑tp = Prelude.id
       ; exp-simple = record { simple = record { var = Prelude.id ; weaken = suc }}
       ; lift = (λ n → simpl (mvar n))
+      ; comm-↑-↑tp = λ s → refl
     }
 
   infixl 8 _/Var_
@@ -314,11 +283,52 @@ module MetaTypeMetaSubst where
   simple : ∀ {ν} → Simple (flip MetaType ν)
   simple = record { var = λ x → simpl (mvar x); weaken = λ x → x /Var VarSubst.wk }
 
-  termLift : MetaLift MetaType
-  termLift = record {
+  module _ where
+    exp-simple : ExpandSimple MetaType
+    exp-simple = record { simple = simple }
+
+    open ExpandSimple exp-simple
+
+    _↑tp : ∀ {m m' ν} → MetaSub MetaType ν m m' → MetaSub MetaType (suc ν) m m'
     _↑tp = λ x → map MetaTypeTypeSubst.weaken x
-    ; exp-simple = record { simple = simple }
-    ; lift = Prelude.id }
+
+    tp-weaken = MetaTypeTypeSubst.weaken
+
+    comm-tp/var-/var : ∀ {ν ν' m m'} (a : MetaType m ν) {s : Sub Fin ν ν'} {s' : Sub Fin m m'} →
+                       (a MetaTypeTypeSubst./Var s) /Var s' ≡ (a /Var s') MetaTypeTypeSubst./Var s
+    comm-tp/var-/var (a ⇒ b) = cong₂ _⇒_ (comm-tp/var-/var a) (comm-tp/var-/var b)
+    comm-tp/var-/var (∀' a) = cong ∀' (comm-tp/var-/var a)
+    comm-tp/var-/var (simpl (tvar x)) = refl
+    comm-tp/var-/var (simpl (mvar x)) = refl
+    comm-tp/var-/var (simpl (a →' b)) = cong₂ (λ u v → simpl (u →' v)) (comm-tp/var-/var a)
+                                          (comm-tp/var-/var b)
+    comm-tp/var-/var (simpl (tc c)) = refl
+
+    comm-weaken-tpweaken : ∀ {m ν} (a : MetaType m ν) → weaken (tp-weaken a) ≡ tp-weaken (weaken a)
+    comm-weaken-tpweaken (a ⇒ b) = cong₂ _⇒_ (comm-weaken-tpweaken a) (comm-weaken-tpweaken b)
+    comm-weaken-tpweaken (∀' a) = cong ∀' (comm-tp/var-/var a)
+    comm-weaken-tpweaken (simpl (tvar x)) = refl
+    comm-weaken-tpweaken (simpl (mvar x)) = refl
+    comm-weaken-tpweaken (simpl (a →' b)) = cong₂ (λ u v → simpl (u →' v)) (comm-weaken-tpweaken a)
+                                              (comm-weaken-tpweaken b)
+    comm-weaken-tpweaken (simpl (tc c)) = refl
+
+    open import Data.Vec.Properties
+
+    termLift : MetaLift MetaType
+    termLift = record {
+        _↑tp = _↑tp
+        ; exp-simple = exp-simple
+        ; lift = Prelude.id 
+        ; comm-↑-↑tp = λ s → begin
+          (s ↑) ↑tp
+            ≡⟨ cong (λ u → simpl (mvar zero) ∷ u) (sym $ map-∘ tp-weaken weaken s) ⟩
+          (simpl (mvar zero)) ∷ (map (tp-weaken ∘ weaken) s)
+            ≡⟨ cong (λ u → simpl (mvar zero) ∷ u)
+                 (sym $ map-cong comm-weaken-tpweaken s) ⟩
+          (simpl (mvar zero)) ∷ (map (weaken ∘ tp-weaken) s)
+            ≡⟨ cong (λ u → simpl (mvar zero) ∷ u) (map-∘ weaken tp-weaken s) ⟩
+          s ↑tp ↑ ∎ }
 
   private
     module ExpandSubst {n : ℕ} where
