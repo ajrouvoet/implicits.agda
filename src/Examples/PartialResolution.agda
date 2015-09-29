@@ -34,6 +34,7 @@ module Ex₁ where
   Δ : ICtx zero
   Δ = Bool ∷ Int ∷ []
 
+  -- resolves directly using a value from the implicit context
   r = run_for_steps (resolve Δ Int) 100
 
   p : isNow r ≡ true
@@ -44,6 +45,7 @@ module Ex₂ where
   Δ : ICtx zero
   Δ = Bool ∷ (Bool ⇒ Int) ∷ []
 
+  -- resolves using implicit application
   r = run_for_steps (resolve Δ Int) 100
 
   p : r resolved? ≡ true
@@ -54,7 +56,8 @@ module Ex₃ where
   Δ : ICtx zero
   Δ = Bool ∷ (∀' (Bool ⇒ (simpl (tvar zero)))) ∷ []
 
-  r = run_for_steps (resolve Δ Int) 1000
+  -- resolves using polymorphic appliation + implicit application
+  r = run_for_steps (resolve Δ Int) 100
 
   p : r resolved? ≡ true
   p = refl
@@ -64,11 +67,47 @@ module Ex₄ where
   Δ : ICtx zero
   Δ = Bool ∷ (∀' ((simpl (tvar zero)) ⇒ Int)) ∷ []
 
-  r = run_for_steps (resolve Δ Int) 1000
+  r = run_for_steps (resolve Δ Int) 100
 
   -- Maybe surprisingly this fails.
   -- But we should note that unification on the codomain of the rule does not fix the domain to a
   -- concrete type, such that it's instantiation is left ambiguous.
   -- Like Oliveira we reject those rules, because they lead to ambiguous terms.
   p : r failed? ≡ true
+  p = refl
+
+module Ex₅ where
+
+  -- The following context would not resolved Int in Oliveira's deterministic calculus.
+  -- Demonstratint that partial resolution is more powerful for terminating contexts.
+  Δ : ICtx zero
+  Δ = (Bool ⇒ Int) ∷ Int ∷ []
+
+  r = run_for_steps (resolve Δ Int) 100
+
+  p : r resolved? ≡ true
+  p = refl
+
+module Ex₆ where
+
+  Δ : ICtx zero
+  Δ = Bool ∷ (∀' (Bool ⇒ (simpl (tvar zero)))) ∷ []
+
+  -- resolves rule types
+  r = run_for_steps (resolve Δ (Bool ⇒ Int)) 100
+
+  p : r resolved? ≡ true
+  p = refl
+
+module Ex₇ where
+
+  Δ : ICtx zero
+  Δ = Bool ∷ (∀' (Bool ⇒ (simpl (tvar zero)))) ∷ []
+
+  -- Resolves polymorphic types.
+  -- Note that it doesn't resolve to the rule in the context directly.
+  -- Instead, it will apply r-tabs and r-iabs, to obtain resolve Δ' ⊢ᵣ (∀' (tvar zero))
+  r = run_for_steps (resolve Δ (∀' (Bool ⇒ (simpl (tvar zero))))) 100
+
+  p : r resolved? ≡ true
   p = refl
