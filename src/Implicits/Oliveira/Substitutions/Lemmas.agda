@@ -181,7 +181,7 @@ module MetaTypeTypeLemmas where
 
     open Lemmas₅ lemmas₅ public hiding (lemmas₃)
 
-module MetaTypeMetaLemmas' where
+module MetaTypeMetaLemmas where
   open MetaTypeMetaSubst using (module Lifted; MetaLift)
   open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
   open import Data.Star as Star
@@ -366,6 +366,46 @@ module MetaTypeMetaLemmas' where
         }
 
     open Lemmas₅ lemmas₅ public hiding (lemmas₃)
+
+  open MetaTypeMetaSubst using (open-meta; _↑tp)
+
+  us↑-⊙-sub-u≡u∷us : ∀ {ν m} (u : MetaType zero ν) (us : Sub (flip MetaType ν) m zero) →
+                     us ↑ ⊙ sub u ≡ u ∷ us
+  us↑-⊙-sub-u≡u∷us {ν} {m} u us = cong (λ v → u ∷ v) map-weaken-⊙-sub
+
+  open-mvar : ∀ {ν m} (x : Fin m) → open-meta {ν = ν} (simpl (mvar x)) ≡ simpl (mvar (suc x))
+  open-mvar x = weaken-var
+
+  open-tvar-suc : ∀ {ν m} (x : Fin m) → open-meta {ν} (simpl (tvar (suc x))) ≡ simpl (tvar x)
+  open-tvar-suc x = MetaTypeTypeLemmas.suc-/-sub {t = (simpl (tvar x))}
+  
+  
+  postulate lem' : ∀ {m ν} (a : MetaType m (suc ν)) u us → from-meta ((open-meta a) / us ↑ / (sub u)) ≡ from-meta (a / (us ↑tp)) tp[/tp from-meta u ]
+  postulate lem : ∀ {ν} (a : MetaType zero (suc ν)) (u : MetaType zero ν) →
+                  (from-meta a) tp[/tp from-meta u ] ≡ from-meta ((open-meta a) / (sub u))
+  {-}
+  lem (a ⇒ b) u = cong₂ _⇒_ (lem a u) (lem b u)
+  lem (∀' a) u = begin
+    ∀' ((from-meta a) TypeSubst./ TypeSubst.sub (from-meta u) TypeSubst.↑)
+      ≡⟨ {!!} ⟩
+    (∀' (from-meta a)) tp[/tp from-meta u ]
+      ≡⟨ {!!} ⟩
+    (from-meta (∀' ((open-meta a) / (sub u) ↑tp)))
+      ≡⟨ refl ⟩
+    (from-meta ((∀' (open-meta a)) / (sub u)))
+      ≡⟨ {!refl!} ⟩
+    (from-meta ((open-meta (∀' a) / (sub u)))) ∎
+  lem (simpl (tvar zero)) u = refl
+  lem (simpl (tvar (suc x))) u = begin
+    (from-meta (simpl (tvar (suc x)))) tp[/tp from-meta u ]
+      ≡⟨ TypeLemmas.suc-/-sub {t = (from-meta u)}⟩
+    (simpl (tvar x))
+      ≡⟨ cong (λ v → from-meta (_/_ v (sub u))) (sym $ open-tvar-suc x) ⟩
+    from-meta ((open-meta (simpl (tvar (suc x)))) / (sub u)) ∎
+  lem (simpl (mvar ())) u
+  lem (simpl (a →' b)) u = cong₂ (λ w v → simpl (w →' v)) (lem a u) (lem b u)
+  lem (simpl (tc c)) u = refl
+  -}
 
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
 

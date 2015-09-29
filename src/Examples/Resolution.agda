@@ -51,7 +51,7 @@ module ex₂ where
     where
       p : ρ⟨ tnat ∷K K , tc unit ⇒ tc unit ⟩↝ (tc unit)
       p = (by-implication (by-value (tc unit ⇒ tc unit)) (rule (tc unit) (tc unit))
-        (, there tnat (here (by-value (tc unit)) List.[])))
+        (, there tnat {!!} (here (by-value (tc unit)) List.[])))
 
 -- higher order resolution
 module ex₃ where

@@ -1,4 +1,4 @@
-open import Prelude hiding (All; module All; _>>=_)
+open import Prelude hiding (All; module All; _>>=_; ⊥)
 
 module Implicits.Improved.Ambiguous.PartialResolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
@@ -42,6 +42,7 @@ ResM Δ r τ = (Δ ⊢ r ↓ τ) ?⊥P
 
 module M = MetaTypeMetaSubst
 
+-- helpful shortcut for when we need partiality- & failure-monad-like behaviour on bind
 _?>>=_ : ∀ {A B : Set} → A ?⊥P → (f : A → B ?⊥P) → B ?⊥P
 x ?>>= f = x >>= (λ{ (just y) → f y ; nothing → now nothing })
 
@@ -63,7 +64,7 @@ mutual
       where
         lem : Maybe (∃ λ u → Δ ⊢ (from-meta (b M./ u)) ↓ τ) → ResM' Δ (a ⇒ b) τ
         lem (just (u , b/u↓τ)) =
-          resolve Δ (from-meta (a M./ u)) >>=
+          resolve' Δ (from-meta (a M./ u)) >>=
             (λ{ (just Δ⊢ᵣa) → now (just (u , (i-iabs (♯ Δ⊢ᵣa) b/u↓τ))) ; nothing → now nothing })
             -- this is the inlined version of the following, which failed productivity checking:
             -- (λ Δ⊢ᵣa → now (just (u , (i-iabs (♯ Δ⊢ᵣa) b/u↓τ))))
@@ -76,9 +77,15 @@ mutual
       where
         lem : (∃ λ u → Δ ⊢ (from-meta ((open-meta a) M./ u)) ↓ τ) →
             ∃ λ u' → Δ ⊢ (from-meta (∀' a M./ u')) ↓ τ
-        lem (u ∷ us , p) =
-          us , (i-tabs (from-meta u) (subst (λ v → Δ ⊢ v ↓ τ) {!!} p))
-            
+        lem (u ∷ us , p) = us , (i-tabs (from-meta u) (subst (λ v → Δ ⊢ v ↓ τ) (begin
+              from-meta (M._/_ (open-meta a) (u ∷ us))
+                ≡⟨ cong (λ v → from-meta (M._/_ (open-meta a) v)) (sym $ us↑-⊙-sub-u≡u∷us u us) ⟩
+              from-meta ((open-meta a) M./ (us M.↑ M.⊙ (M.sub u)))
+                ≡⟨ cong from-meta (/-⊙ (open-meta a)) ⟩
+              from-meta ((open-meta a) M./ us M.↑ M./ (M.sub u))
+                ≡⟨ lem' a u us ⟩
+              from-meta (M._/_ a (us M.↑tp)) tp[/tp from-meta u ] ∎) p))
+            where open MetaTypeMetaLemmas hiding (subst)
 
     -- The only thing left to do is to try and unify τ and x.
     -- If we succeed, we use  i-simpl to return a result.
@@ -116,9 +123,25 @@ mutual
       recoverOnFail nothing = match1st ρs (λ y → ρs⊆Δ (there y)) a
 
   -- resolution in ResP
-  resolve : ∀ {ν} (Δ : ICtx ν) (a : Type ν) → ResP Δ a
-  resolve Δ (simpl x) = match1st {Δ = Δ} Δ id x >>= (
+  resolve' : ∀ {ν} (Δ : ICtx ν) (a : Type ν) → ResP Δ a
+  resolve' Δ (simpl x) = match1st {Δ = Δ} Δ id x >>= (
       λ v → now ((λ{ (r , r∈Δ , r↓x) → r-simp r∈Δ r↓x }) <$> v)
     )
-  resolve Δ (a ⇒ b) = resolve (a List.∷ Δ) b >>= (λ v → now ((λ x → r-iabs (♯ x)) <$> v))
-  resolve Δ (∀' a) = resolve (ictx-weaken Δ) a >>= (λ v → now ((λ x → r-tabs (♯ x)) <$> v))
+  resolve' Δ (a ⇒ b) = resolve' (a List.∷ Δ) b >>= (λ v → now ((λ x → r-iabs (♯ x)) <$> v))
+  resolve' Δ (∀' a) = resolve' (ictx-weaken Δ) a >>= (λ v → now ((λ x → r-tabs (♯ x)) <$> v))
+
+  resolve : ∀ {ν} (Δ : ICtx ν) (r : Type ν) → (Maybe (Δ ⊢ᵣ r)) ⊥
+  resolve Δ r = ⟦ resolve' Δ r ⟧P
+
+  _resolved? : ∀ {ν} {Δ : ICtx ν} {r : Type ν} → (Maybe (Δ ⊢ᵣ r)) ⊥ → Bool
+  now (just x) resolved? = true
+  now nothing resolved? = false
+  later x resolved? = false
+
+  _failed? : ∀ {ν} {Δ : ICtx ν} {r : Type ν} → (Maybe (Δ ⊢ᵣ r)) ⊥ → Bool
+  now (just x) failed? = false
+  now nothing failed? = true
+  later x failed? = false
+
+  _resolves_after_steps : ∀ {ν} (Δ : ICtx ν) (r : Type ν) → ℕ → Bool
+  Δ resolves r after n steps = (run_for_steps (resolve Δ r) n) resolved?
