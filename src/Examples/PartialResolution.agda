@@ -35,7 +35,7 @@ module Ex₁ where
   Δ = Bool ∷ Int ∷ []
 
   -- resolves directly using a value from the implicit context
-  r = run_for_steps (resolve Δ Int) 100
+  r = run_for_steps (resolve Δ Int) 10
 
   p : isNow r ≡ true
   p = refl
@@ -46,7 +46,7 @@ module Ex₂ where
   Δ = Bool ∷ (Bool ⇒ Int) ∷ []
 
   -- resolves using implicit application
-  r = run_for_steps (resolve Δ Int) 100
+  r = run_for_steps (resolve Δ Int) 10
 
   p : r resolved? ≡ true
   p = refl
@@ -57,7 +57,7 @@ module Ex₃ where
   Δ = Bool ∷ (∀' (Bool ⇒ (simpl (tvar zero)))) ∷ []
 
   -- resolves using polymorphic appliation + implicit application
-  r = run_for_steps (resolve Δ Int) 100
+  r = run_for_steps (resolve Δ Int) 10
 
   p : r resolved? ≡ true
   p = refl
@@ -67,7 +67,7 @@ module Ex₄ where
   Δ : ICtx zero
   Δ = Bool ∷ (∀' ((simpl (tvar zero)) ⇒ Int)) ∷ []
 
-  r = run_for_steps (resolve Δ Int) 100
+  r = run_for_steps (resolve Δ Int) 10
 
   -- Maybe surprisingly this fails.
   -- But we should note that unification on the codomain of the rule does not fix the domain to a
@@ -83,7 +83,7 @@ module Ex₅ where
   Δ : ICtx zero
   Δ = (Bool ⇒ Int) ∷ Int ∷ []
 
-  r = run_for_steps (resolve Δ Int) 100
+  r = run_for_steps (resolve Δ Int) 10
 
   p : r resolved? ≡ true
   p = refl
@@ -94,7 +94,7 @@ module Ex₆ where
   Δ = Bool ∷ (∀' (Bool ⇒ (simpl (tvar zero)))) ∷ []
 
   -- resolves rule types
-  r = run_for_steps (resolve Δ (Bool ⇒ Int)) 100
+  r = run_for_steps (resolve Δ (Bool ⇒ Int)) 10
 
   p : r resolved? ≡ true
   p = refl
@@ -104,10 +104,33 @@ module Ex₇ where
   Δ : ICtx zero
   Δ = Bool ∷ (∀' (Bool ⇒ (simpl (tvar zero)))) ∷ []
 
+  q : Type zero
+  q = (∀' (Bool ⇒ (simpl (tvar zero))))
+
   -- Resolves polymorphic types.
   -- Note that it doesn't resolve to the rule in the context directly.
   -- Instead, it will apply r-tabs and r-iabs, to obtain resolve Δ' ⊢ᵣ (∀' (tvar zero))
-  r = run_for_steps (resolve Δ (∀' (Bool ⇒ (simpl (tvar zero))))) 100
+  r = run_for_steps (resolve Δ q) 10
 
   p : r resolved? ≡ true
   p = refl
+
+module Ex₈ where
+
+  Δ : ICtx zero
+  Δ = Bool ∷ (∀' ((simpl (tvar zero)) ⇒ (simpl (tvar zero)))) ∷ []
+
+  -- infinite derivation exists: not decidable
+  r = run_for_steps (resolve Δ Int) 10
+
+  p : r resolved? ≡ false
+  p = refl
+
+  ¬p : r failed? ≡ false
+  ¬p = refl
+
+open import Coinduction
+open Trace
+open Ex₇
+
+r' = (resolve Δ q) trace 10 steps

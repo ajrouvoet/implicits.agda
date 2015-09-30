@@ -28,17 +28,8 @@ module SyntaxDirected where
 
     data _⊢ᵣ_ {ν} (Δ : ICtx ν) : Type ν → Set where
       r-simp : ∀ {r τ} → (r List.∈ Δ) → Δ ⊢ r ↓ τ → Δ ⊢ᵣ simpl τ
-      r-iabs : ∀ {ρ₁ ρ₂} → ∞ ((ρ₁ List.∷ Δ) ⊢ᵣ ρ₂) → Δ ⊢ᵣ (ρ₁ ⇒ ρ₂)
-      r-tabs : ∀ {ρ} → ∞ (ictx-weaken Δ ⊢ᵣ ρ) → Δ ⊢ᵣ ∀' ρ
-
-  complexity : ∀ {ν} → Type ν → ℕ
-  complexity (simpl (tc x)) = 1
-  complexity (simpl (tvar n)) = 1
-  complexity (simpl (a →' b)) = complexity a N+ complexity b
-  complexity (a ⇒ b) = complexity a N+ complexity b
-  complexity (∀' x) = complexity x
-
-  data ⊢diverges {ν} {Δ : ICtx ν} : ∀ {a τ} → Δ ⊢ a ↓ τ → Set where
+      r-iabs : ∀ {ρ₁ ρ₂} → ((ρ₁ List.∷ Δ) ⊢ᵣ ρ₂) → Δ ⊢ᵣ (ρ₁ ⇒ ρ₂)
+      r-tabs : ∀ {ρ} → (ictx-weaken Δ ⊢ᵣ ρ) → Δ ⊢ᵣ ∀' ρ
 
   open import Data.List.Any.Membership using (map-mono)
   open import Data.List.Any
@@ -58,7 +49,7 @@ module SyntaxDirected where
     ⊆-Δ⊢a : ∀ {ν} {Δ Δ' : ICtx ν} {a} → Δ ⊢ᵣ a → Δ ⊆ Δ' → Δ' ⊢ᵣ a
     ⊆-Δ⊢a (r-simp x₁ x₂) f = r-simp (f x₁) (⊆-r↓a x₂ f)
     ⊆-Δ⊢a (r-iabs x₁) f =
-      r-iabs (♯ (⊆-Δ⊢a (♭ x₁) (λ{ (here px) → here px ; (there x₂) → there (f x₂) })))
-    ⊆-Δ⊢a (r-tabs x) f = r-tabs (♯ (⊆-Δ⊢a (♭ x) f'))
+      r-iabs (⊆-Δ⊢a x₁ (λ{ (here px) → here px ; (there x₂) → there (f x₂) }))
+    ⊆-Δ⊢a (r-tabs x) f = r-tabs (⊆-Δ⊢a x f')
       where
         f' = map-mono (flip TypeSubst._/_ TypeSubst.wk) f

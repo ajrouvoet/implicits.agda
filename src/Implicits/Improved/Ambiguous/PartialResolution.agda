@@ -127,8 +127,8 @@ mutual
   resolve' Δ (simpl x) = match1st {Δ = Δ} Δ id x >>= (
       λ v → now ((λ{ (r , r∈Δ , r↓x) → r-simp r∈Δ r↓x }) <$> v)
     )
-  resolve' Δ (a ⇒ b) = resolve' (a List.∷ Δ) b >>= (λ v → now ((λ x → r-iabs (♯ x)) <$> v))
-  resolve' Δ (∀' a) = resolve' (ictx-weaken Δ) a >>= (λ v → now ((λ x → r-tabs (♯ x)) <$> v))
+  resolve' Δ (a ⇒ b) = resolve' (a List.∷ Δ) b >>= (λ v → now ((λ x → r-iabs x) <$> v))
+  resolve' Δ (∀' a) = resolve' (ictx-weaken Δ) a >>= (λ v → now ((λ x → r-tabs x) <$> v))
 
   resolve : ∀ {ν} (Δ : ICtx ν) (r : Type ν) → (Maybe (Δ ⊢ᵣ r)) ⊥
   resolve Δ r = ⟦ resolve' Δ r ⟧P

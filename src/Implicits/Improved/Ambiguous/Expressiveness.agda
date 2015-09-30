@@ -60,8 +60,8 @@ module syntax-directed⊇oliveira-deterministic where
       lem (i-simp a) = i-simp a
       lem (i-iabs x₁ x₂) = i-iabs (♯ (p x₁)) (lem x₂)
       lem (i-tabs b x₁) = i-tabs b (lem x₁)
-  p (r-iabs ρ₁ x) = r-iabs (♯ (p x))
-  p (r-tabs x) = r-tabs (♯ (p x))
+  p (r-iabs ρ₁ x) = r-iabs (p x)
+  p (r-tabs x) = r-tabs (p x)
 
   -- proof that polymorphic id derives every type
   -- this corresponds to the non-terminating expression:
@@ -81,16 +81,16 @@ module syntax-directed⊇oliveira-deterministic where
 
   [tid]⊢a : ∀ {ν} {a : Type ν} → (tid List.∷ List.[]) I.⊢ᵣ a
   [tid]⊢a {a = simpl x} = r-simp (here refl) tid↓a
-  [tid]⊢a {a = a ⇒ b} = r-iabs (♯ ⊆-Δ⊢a [tid]⊢a sub)
+  [tid]⊢a {a = a ⇒ b} = r-iabs (⊆-Δ⊢a [tid]⊢a sub)
     where
       sub : ∀ {a x} → a List.∈ (tid List.∷ List.[]) → a List.∈ (x List.∷ tid List.∷ List.[])
       sub (here px) = there (here px)
       sub (there ())
-  [tid]⊢a {a = ∀' a} = r-tabs (♯ [tid]⊢a)
+  [tid]⊢a {a = ∀' a} = r-tabs [tid]⊢a
 
   -- we can derive identity from nothing:
   []⊢tid : ∀ {ν} → List.[] I.⊢ᵣ tid {ν}
-  []⊢tid = r-tabs (♯ (r-iabs (♯ r-simp (here refl) (i-simp (tvar zero)))))
+  []⊢tid = r-tabs (r-iabs (r-simp (here refl) (i-simp (tvar zero))))
 
   -- but interestingly, we CANNOT use this identity, and use it to derive everything else
   -- as in the NotSyntaxDirected resolution rules was possible.
@@ -114,8 +114,8 @@ module SyntaxDirected⊆NotSyntaxDirected where
       lem (i-simp a) q = q
       lem {Δ = Δ} (i-iabs {ρ₁ = ρ₁} x p) q = lem p (r-iapp (♯ q) (♯ (thm (♭ x))))
       lem (i-tabs b p) q = lem p (r-tapp b (♯ q))
-  thm (r-iabs x) = r-iabs (♯ (thm (♭ x)))
-  thm (r-tabs x) = r-tabs (♯ (thm (♭ x)))
+  thm (r-iabs x) = r-iabs (♯ (thm x))
+  thm (r-tabs x) = r-tabs (♯ (thm x))
 
   -- the comment in the example above shows that SyntaxDirected is *not* complete wrt the
   -- ambiguous non-syntax-directed rules
