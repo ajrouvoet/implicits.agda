@@ -23,8 +23,9 @@ module not-syntax-directed⊇oliveira-ambiguous where
   p (r-iabs x) = r-iabs (♯ (p x))
   p (r-iapp x y) = r-iapp (♯ (p x)) (♯ p y)
 
+
   -- proof that polymorphic id derives every type
-  -- this corresponds to the non-terminating expression:
+  -- this is similar to the non-terminating expression:
   --   x : ∀ {a : Set} → a
   --   x = x
   --

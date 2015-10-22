@@ -21,7 +21,7 @@ private
   module T = MetaTypeTypeSubst
 
 Unifiable : ∀ {m ν} → (MetaType m ν) → SimpleType ν → Set
-Unifiable {m} a b = ∃ λ u → McBride.mgu a (simpl b)  ≡ just (zero , u)
+Unifiable {m} a b = ∃ λ u → McBride.mgu a (simpl b) ≡ just (zero , u)
 
 -- Just a bit stricter than mcbride.mgu
 -- We require here as well that all meta variables are instantiated
@@ -37,13 +37,21 @@ smeta-weaken = M.smeta-weaken
 metatp-weaken = T.weaken
 open-meta = M.open-meta
 
-postulate alist-zero-vanishes : ∀ {ν x} (u : AList ν zero zero) → from-meta ((to-meta x) M./ (asub u)) ≡ x
+to-meta-zero-vanishes : ∀ {ν} {a : Type ν} → from-meta (to-meta a) ≡ a
+to-meta-zero-vanishes {a = simpl (tc x)} = refl
+to-meta-zero-vanishes {a = simpl (tvar n)} = refl
+to-meta-zero-vanishes {a = simpl (a →' b)} =
+  cong₂ (λ u v → simpl (u →' v)) to-meta-zero-vanishes to-meta-zero-vanishes
+to-meta-zero-vanishes {a = a ⇒ b} = cong₂ _⇒_ to-meta-zero-vanishes to-meta-zero-vanishes
+to-meta-zero-vanishes {a = ∀' a} = cong ∀' to-meta-zero-vanishes
+
+-- the following properties of mgu are assumed to hold here but have been proven by
+-- Conor McBride (and verified using the LEGO dependently typed language)
+
 postulate mgu-id : ∀ {ν} → (a : SimpleType ν) → Unifiable {m = zero} (simpl (to-smeta a)) a
 
 postulate mgu-sound : ∀ {m ν} → (a : MetaType m ν) → (b : SimpleType ν) →
                       mgu a b ≡ nothing → ¬ Unifiable a b
+
 postulate mgu-unifies : ∀ {m ν} (a : MetaType m ν) (b : SimpleType ν) → (u : Unifiable a b) →
                         from-meta (a M./ (asub (proj₁ u))) ≡ (simpl b)
-
-postulate to-meta-zero-vanishes : ∀ {ν} {a : Type ν} → from-meta (to-meta {zero} a) ≡ a
--- to-meta-zero-vanishes {a = a} = {!!}

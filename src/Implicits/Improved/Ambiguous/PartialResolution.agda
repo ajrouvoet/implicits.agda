@@ -66,8 +66,6 @@ mutual
         lem (just (u , b/u↓τ)) =
           resolve' Δ (from-meta (a M./ u)) >>=
             (λ{ (just Δ⊢ᵣa) → now (just (u , (i-iabs (♯ Δ⊢ᵣa) b/u↓τ))) ; nothing → now nothing })
-            -- this is the inlined version of the following, which failed productivity checking:
-            -- (λ Δ⊢ᵣa → now (just (u , (i-iabs (♯ Δ⊢ᵣa) b/u↓τ))))
         lem nothing = now nothing
 
     -- On type vars we simply open it up, adding the tvar to the set of unification variables.

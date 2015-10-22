@@ -129,8 +129,10 @@ module Ex₈ where
   ¬p : r failed? ≡ false
   ¬p = refl
 
-open import Coinduction
-open Trace
+open Workaround
+open import Implicits.Improved.Ambiguous.Resolution
+open SyntaxDirected
+open import Implicits.Oliveira.Types
 open Ex₇
-
-r' = (resolve Δ q) trace 10 steps
+s = resolve' Δ q
+s' = resolve Δ q
