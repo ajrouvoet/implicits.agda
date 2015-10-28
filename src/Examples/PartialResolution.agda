@@ -129,10 +129,36 @@ module Ex₈ where
   ¬p : r failed? ≡ false
   ¬p = refl
 
+module Ex₉ where
+
+  Δ : ICtx zero
+  Δ = (∀' ((Int ⇒ simpl (tvar zero)) ⇒ ((simpl (tvar zero)) ⇒ Int))) ∷ (Int ⇒ Bool) ∷ []
+
+  -- infinite derivation exists: not decidable
+  r = run_for_steps (resolve Δ (Bool ⇒ Int)) 10
+
+  p : r resolved? ≡ false
+  p = refl
+
+  ¬p : r failed? ≡ true
+  ¬p = refl
+
 open Workaround
-open import Implicits.Improved.Ambiguous.Resolution
+open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
 open SyntaxDirected
-open import Implicits.Oliveira.Types
-open Ex₇
-s = resolve' Δ q
-s' = resolve Δ q
+open import Implicits.Oliveira.Types.Unification.Types
+open Ex₉
+open import Coinduction
+
+p' : Δ ⊢ᵣ (Bool ⇒ Int)
+p' = r-iabs
+  (r-simp
+    (there (here refl))
+    (i-tabs
+      (simpl (tc tc-bool))
+      (i-iabs
+        (♯ (r-iabs (r-simp (there (here refl)) (i-simp (tc tc-bool)))))
+        (i-iabs (♯ (r-simp (here refl) (i-simp (tc tc-bool)))) (i-simp (tc tc-int)))
+      )
+    )
+  )

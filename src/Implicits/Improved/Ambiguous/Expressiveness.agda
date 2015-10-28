@@ -95,7 +95,9 @@ module syntax-directed⊇oliveira-deterministic where
 
   -- but interestingly, we CANNOT use this identity, and use it to derive everything else
   -- as in the NotSyntaxDirected resolution rules was possible.
-  -- Because we can only apply rules rule types from an empty context.
+  -- Because we can only derive (polymorphic) rule-types from an empty context.
+  counter-example₁ : ¬ List.[] I.⊢ᵣ simpl (tvar {suc zero} zero)
+  counter-example₁ (r-simp () _)
 
 module SyntaxDirected⊆NotSyntaxDirected where
 
