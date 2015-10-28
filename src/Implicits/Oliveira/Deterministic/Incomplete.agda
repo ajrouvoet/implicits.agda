@@ -57,8 +57,10 @@ module Example₁ where
     p = r-ivar (there (here refl))
   
   -- just showing that the improved rules CAN derive Bool here
+  {-}
   module Improved where
-    open import Implicits.Oliveira.Improved.Resolution TC _tc≟_
+    open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
+    open SyntaxDirected
     open TypingRules _⊢ᵣ_
     open import Extensions.ListFirst
   
@@ -69,3 +71,4 @@ module Example₁ where
     
     p : K ⊢ᵣ Bool
     p = r-simp (there (Int ⇒ Bool) ¬r₁ (here (i-simp (tc tc-bool)) List.[]))
+  -}
