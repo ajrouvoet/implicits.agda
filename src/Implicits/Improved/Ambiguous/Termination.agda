@@ -9,7 +9,6 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
 open import Data.Nat
-open import Size
 open SyntaxDirected
 
 mutual
@@ -31,6 +30,7 @@ mutual
   ⊢ᵣdiv : ∀ {ν} {Δ : ICtx ν} {r} → Δ ⊢ᵣ r → Set
   ⊢ᵣdiv x = ¬ ⊬ᵣdiv x
 
+  {-}
   ?div : ∀ {ν} {Δ : ICtx ν} {a} → (x : Δ ⊢ᵣ a) → Dec (⊬ᵣdiv x)
   ?div (r-simp a b) with ?div' b
     where
@@ -38,7 +38,7 @@ mutual
       ?div' (i-simp τ) = yes ndiv-simp
       ?div' (i-iabs {ρ₁ = r₁} {ρ₂ = r₂} ⊢r₁ r₂↓τ) with r₁ ρ<? r₂
       ?div' (i-iabs ⊢r₁ r₂↓τ) | yes p = {!!}
-      ?div' (i-iabs ⊢r₁ r₂↓τ) | no ¬p = no (λ{ (ndiv-iabs p .r₂↓τ x x₁ x₂) → ? })
+      ?div' (i-iabs ⊢r₁ r₂↓τ) | no ¬p = {!!}
       ?div' (i-tabs b x) with ?div' x
       ?div' (i-tabs b x) | yes p = yes (ndiv-tabs p)
       ?div' (i-tabs b x) | no ¬p = no (λ{ (ndiv-tabs p) → ¬p p })
@@ -51,6 +51,7 @@ mutual
   ?div (r-tabs x) | yes p = yes (ndiv-rtabs p)
   ?div (r-tabs x) | no ¬p = no (λ{ (ndiv-rtabs p) → ¬p p })
 
+-}
 module Example where
   tid : ∀ {n} → Type n
   tid = (∀' (simpl (tvar zero) ⇒ simpl (tvar zero)))
