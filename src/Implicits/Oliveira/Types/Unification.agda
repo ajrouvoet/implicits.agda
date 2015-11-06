@@ -45,10 +45,10 @@ to-meta-zero-vanishes {a = simpl (a →' b)} =
 to-meta-zero-vanishes {a = a ⇒ b} = cong₂ _⇒_ to-meta-zero-vanishes to-meta-zero-vanishes
 to-meta-zero-vanishes {a = ∀' a} = cong ∀' to-meta-zero-vanishes
 
+postulate mgu-id : ∀ {ν} → (a : SimpleType ν) → Unifiable {m = zero} (simpl (to-smeta a)) a
+
 -- the following properties of mgu are assumed to hold here but have been proven by
 -- Conor McBride (and verified using the LEGO dependently typed language)
-
-postulate mgu-id : ∀ {ν} → (a : SimpleType ν) → Unifiable {m = zero} (simpl (to-smeta a)) a
 
 postulate mgu-sound : ∀ {m ν} → (a : MetaType m ν) → (b : SimpleType ν) →
                       mgu a b ≡ nothing → ¬ Unifiable a b

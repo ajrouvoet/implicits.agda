@@ -149,3 +149,19 @@ simpl (x →' x₁) ≟ ∀' b = no (λ ())
     where
       helper : ∀ {ν} {a b : Type (suc ν)} → ∀' a ≡ ∀' b → a ≡ b
       helper refl = refl
+
+-- sizes of types
+
+||_|| : ∀ {ν} → Type ν → ℕ
+|| simpl (tc x) || = 1
+|| simpl (tvar n) || = 1
+|| simpl (a →' b) || = 1 N+ || a || N+ || b ||
+|| a ⇒ b || = 1 N+ || a || N+ || b ||
+|| ∀' a || = || a ||
+
+_ρ<_ : ∀ {ν} → (a b : Type ν) → Set
+a ρ< b = || a || N< || b ||
+
+_ρ<?_ : ∀ {ν} → (a b : Type ν) → Dec (a ρ< b)
+a ρ<? b with || a || | || b ||
+a ρ<? b | y | z = (suc y) N≤? z
