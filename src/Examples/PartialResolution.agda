@@ -134,7 +134,6 @@ module Ex₉ where
   Δ : ICtx zero
   Δ = (∀' ((Int ⇒ simpl (tvar zero)) ⇒ ((simpl (tvar zero)) ⇒ Int))) ∷ (Int ⇒ Bool) ∷ []
 
-  -- infinite derivation exists: not decidable
   r = run_for_steps (resolve Δ (Bool ⇒ Int)) 10
 
   p : r resolved? ≡ false
@@ -143,22 +142,28 @@ module Ex₉ where
   ¬p : r failed? ≡ true
   ¬p = refl
 
-open Workaround
-open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
-open SyntaxDirected
-open import Implicits.Oliveira.Types.Unification.Types
-open Ex₉
-open import Coinduction
+  -- Below shows that there is a derivation however!
+  -- The algorithm doesn't find it because we left the ⊢unamb predicate from oliveira implicit.
+  -- at some point the algorithm has to match ((simpl (mvar zero) ⇒ Int)) with Int.
+  -- However, when we match the codomain Int with the goal Int (note the open mvar):
+  test : mgu {m = suc zero} {ν = zero} (to-meta Int) (tc tc-int) ≡ nothing
+  test = refl
+  -- Because mgu requires that all meta variables are instantiated by unification;
+  -- and this is not the case for the above example
 
-p' : Δ ⊢ᵣ (Bool ⇒ Int)
-p' = r-iabs
-  (r-simp
-    (there (here refl))
-    (i-tabs
-      (simpl (tc tc-bool))
-      (i-iabs
-        (♯ (r-iabs (r-simp (there (here refl)) (i-simp (tc tc-bool)))))
-        (i-iabs (♯ (r-simp (here refl) (i-simp (tc tc-bool)))) (i-simp (tc tc-int)))
+  open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
+  open SyntaxDirected
+  open import Coinduction
+
+  p' : Δ ⊢ᵣ (Bool ⇒ Int)
+  p' = r-iabs
+    (r-simp
+      (there (here refl))
+      (i-tabs
+        (simpl (tc tc-bool))
+        (i-iabs
+          (♯ (r-iabs (r-simp (there (here refl)) (i-simp (tc tc-bool)))))
+          (i-iabs (♯ (r-simp (here refl) (i-simp (tc tc-bool)))) (i-simp (tc tc-int)))
+        )
       )
     )
-  )
