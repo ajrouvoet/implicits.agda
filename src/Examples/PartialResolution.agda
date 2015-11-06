@@ -142,14 +142,14 @@ module Ex₉ where
   ¬p : r failed? ≡ true
   ¬p = refl
 
-  -- Below shows that there is a derivation however!
+  -- Below p' demonstrates however that a derivation exists!
   -- The algorithm doesn't find it because we left the ⊢unamb predicate from oliveira implicit.
   -- at some point the algorithm has to match ((simpl (mvar zero) ⇒ Int)) with Int.
   -- However, when we match the codomain Int with the goal Int (note the open mvar):
   test : mgu {m = suc zero} {ν = zero} (to-meta Int) (tc tc-int) ≡ nothing
   test = refl
-  -- Because mgu requires that all meta variables are instantiated by unification;
-  -- and this is not the case for the above example
+  -- Because mgu requires that all meta variables are instantiated by unification
+  -- and in this example (mvar zero) does not occur and thus can't be unified.
 
   open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
   open SyntaxDirected
