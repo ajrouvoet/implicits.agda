@@ -17,19 +17,19 @@ open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong)
 open import Data.List.Any.Properties using (Any↔)
 
-open SyntaxDirectedFinite
+open Finite
   
 module M = MetaTypeMetaSubst
 
 mutual
   {-# NO_TERMINATION_CHECK #-}
   match' : ∀ {m ν} (Δ : ICtx ν) s r∈Δ τ → (r : MetaType m ν) →
-          Maybe (∃ λ u → Δ , s ⊢[ r∈Δ ] from-meta (r M./ u) ↓ τ)
+          Maybe (∃ λ u → Δ & s , r∈Δ ⊢ from-meta (r M./ u) ↓ τ)
   match' Δ s r∈Δ τ (simpl x) with mgu (simpl x) τ 
   match' Δ s r∈Δ τ (simpl x) | just (u , p) =
     just (
       (asub u) ,
-      subst (λ a → Δ , s ⊢[ r∈Δ ] a ↓ τ) (sym $ mgu-unifies (simpl x) τ (u , p)) (i-simp τ)
+      subst (λ a → Δ & s , r∈Δ  ⊢ a ↓ τ) (sym $ mgu-unifies (simpl x) τ (u , p)) (i-simp τ)
     )
   match' Δ s r∈Δ τ (simpl x) | nothing = nothing
 
@@ -48,9 +48,9 @@ mutual
   match' Δ s r∈Δ τ (∀' a) with match' Δ s r∈Δ τ (open-meta a)
   match' Δ s r∈Δ τ (∀' a) | just p = just $ lem p
     where
-      lem : (∃ λ u → Δ , s ⊢[ r∈Δ ] (from-meta ((open-meta a) M./ u)) ↓ τ) →
-          ∃ λ u' → Δ , s ⊢[ r∈Δ ] (from-meta (∀' a M./ u')) ↓ τ
-      lem (u ∷ us , p) = us , (i-tabs (from-meta u) (subst (λ v → Δ , s ⊢[ r∈Δ ] v ↓ τ) (begin
+      lem : (∃ λ u → Δ & s , r∈Δ ⊢ (from-meta ((open-meta a) M./ u)) ↓ τ) →
+          ∃ λ u' → Δ & s , r∈Δ ⊢ (from-meta (∀' a M./ u')) ↓ τ
+      lem (u ∷ us , p) = us , (i-tabs (from-meta u) (subst (λ v → Δ & s , r∈Δ ⊢ v ↓ τ) (begin
             from-meta (M._/_ (open-meta a) (u ∷ us))
               ≡⟨ cong (λ v → from-meta (M._/_ (open-meta a) v)) (sym $ us↑-⊙-sub-u≡u∷us u us) ⟩
             from-meta ((open-meta a) M./ (us M.↑ M.⊙ (M.sub u)))
@@ -64,7 +64,7 @@ mutual
   -- match defers to match', which concerns itself with MetaTypes.
   -- If match' finds a match, we can use the fact that we have zero unification variables open here
   -- to show that we found the right thing.
-  match : ∀ {ν} (Δ : ICtx ν) s r∈Δ → ∀ r τ → Maybe (Δ , s ⊢[ r∈Δ ] r ↓ τ)
+  match : ∀ {ν} (Δ : ICtx ν) s r∈Δ → ∀ r τ → Maybe (Δ & s , r∈Δ ⊢ r ↓ τ)
   match Δ s r∈Δ a τ with match' Δ s r∈Δ τ (to-meta {zero} a)
   match Δ s r∈Δ a τ | just x = just (lem x)
     where
@@ -75,15 +75,16 @@ mutual
           from-meta (to-meta {zero} a)
           ≡⟨ to-meta-zero-vanishes ⟩
           a ∎
-      lem : ∃ (λ u → Δ , s ⊢[ r∈Δ ] from-meta (to-meta {zero} a M./ u) ↓ τ) → Δ , s ⊢[ r∈Δ ] a ↓ τ
-      lem ([] , proj₂) = subst (λ u → Δ , s ⊢[ r∈Δ ] u ↓ τ) eq proj₂
+      lem : ∃ (λ u → Δ & s , r∈Δ ⊢ from-meta (to-meta {zero} a M./ u) ↓ τ) →
+                Δ & s , r∈Δ ⊢ a ↓ τ
+      lem ([] , proj₂) = subst (λ u → Δ & s , r∈Δ ⊢ u ↓ τ) eq proj₂
   match Δ s r∈Δ a τ | nothing = nothing
 
-  match1st : ∀ {ν} (Δ : ICtx ν) s τ  → Maybe (Any (λ r → Δ , s ⊢[ r ] r ↓ τ) Δ)
+  match1st : ∀ {ν} (Δ : ICtx ν) s τ  → Maybe (Any (λ r → Δ & s , r ⊢ r ↓ τ) Δ)
   match1st Δ s τ = match1st' Δ Δ s τ -- any (λ r → match Δ r τ)
     where
       match1st' : ∀ {ν} (Δ ρs : ICtx ν) s → (τ : SimpleType ν) →
-                  Maybe (Any (λ r → Δ , s ⊢[ r ] r ↓ τ) ρs)
+                  Maybe (Any (λ r → Δ & s , r ⊢ r ↓ τ) ρs)
       match1st' Δ List.[] s τ = nothing
       match1st' Δ (x List.∷ xs) s τ with match Δ s x x τ
       match1st' Δ (x List.∷ xs) s τ | just px = just (here px)
@@ -91,7 +92,7 @@ mutual
       match1st' Δ (x List.∷ xs) s τ | nothing | just y = just (there y)
       match1st' Δ (x List.∷ xs) s τ | nothing | nothing = nothing
 
-  resolve' : ∀ {ν} (Δ : ICtx ν) s r → (Maybe (Δ , s ⊢ᵣ r))
+  resolve' : ∀ {ν} (Δ : ICtx ν) s r → (Maybe (Δ & s ⊢ᵣ r))
   resolve' Δ s (simpl x) with match1st Δ s x
   resolve' Δ s (simpl x) | just p =
     let r , r∈Δ , r↓x = (Inverse.from Any↔) Π.⟨$⟩ p in just (r-simp r∈Δ r↓x)
@@ -104,5 +105,5 @@ mutual
   resolve' Δ s (∀' r) | just p = just (r-tabs p)
   resolve' Δ s (∀' r) | nothing = nothing --no (λ{ (r-tabs x) → ¬p x })
 
-  resolve : ∀ {ν} (Δ : ICtx ν) r → (Maybe (Δ , List.[] ⊢ᵣ r))
+  resolve : ∀ {ν} (Δ : ICtx ν) r → (Maybe (Δ & List.[] ⊢ᵣ r))
   resolve Δ r = resolve' Δ List.[] r
