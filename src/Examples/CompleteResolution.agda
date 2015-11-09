@@ -18,8 +18,7 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.WellTyped TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Improved.Ambiguous.Decidable TC _tc≟_
-open SyntaxDirectedFinite'Dec
+open import Implicits.Improved.Ambiguous.CompleteResolution TC _tc≟_
 open import Data.Maybe
 open import Data.List
 open import Category.Monad.Partiality
