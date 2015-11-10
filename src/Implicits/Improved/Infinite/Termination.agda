@@ -1,15 +1,14 @@
 open import Prelude
 
-module Implicits.Improved.Ambiguous.Termination (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Infinite.Termination (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Implicits.Oliveira.Types TC _tc≟_
 open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
+open import Implicits.Improved.Infinite.Resolution TC _tc≟_
 open import Data.Nat
-open SyntaxDirected
 
 mutual
   data ⊬div {ν} {Δ : ICtx ν} : ∀ {r τ} → Δ ⊢ r ↓ τ → Set where

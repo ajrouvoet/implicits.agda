@@ -18,7 +18,7 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.WellTyped TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Improved.Ambiguous.PartialResolution TC _tc≟_
+open import Implicits.Improved.Infinite.Algorithm TC _tc≟_
 open import Data.Maybe
 open import Data.List
 open import Category.Monad.Partiality
@@ -151,8 +151,7 @@ module Ex₉ where
   -- Because mgu requires that all meta variables are instantiated by unification
   -- and in this example (mvar zero) does not occur and thus can't be unified.
 
-  open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
-  open SyntaxDirected
+  open import Implicits.Improved.Infinite.Resolution TC _tc≟_
   open import Coinduction
 
   p' : Δ ⊢ᵣ (Bool ⇒ Int)

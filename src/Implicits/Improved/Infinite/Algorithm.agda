@@ -1,6 +1,6 @@
 open import Prelude hiding (All; module All; _>>=_; ⊥)
 
-module Implicits.Improved.Ambiguous.PartialResolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Infinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
@@ -11,9 +11,8 @@ open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
+open import Implicits.Improved.Infinite.Resolution TC _tc≟_
 open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open SyntaxDirected
 
 open import Category.Monad
 open import Category.Functor

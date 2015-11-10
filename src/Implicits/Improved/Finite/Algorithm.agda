@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Improved.Ambiguous.CompleteResolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Finite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
@@ -11,14 +11,12 @@ open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
+open import Implicits.Improved.Finite.Resolution TC _tc≟_
 open import Implicits.Oliveira.Types.Unification TC _tc≟_
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong)
 open import Data.List.Any.Properties using (Any↔)
 
-open Finite
-  
 module M = MetaTypeMetaSubst
 
 mutual
