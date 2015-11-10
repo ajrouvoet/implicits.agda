@@ -53,3 +53,19 @@ r↓a⟶r◁a : ∀ {ν n} {K : Ktx ν n} {r a} → K ⊢ r ↓ a → r ◁ a
 r↓a⟶r◁a (i-simp a) = m-simp
 r↓a⟶r◁a (i-iabs _ x) = m-iabs (r↓a⟶r◁a x)
 r↓a⟶r◁a (i-tabs _ x) = m-tabs (r↓a⟶r◁a x)
+
+{-}
+?? : ∀ {ν} → (a : Type ν) → ∃ λ τ → a ◁ τ
+?? (simpl τ) = τ , m-simp
+?? (a ⇒ b) = let τ , b◁τ = ?? b in τ , (m-iabs b◁τ) 
+?? (∀' x) = let τ , b◁τ = ?? (x tp[/tp {!!} ]) in τ , (m-tabs b◁τ)
+-}
+
+{-}
+module Termination where
+
+  data ⊢term {ν} : Type ν → Set where
+    term-simp : ∀ {τ} → ⊢term (simpl τ)
+    term-all  : ∀ {a} → ⊢term a → ⊢term (∀' a)
+    term-rule : ∀ {a b} → ⊢term a → ⊢term b → a ◁ τ₁ → b ◁ τ₂ → τ₁ 
+-}

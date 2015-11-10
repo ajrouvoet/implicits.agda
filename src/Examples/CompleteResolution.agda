@@ -111,3 +111,34 @@ module Ex₈ where
 
   p : is-just r ≡ false
   p = refl
+
+module Ex₉ where
+
+  a⇒consta : Type zero
+  a⇒consta = (∀' ((simpl (tvar zero)) ⇒ (∀' (simpl (simpl (tvar zero) →' (simpl (tvar (suc zero))))))))
+
+  Δ : ICtx zero
+  Δ = Bool ∷ a⇒consta ∷ []
+
+  const-bool : Type zero
+  const-bool = (∀' (simpl ((simpl (tvar zero)) →' Bool)))
+
+  r = resolve Δ const-bool
+
+  p : is-just r ≡ true
+  p = refl
+
+module Ex₁₀ where
+
+  -- similar to Ex₉ but for this particular example we have that for the rule part
+  -- || ρ₁ || ≮ || ρ₂ || such that Oliveira's ⊢term predicate on ρ₁ ⇒ ρ₂ fails
+  a⇒∀a : Type zero
+  a⇒∀a = (∀' ((simpl (tvar zero)) ⇒ (∀' (simpl (tvar (suc zero))))))
+
+  Δ : ICtx zero
+  Δ = Bool ∷ a⇒∀a ∷ []
+
+  r = resolve Δ (∀' Bool)
+
+  p : is-just r ≡ true
+  p = refl

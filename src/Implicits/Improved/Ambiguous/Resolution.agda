@@ -47,21 +47,6 @@ module Infinite where
 
 module Finite where
 
-  -- sizes of types
-  ||_|| : ∀ {ν} → Type ν → ℕ
-  || simpl (tc x) || = 1
-  || simpl (tvar n) || = 1
-  || simpl (a →' b) || = 1 N+ || a || N+ || b ||
-  || a ⇒ b || = 1 N+ || a || N+ || b ||
-  || ∀' a || = || a ||
-
-  _ρ<_ : ∀ {ν} → (a b : Type ν) → Set
-  a ρ< b = || a || N< || b ||
-
-  _ρ<?_ : ∀ {ν} → (a b : Type ν) → Dec (a ρ< b)
-  a ρ<? b with || a || | || b ||
-  a ρ<? b | y | z = (suc y) N≤? z
-
   -- A Stack is a list of rules used paired with the 'next' resolution goal.
   Stack : ℕ → Set
   Stack ν = List (Type ν × Type ν)
@@ -107,3 +92,28 @@ module Finite where
 
   _⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set
   Δ ⊢ᵣ r = Δ & List.[] ⊢ᵣ r
+
+  module Properties where
+
+    ρ<-trans : ∀ {ν} {a b c : Type ν} → a ρ< b → b ρ< c → a ρ< c
+    ρ<-trans p q = ≤-trans p (≤⇒pred≤ _ _ q)
+      where
+        open import Data.Nat
+        open import Data.Nat.Properties
+        open import Relation.Binary
+        open DecTotalOrder decTotalOrder using () renaming (trans to ≤-trans)
+
+    ⊬dom-trans : ∀ {ν} {a b : Type ν} {x r} → (r , b) ⊬dom x → a ρ< b → (r , a) ⊬dom x 
+    ⊬dom-trans (inj₁ x) aρ<b = inj₁ x
+    ⊬dom-trans {ν} {a} {b} {x = x} (inj₂ y) aρ<b = inj₂ (ρ<-trans {a = a} {b = b} {c = proj₂ x} aρ<b y)
+
+{-}
+    all-⊬dom-trans : ∀ {ν} {a b : Type ν} {r s} → All (_⊬dom_ (r , b)) s → a ρ< b →
+                     All (_⊬dom_ (r , a)) s
+    all-⊬dom-trans {a = a} {b = b} {r} p aρ<b = All.map (λ{ x → ⊬dom-trans x aρ<b}) p
+
+    lem : ∀ {ν} {Δ : ICtx ν} {s a b r τ} → Δ & s , a ⊢ r ↓ τ → b ρ< a → Δ & s , b ⊢ r ↓ τ
+    lem (i-simp τ) aρ<b = i-simp τ
+    lem (i-iabs x x₁ p) aρ<b = i-iabs {!all-⊬dom-trans x aρ<b!} {!!} (lem p aρ<b)
+    lem (i-tabs b₁ p) aρ<b = {!!}
+    -}
