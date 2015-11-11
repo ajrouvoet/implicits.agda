@@ -9,7 +9,59 @@ open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_ as D
-open import Implicits.Improved.Infinite.Resolution TC _tc≟_ as I 
+open import Implicits.Oliveira.Ambiguous.Resolution TC _tc≟_ as A
+open import Implicits.Improved.Finite.Resolution TC _tc≟_ as F
+open import Implicits.Improved.Infinite.Resolution TC _tc≟_ as ∞
+
+
+{-}
+module SizeMeasure where
+
+  -- Oliveira's size measure
+  _ρ<'_ : ∀ {ν} → (a b : Type ν) → Set
+  a ρ<' b = ∀ {τ₁ τ₂} → a ◁ τ₁ → b ◁ τ₂ → simpl τ₁ ρ< simpl τ₂
+
+  -- let's see if we can find an a, b such that ¬ a ρ< b & a ρ<' b
+  a : Type (suc zero)
+  a = (simpl (tvar zero) ⇒ simpl (tvar zero))
+  b : Type (suc zero)
+  b = (simpl (simpl (tvar zero) →' simpl (tvar zero)))
+  q = a ρ<? b
+  p : ¬ a ρ< b × a ρ<' b
+  p = {!!} , (λ{ (m-iabs x) m-simp → ? })
+      where
+        open import Data.Nat.Base
+
+open SizeMeasure
+-}
+
+module Finite⊆Infinite where
+
+  p : ∀ {ν} {a s} {Δ : ICtx ν} → Δ F.& s ⊢ᵣ a → Δ ∞.⊢ᵣ a
+  p (r-simp a a↓τ) = r-simp a (lem a↓τ)
+    where
+      lem : ∀ {ν} {a r τ s} {Δ : ICtx ν} → Δ F.& s , r ⊢ a ↓ τ → Δ ∞.⊢ a ↓ τ
+      lem (i-simp τ) = i-simp τ
+      lem (i-iabs _ ⊢ᵣa b↓τ) = i-iabs (♯ (p ⊢ᵣa)) (lem b↓τ)
+      lem (i-tabs b a[/b]↓τ) = i-tabs b (lem a[/b]↓τ)
+  p (r-iabs x) = r-iabs (p x)
+  p (r-tabs x) = r-tabs (p x)
+
+
+module Finite⊆OliveiraAmbiguous where
+
+  p : ∀ {ν n} {a s} {K : Ktx ν n} → (proj₂ K) F.& s ⊢ᵣ a → K A.⊢ᵣ a
+  p (r-simp a a↓τ) = lem a↓τ (r-ivar a)
+    where
+      lem : ∀ {ν n} {a r τ s} {K : Ktx ν n} →
+            (proj₂ K) F.& s , r ⊢ a ↓ τ → K A.⊢ᵣ a → K A.⊢ᵣ simpl τ
+      lem (i-simp τ) K⊢ᵣτ = K⊢ᵣτ
+      lem (i-iabs _ ⊢ᵣa b↓τ) K⊢ᵣa⇒b = lem b↓τ (r-iapp K⊢ᵣa⇒b (p ⊢ᵣa))
+      lem (i-tabs b a[/b]↓τ) K⊢ᵣ∀a = lem a[/b]↓τ (r-tapp b K⊢ᵣ∀a)
+  p (r-iabs x) = r-iabs (p x)
+  p (r-tabs x) = r-tabs (p x)
+
+module OliveiraDeterministic⊆Finite where
 
 {-
 p : ∀ {ν n} {a : Type ν} {K : Ktx ν n} → K D.⊢ᵣ a → (proj₂ K) I.⊢ᵣ a
