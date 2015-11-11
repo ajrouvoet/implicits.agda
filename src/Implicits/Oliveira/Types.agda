@@ -155,7 +155,7 @@ simpl (x →' x₁) ≟ ∀' b = no (λ ())
 || simpl (tc x) || = 1
 || simpl (tvar n) || = 1
 || simpl (a →' b) || = 1 N+ || a || N+ || b ||
-|| a ⇒ b || = 1 N+ || a || N+ || b ||
+|| a ⇒ b || = || b ||
 || ∀' a || = || a ||
 
 _ρ<_ : ∀ {ν} → (a b : Type ν) → Set

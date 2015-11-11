@@ -13,27 +13,34 @@ open import Implicits.Oliveira.Ambiguous.Resolution TC _tc≟_ as A
 open import Implicits.Improved.Finite.Resolution TC _tc≟_ as F
 open import Implicits.Improved.Infinite.Resolution TC _tc≟_ as ∞
 
-
-{-}
 module SizeMeasure where
+  open import Induction.WellFounded
+
+  -- we can show that our size measure a ρ< b is well founded
+  -- by relating it to the well-foundedness proof of _<'_
+  ρ<-well-founded : ∀ {ν} → Well-founded (_ρ<_ {ν})
+  ρ<-well-founded = sub.well-founded (image.well-founded <-well-founded)
+    where
+      open import Induction.Nat
+      open import Data.Nat
+      open import Data.Nat.Properties
+      module sub = Inverse-image ||_||
+      module image = Subrelation {A = ℕ} {_N<_} {_<′_} ≤⇒≤′
 
   -- Oliveira's size measure
   _ρ<'_ : ∀ {ν} → (a b : Type ν) → Set
   a ρ<' b = ∀ {τ₁ τ₂} → a ◁ τ₁ → b ◁ τ₂ → simpl τ₁ ρ< simpl τ₂
 
-  -- let's see if we can find an a, b such that ¬ a ρ< b & a ρ<' b
+  {-
+  ρ<'⇒ρ< : ∀ {ν} (a b : Type ν) → a ρ<' b → a ρ< b
+  ρ<'⇒ρ< a b f = {!!}
+  -}
+
+  -- a, b such that ¬ a ρ< b × a ρ<' b
   a : Type (suc zero)
   a = (simpl (tvar zero) ⇒ simpl (tvar zero))
   b : Type (suc zero)
   b = (simpl (simpl (tvar zero) →' simpl (tvar zero)))
-  q = a ρ<? b
-  p : ¬ a ρ< b × a ρ<' b
-  p = {!!} , (λ{ (m-iabs x) m-simp → ? })
-      where
-        open import Data.Nat.Base
-
-open SizeMeasure
--}
 
 module Finite⊆Infinite where
 
@@ -46,7 +53,6 @@ module Finite⊆Infinite where
       lem (i-tabs b a[/b]↓τ) = i-tabs b (lem a[/b]↓τ)
   p (r-iabs x) = r-iabs (p x)
   p (r-tabs x) = r-tabs (p x)
-
 
 module Finite⊆OliveiraAmbiguous where
 
@@ -63,14 +69,14 @@ module Finite⊆OliveiraAmbiguous where
 
 module OliveiraDeterministic⊆Finite where
 
-{-
-p : ∀ {ν n} {a : Type ν} {K : Ktx ν n} → K D.⊢ᵣ a → (proj₂ K) I.⊢ᵣ a
-p (r-simp x r↓a) = r-simp (proj₁ $ FirstLemmas.first⟶∈ x) (lem r↓a)
+  {-
+  p : ∀ {ν n} {a : Type ν} {K : Ktx ν n} → K D.⊢ᵣ a → (proj₂ K) I.⊢ᵣ a
+  p (r-simp x r↓a) = r-simp (proj₁ $ FirstLemmas.first⟶∈ x) (lem r↓a)
   where
-    lem : ∀ {ν n} {K : Ktx ν n} {r a} → K D.⊢ r ↓ a → (proj₂ K) I.⊢ r ↓ a
-    lem (i-simp a) = i-simp a
-    lem (i-iabs x₁ x₂) = i-iabs All.[] {!p x₁!} {!!}
-    lem (i-tabs b x₁) = i-tabs b {!lem x₁!}
-p (r-iabs ρ₁ x) = r-iabs (p x)
-p (r-tabs x) = r-tabs (p x)
--}
+      lem : ∀ {ν n} {K : Ktx ν n} {r a} → K D.⊢ r ↓ a → (proj₂ K) I.⊢ r ↓ a
+      lem (i-simp a) = i-simp a
+      lem (i-iabs x₁ x₂) = i-iabs All.[] {!p x₁!} {!!}
+      lem (i-tabs b x₁) = i-tabs b {!lem x₁!}
+  p (r-iabs ρ₁ x) = r-iabs (p x)
+  p (r-tabs x) = r-tabs (p x)
+  -}
