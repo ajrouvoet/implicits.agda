@@ -5,12 +5,13 @@ open import Data.Bool public using (Bool; true; false)
 open import Data.Nat public
   using (ℕ; zero; suc; _⊔_)
   renaming ( _+_ to _N+_; _∸_ to _N-_
-           ; _≤_ to _N≤_; _≥_ to _N≥_; _<_ to _N<_; _≤?_ to _N≤?_
+           ; _≤_ to _N≤_; _≥_ to _N≥_; _<_ to _N<_; _≤?_ to _N≤?_; _>_ to _N>_
            ; _≟_ to _N≟_)
-open import Data.Fin public
+open import Data.Fin public hiding (_<_)
 open import Data.Fin.Properties public using () renaming (_≟_ to _fin≟_)
 open import Data.Sum public hiding (map)
 open import Data.Product public hiding (zip) renaming (map to pmap)
+open import Data.Sum public hiding (map)
 open import Data.Vec public hiding ([_])
 open import Data.List as List' public using (List)
 open import Data.List.Any public using (Any; any; here; there; module Membership-≡)

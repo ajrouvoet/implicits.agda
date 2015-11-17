@@ -150,6 +150,12 @@ simpl (x →' x₁) ≟ ∀' b = no (λ ())
       helper : ∀ {ν} {a b : Type (suc ν)} → ∀' a ≡ ∀' b → a ≡ b
       helper refl = refl
 
+-- 'head' of the context type
+_◁ : ∀ {ν} → Type ν → ∃ λ μ → Type μ
+simpl x ◁ = , simpl x
+(a ⇒ b) ◁ = b ◁
+∀' a ◁ = a ◁
+
 -- sizes of types
 ||_|| : ∀ {ν} → Type ν → ℕ
 || simpl (tc x) || = 1
@@ -159,8 +165,25 @@ simpl (x →' x₁) ≟ ∀' b = no (λ ())
 || ∀' a || = || a ||
 
 _ρ<_ : ∀ {ν} → (a b : Type ν) → Set
-a ρ< b = || a || N< || b ||
+a ρ< b = || proj₂ (a ◁) || N< || proj₂ (b ◁) ||
 
 _ρ<?_ : ∀ {ν} → (a b : Type ν) → Dec (a ρ< b)
-a ρ<? b with || a || | || b ||
+a ρ<? b with || proj₂ (a ◁) || | || proj₂ (b ◁) ||
 a ρ<? b | y | z = (suc y) N≤? z
+
+data ⊢term {ν} : Type ν → Set where
+  term-simp : ∀ {τ} → ⊢term (simpl τ)
+  term-all  : ∀ {a} → ⊢term a → ⊢term (∀' a)
+  term-rule : ∀ {a b} → ⊢term a → ⊢term b → a ρ< b → ⊢term (a ⇒ b)
+
+-- we can show that our size measure a ρ< b is well founded
+-- by relating it to the well-foundedness proof of _<'_
+open import Induction.WellFounded
+ρ<-well-founded : ∀ {ν} → Well-founded (_ρ<_ {ν})
+ρ<-well-founded = sub.well-founded (image.well-founded <-well-founded)
+  where
+    open import Induction.Nat
+    open import Data.Nat
+    open import Data.Nat.Properties
+    module sub = Inverse-image (λ a → || proj₂ (a ◁) ||)
+    module image = Subrelation {A = ℕ} {_N<_} {_<′_} ≤⇒≤′

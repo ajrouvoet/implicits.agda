@@ -8,10 +8,48 @@ open import Implicits.Oliveira.Types TC _tc≟_
 open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Induction
+open import Induction.WellFounded
+open import Relation.Binary using (Rel)
 
--- A Stack is a list of rules used paired with the 'next' resolution goal.
+-- stacks are just a list of types
 Stack : ℕ → Set
 Stack ν = List (Type ν × Type ν)
+{-
+
+_List≤[_]_ : ∀ {l} {A : Set l} → List A → (_<_ : Rel A l) → List A → Set l
+j List≤[ _<_ ] l = All (λ{ (a , b) → a < b ⊎ a ≡ b}) (List.zip j l)
+
+_List<[_]_ : ∀ {l} {A : Set l} → List A → (_<_ : Rel A l) → List A → Set l
+j List<[ _<_ ] l = j List≤[ _<_ ] l × Any (λ{ (a , b) → a < b}) (List.zip j l)
+
+List<-well-founded : ∀ {l} {A : Set l} {_<_ : Rel A l} → (Well-founded _<_) →
+                     Well-founded (λ j k → j List<[ _<_ ] k)
+List<-well-founded wf-< List.[] = {!!}
+List<-well-founded wf-< (x List.∷ l₁) = {!!}
+
+ListRec : ∀ {l} {A : Set l} → RecStruct A l l → RecStruct (List A) l l
+ListRec RecA P List.[] = Level.Lift ⊤
+  where
+    open import Level
+ListRec RecA P (x List.∷ xs) =
+  -- Either 
+
+mutual
+  data Stack' {ν} : Type ν → Set where
+    [_] : (r : Type ν) → Stack' r
+    _∷_ : ∀ {r' r} → (s : Stack' r) → r' ρ< (shead s) → Stack' r
+
+  shead : ∀ {ν r} → Stack' {ν} r → Type ν
+  shead [ r ] = r
+  shead (_∷_ {r'} {r} s p) = r'
+
+Stack'' : ∀ {ν} → ICtx ν → Set
+Stack'' Δ = All Stack' Δ
+
+_Stack<_ : ∀ {ν} {Δ : ICtx ν} → Stack'' Δ → Stack'' Δ → Set
+Δ' Stack< Δ = {!Any ? (zip Δ' Δ)!}
+-}
 
 stack-weaken : ∀ {ν} → Stack ν → Stack (suc ν)
 stack-weaken s = List.map (λ{ (r , g) → tp-weaken r , tp-weaken g }) s
