@@ -161,14 +161,16 @@ simpl x ◁ = , simpl x
 || simpl (tc x) || = 1
 || simpl (tvar n) || = 1
 || simpl (a →' b) || = 1 N+ || a || N+ || b ||
-|| a ⇒ b || = || b ||
-|| ∀' a || = || a ||
+|| a ⇒ b || = 1 N+ || a || N+ || b ||
+|| ∀' a || = 1 N+ || a ||
 
+h||_|| : ∀ {ν} → Type ν → ℕ
+h|| a || = || proj₂ (a ◁) ||
 _ρ<_ : ∀ {ν} → (a b : Type ν) → Set
-a ρ< b = || proj₂ (a ◁) || N< || proj₂ (b ◁) ||
+a ρ< b = h|| a || N< h|| b ||
 
 _ρ<?_ : ∀ {ν} → (a b : Type ν) → Dec (a ρ< b)
-a ρ<? b with || proj₂ (a ◁) || | || proj₂ (b ◁) ||
+a ρ<? b with h|| a || | h|| b ||
 a ρ<? b | y | z = (suc y) N≤? z
 
 data ⊢term {ν} : Type ν → Set where
