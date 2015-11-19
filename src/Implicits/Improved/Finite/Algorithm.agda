@@ -25,82 +25,10 @@ open DecTotalOrder decTotalOrder using () renaming (refl to ≤-refl)
 
 module M = MetaTypeMetaSubst
 
--- let's assume a strict ordering on stacks
-postulate _s<_ : ∀ {ν μ} → Stack ν → Stack μ → Set
-
--- let's assume the ordering is well founded
-postulate s<-well-founded : ∀ {ν} → Well-founded (_s<_ {ν})
-
--- let's have a strict size measure on types
-s||_|| : ∀ {ν} → Type ν → ℕ
-s|| simpl (tc x) || = 1
-s|| simpl (tvar n) || = 1
-s|| simpl (a →' b) || = suc (s|| a || N+ s|| b ||)
-s|| a ⇒ b || = suc (s|| a || N+ s|| b ||)
-s|| ∀' a || = 1 N+ s|| a ||
-
--- ... and metatypes
-m||_|| : ∀ {m ν} → MetaType m ν → ℕ
-m|| simpl (tc x) || = 1
-m|| simpl (tvar n) || = 1
-m|| simpl (mvar n) || = 1
-m|| simpl (a →' b) || = suc (m|| a || N+ m|| b ||)
-m|| a ⇒ b || = suc (m|| a || N+ m|| b ||)
-m|| ∀' a || = 1 N+ m|| a ||
-
-_sρ<_ : ∃ Type → ∃ Type → Set
-(_ , a) sρ< (_ , b) = s|| a || N< s|| b ||
-
-_m<_ : ∃₂ MetaType → ∃₂ MetaType → Set
-(_ , _ , a) m< (_ , _ , b) = m|| a || N< m|| b ||
-
--- we can show that our strict size measure a ρ< b is well founded
--- by relating it to the well-foundedness proof of _<'_
-sρ<-well-founded : Well-founded _sρ<_
-sρ<-well-founded = sub.well-founded (image.well-founded <-well-founded)
-  where
-    module sub = Inverse-image (λ{ (_ , a) → s|| a ||})
-    module image = Subrelation {A = ℕ} {_N<_} {_<′_} ≤⇒≤′
-
-m<-well-founded : Well-founded _m<_
-m<-well-founded = sub.well-founded (image.well-founded <-well-founded)
-  where
-    module sub = Inverse-image (λ{ (_ , _ , a) → m|| a ||})
-    module image = Subrelation {A = ℕ} {_N<_} {_<′_} ≤⇒≤′
-
-a-sρ<-∀a : ∀ {n a} → (suc n , a) sρ< (, ∀' a)
-a-sρ<-∀a = ≤-refl
-
-b-sρ<-a⇒b : ∀ {ν} (a b : Type ν) → (_ , b) sρ< (_ , a ⇒ b)
-b-sρ<-a⇒b a b = s≤s (≤-steps s|| a || ≤-refl)
-
-a-m<-∀a : ∀ {m ν} a → (m , suc ν , a) m< (m , ν , ∀' a)
-a-m<-∀a a = ≤-refl 
-
-b-m<-a⇒b : ∀ {m ν} a b → (m , ν , b) m< (m , ν , a ⇒ b)
-b-m<-a⇒b a b = s≤s (≤-steps m|| a || ≤-refl)
-
-||open-meta-a||≡a : ∀ {m ν} (a : MetaType m (suc ν)) → m|| open-meta a || ≡ m|| a ||
-||open-meta-a||≡a (a ⇒ b) =
-  cong₂
-    (λ u v → 1 N+ u N+ v)
-    (||open-meta-a||≡a a)
-    (||open-meta-a||≡a b)
-||open-meta-a||≡a (∀' a) = cong (λ u → 1 N+ u) {!!}
-||open-meta-a||≡a (simpl (tvar x)) = {!!}
-||open-meta-a||≡a (simpl (mvar x)) = refl
-||open-meta-a||≡a (simpl (a →' b)) =
-  cong₂
-    (λ u v → 1 N+ u N+ v)
-    (||open-meta-a||≡a a)
-    (||open-meta-a||≡a b)
-||open-meta-a||≡a (simpl (tc c)) = refl
-
-open-meta-a-m<-∀'a : ∀ {m ν} a → (suc m , ν , open-meta a) m< (m , ν , ∀' a)
-open-meta-a-m<-∀'a a = subst (λ x → x N< m||  ∀' a ||) (sym $ ||open-meta-a||≡a a) (a-m<-∀a a)
-
-module Arg<-well-founded {ν : ℕ} where
-  open Lexicographic (_s<_ {ν}) (λ x → _sρ<_)
+-- We use the above well foundedness proofs to get a well-foundedness proof
+-- on two arguments of resolve (goal + stack)
+module Arg<-well-founded {ν} where
+  open Lexicographic (_s<_ {ν}) (const _sρ<_)
 
   arg<-well-founded : Well-founded _<_
   arg<-well-founded = well-founded s<-well-founded sρ<-well-founded

@@ -12,35 +12,37 @@ open import Induction
 open import Induction.Nat
 open import Relation.Binary using (Rel)
 
-Stack' : ∀ {ν} → ICtx ν → Set
-Stack' {ν} Δ = All (const $ Type ν) Δ
+-- on the stack we maintain, for each rule in Δ,
+-- the last goal type that resulted from using the rule
+Stack : ∀ {ν} → ICtx ν → Set
+Stack {ν} Δ = All (const $ Type ν) Δ
 
 ----------------------------------------------------------------
 -- basic stack operations
 
-_push_for_ : ∀ {ν r} {Δ : ICtx ν} → Stack' Δ → Type ν → r List.∈ Δ → Stack' Δ
+_push_for_ : ∀ {ν r} {Δ : ICtx ν} → Stack Δ → Type ν → r List.∈ Δ → Stack Δ
 (a All.∷ s) push a' for here _ = a' All.∷ s
 (b All.∷ s) push a for there r∈Δ = b All.∷ s push a for r∈Δ
 
-_prepend_ : ∀ {ν r} {Δ : ICtx ν} → Stack' Δ → Type ν → Stack' (r List.∷ Δ)
+_prepend_ : ∀ {ν r} {Δ : ICtx ν} → Stack Δ → Type ν → Stack (r List.∷ Δ)
 s prepend a = a All.∷ s
 
-_get_ : ∀ {ν r} {Δ : ICtx ν} → Stack' Δ → r List.∈ Δ → Type ν
+_get_ : ∀ {ν r} {Δ : ICtx ν} → Stack Δ → r List.∈ Δ → Type ν
 (a All.∷ s) get here _ = a 
 (a All.∷ s) get there r∈Δ = s get r∈Δ
 
-ssum : ∀ {ν} {Δ : ICtx ν} → Stack' Δ → ℕ
+ssum : ∀ {ν} {Δ : ICtx ν} → Stack Δ → ℕ
 ssum All.[] = 0
 ssum (a All.∷ s) = h|| a || N+ ssum s
 
-stack-weaken : ∀ {ν} {Δ : ICtx ν} → Stack' Δ → Stack' (ictx-weaken Δ)
+stack-weaken : ∀ {ν} {Δ : ICtx ν} → Stack Δ → Stack (ictx-weaken Δ)
 stack-weaken All.[] = All.[]
 stack-weaken (px All.∷ s) = (tp-weaken px) All.∷ (stack-weaken s)
 
 ----------------------------------------------------------------
 -- stack ordering
 
-_s<_ : ∀ {ν} {Δ : ICtx ν} → (s s' : Stack' Δ) → Set
+_s<_ : ∀ {ν} {Δ : ICtx ν} → (s s' : Stack Δ) → Set
 s s< s' = ssum s N< ssum s'
 
 open import Data.Nat.Base
@@ -63,12 +65,12 @@ open import Data.Nat.Base
 ----------------------------------------------------------------
 -- stack properties
 
-push< : ∀ {ν r a} {Δ : ICtx ν} (s : Stack' Δ) (r∈Δ : r List.∈ Δ) →
+push< : ∀ {ν r a} {Δ : ICtx ν} (s : Stack Δ) (r∈Δ : r List.∈ Δ) →
         a ρ< (s get r∈Δ) → (s push a for r∈Δ) s< s
 push< (b All.∷ s) (here _) a<b = +k<+k' (ssum s) a<b
 push< (b All.∷ s) (there r∈Δ) p = +k<+k h|| b || (push< s r∈Δ p)
 
-push≮ : ∀ {ν r a} {Δ : ICtx ν} (s : Stack' Δ) (r∈Δ : r List.∈ Δ) →
+push≮ : ∀ {ν r a} {Δ : ICtx ν} (s : Stack Δ) (r∈Δ : r List.∈ Δ) →
         ¬ (a ρ< (s get r∈Δ)) → ¬ (s push a for r∈Δ) s< s
 push≮ (b All.∷ s) (here _) ¬a<b = λ x → ¬a<b (-k<-k' (ssum s) x)
 push≮ (b All.∷ s) (there r∈Δ) ¬a<b = λ x → push≮ s r∈Δ ¬a<b (-k<-k h|| b || x)
@@ -76,14 +78,14 @@ push≮ (b All.∷ s) (there r∈Δ) ¬a<b = λ x → push≮ s r∈Δ ¬a<b (-k
 ----------------------------------------------------------------
 -- a type dominates a stack if pushing it to the stack makes the stack bigger
 
-_for_⊬dom_ : ∀ {ν r} {Δ : ICtx ν} → Type ν → r List.∈ Δ → Stack' Δ → Set
+_for_⊬dom_ : ∀ {ν r} {Δ : ICtx ν} → Type ν → r List.∈ Δ → Stack Δ → Set
 a for r∈Δ ⊬dom s = (s push a for r∈Δ) s< s
 
-_for_?⊬dom'_ : ∀ {ν r} {Δ : ICtx ν} → (a : Type ν) → (r∈Δ : r List.∈ Δ) → (s : Stack' Δ) →
+_for_?⊬dom_ : ∀ {ν r} {Δ : ICtx ν} → (a : Type ν) → (r∈Δ : r List.∈ Δ) → (s : Stack Δ) →
                Dec (a for r∈Δ ⊬dom s)
-a for r∈Δ ?⊬dom' s with a ρ<? (s get r∈Δ)
-a for r∈Δ ?⊬dom' s | yes p = yes (push< s r∈Δ p)
-a for r∈Δ ?⊬dom' s | no ¬p = no (push≮ s r∈Δ ¬p)
+a for r∈Δ ?⊬dom s with a ρ<? (s get r∈Δ)
+a for r∈Δ ?⊬dom s | yes p = yes (push< s r∈Δ p)
+a for r∈Δ ?⊬dom s | no ¬p = no (push≮ s r∈Δ ¬p)
 
 infixl 5 _⊢ᵣ_
 infixl 5 _&_⊢ᵣ_ _&_,_⊢_↓_
@@ -94,7 +96,7 @@ mutual
   -- 'r' is used to keep track of the rule from the context that yielded 'a'
   -- ('a' is getting recursively refined)
   data _&_,_⊢_↓_ {ν} (Δ : ICtx ν) :
-    ∀ {r} → Stack' Δ → r List.∈ Δ → Type ν → SimpleType ν → Set where
+    ∀ {r} → Stack Δ → r List.∈ Δ → Type ν → SimpleType ν → Set where
 
     i-simp : ∀ {r s} {r∈Δ : r List.∈ Δ} a → Δ & s , r∈Δ ⊢ simpl a ↓ a
     i-iabs : ∀ {ρ₁ ρ₂ a r s} {r∈Δ : r List.∈ Δ} →
@@ -105,9 +107,9 @@ mutual
     i-tabs : ∀ {ρ a r s} {r∈Δ : r List.∈ Δ} b →
              Δ & s , r∈Δ ⊢ ρ tp[/tp b ] ↓ a → Δ & s , r∈Δ ⊢ ∀' ρ ↓ a
 
-  data _&_⊢ᵣ_ {ν} (Δ : ICtx ν) : Stack' Δ → Type ν → Set where
+  data _&_⊢ᵣ_ {ν} (Δ : ICtx ν) : Stack Δ → Type ν → Set where
     r-simp : ∀ {r τ s} → (r∈Δ : r List.∈ Δ) → Δ & s , r∈Δ ⊢ r ↓ τ → Δ & s ⊢ᵣ simpl τ
-    r-iabs : ∀ {ρ₁ ρ₂} {s : Stack' Δ} → ((ρ₁ List.∷ Δ) & (s prepend ρ₂) ⊢ᵣ ρ₂) →
+    r-iabs : ∀ {ρ₁ ρ₂} {s : Stack Δ} → ((ρ₁ List.∷ Δ) & (s prepend ρ₂) ⊢ᵣ ρ₂) →
              Δ & s ⊢ᵣ (ρ₁ ⇒ ρ₂)
     r-tabs : ∀ {ρ s} → ictx-weaken Δ & stack-weaken s ⊢ᵣ ρ → Δ & s ⊢ᵣ ∀' ρ
 
