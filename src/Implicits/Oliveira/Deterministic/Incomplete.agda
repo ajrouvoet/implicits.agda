@@ -31,19 +31,19 @@ Int = simpl $ tc tc-int
 -- result that deterministic resolution is incomplete (or ambiguous resolution is strictly stronger)
 
 module Example₁ where
-  K : Ktx 0 2
-  K = (Int ⇒ Bool) ∷K (Bool ∷K nil)
+  Δ : ICtx 0
+  Δ = (Int ⇒ Bool) List.∷ Bool List.∷ List.[]
 
   module Deterministic where
     open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_
     open TypingRules _⊢ᵣ_
   
     -- proof that Bool is not derivable under the deterministic resolution rules
-    p : ¬ (K ⊢ᵣ Bool)
+    p : ¬ (Δ ⊢ᵣ Bool)
     p (r-simp fst fst↓bool) with FirstLemmas.first-unique (l-head (m-iabs m-simp) (Bool List.∷ List.[])) fst
     p (r-simp fst (i-iabs (r-simp r _) b)) | refl = ¬r◁Int (, r)
       where
-        ¬r◁Int : ¬ (∃ λ r → (proj₂ K) ⟨ tc tc-int ⟩= r)
+        ¬r◁Int : ¬ (∃ λ r → Δ ⟨ tc tc-int ⟩= r)
         ¬r◁Int (._ , l-head (m-iabs ()) ._)
         ¬r◁Int (._ , l-tail _ (l-head () .List.[]))
         ¬r◁Int ( _ , l-tail _ (l-tail _ ()))
@@ -53,7 +53,7 @@ module Example₁ where
     open TypingRules _⊢ᵣ_
   
     -- proof that Bool is derivable under the "Ambiguous" resolution rules
-    p : K ⊢ᵣ Bool
+    p : Δ ⊢ᵣ Bool
     p = r-ivar (there (here refl))
   
   -- just showing that the improved rules CAN derive Bool here
@@ -64,11 +64,11 @@ module Example₁ where
     open TypingRules _⊢ᵣ_
     open import Extensions.ListFirst
   
-    ¬r₁ : ¬ K ⊢ (Int ⇒ Bool) ↓ tc tc-bool
+    ¬r₁ : ¬ Δ ⊢ (Int ⇒ Bool) ↓ tc tc-bool
     ¬r₁ (i-iabs (r-simp (here (i-iabs x ()) ._)) _)
     ¬r₁ (i-iabs (r-simp (there ._ _ (here () .List.[]))) _)
     ¬r₁ (i-iabs (r-simp (there ._ _ (there ._ _ ()))) _)
     
-    p : K ⊢ᵣ Bool
+    p : Δ ⊢ᵣ Bool
     p = r-simp (there (Int ⇒ Bool) ¬r₁ (here (i-simp (tc tc-bool)) List.[]))
   -}

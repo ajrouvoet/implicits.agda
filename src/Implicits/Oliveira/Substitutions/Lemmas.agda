@@ -407,7 +407,7 @@ module MetaTypeMetaLemmas where
   lem (simpl (tc c)) u = refl
   -}
 
-module SubstLemmas (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
+module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
 
   open TypingRules _⊢ᵣ_
 

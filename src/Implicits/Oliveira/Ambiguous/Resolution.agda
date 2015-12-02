@@ -10,9 +10,9 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Extensions.ListFirst
 
-data _⊢ᵣ_ {ν n} (K : Ktx ν n) : Type ν → Set where
-  r-tabs : ∀ {r} → ktx-weaken K ⊢ᵣ r → K ⊢ᵣ ∀' r
-  r-tapp : ∀ {r} a → K ⊢ᵣ ∀' r → K ⊢ᵣ (r tp[/tp a ])
-  r-ivar : ∀ {r} → r List.∈ proj₂ K → K ⊢ᵣ r
-  r-iabs : ∀ {a b} → (a ∷K K) ⊢ᵣ b → K ⊢ᵣ (a ⇒ b)
-  r-iapp : ∀ {a b} → K ⊢ᵣ (a ⇒ b) → K ⊢ᵣ a → K ⊢ᵣ b
+data _⊢ᵣ_ {ν} (Δ : ICtx ν) : Type ν → Set where
+  r-tabs : ∀ {r} → ictx-weaken Δ ⊢ᵣ r → Δ ⊢ᵣ ∀' r
+  r-tapp : ∀ {r} a → Δ ⊢ᵣ ∀' r → Δ ⊢ᵣ (r tp[/tp a ])
+  r-ivar : ∀ {r} → r List.∈ Δ → Δ ⊢ᵣ r
+  r-iabs : ∀ {a b} → (a List.∷ Δ) ⊢ᵣ b → Δ ⊢ᵣ (a ⇒ b)
+  r-iapp : ∀ {a b} → Δ ⊢ᵣ (a ⇒ b) → Δ ⊢ᵣ a → Δ ⊢ᵣ b

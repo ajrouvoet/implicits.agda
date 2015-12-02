@@ -9,7 +9,7 @@ open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Extensions.ListFirst
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 
-module TypingRules (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) where
+module TypingRules (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
   infixl 6 _⊢unamb_
   infixl 4 _⊢_∈_ 
 
@@ -31,7 +31,7 @@ module TypingRules (_⊢ᵣ_ : ∀ {ν n} → Ktx ν n → Type ν → Set) wher
     -- implicit abstract/application
     ρ : ∀ {t b a} → List.[] ⊢unamb a → a ∷K K ⊢ t ∈ b → K ⊢ ρ a t ∈ (a ⇒ b)
     _⟨_⟩ : ∀ {t ρ a b} → K ⊢ ρ ∈ (a ⇒ b) → K ⊢ t ∈ a → K ⊢ ρ ⟨ t ⟩ ∈ b
-    ¿ : ∀ {a} → List.[] ⊢unamb a → K ⊢ᵣ a → K ⊢ ¿ a ∈ a
+    ¿ : ∀ {a} → List.[] ⊢unamb a → (proj₂ K) ⊢ᵣ a → K ⊢ ¿ a ∈ a
 
     -- ML style let-polymorphism
     let'_in'_ : ∀ {t u b} {a : Type ν} → K ⊢ t ∈ a → a ∷Γ K ⊢ u ∈ b → 

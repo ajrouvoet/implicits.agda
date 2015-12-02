@@ -22,17 +22,17 @@ data _⟨_⟩=_ {ν} : ∀ (Δ : ICtx ν) → SimpleType ν → Type ν → Set 
   l-tail : ∀ {Δ : ICtx ν} {r r' a} → ¬ (r ◁ a) → Δ ⟨ a ⟩= r' → (r List.∷ Δ) ⟨ a ⟩= r'
 
 mutual 
-  data _⊢_↓_ {ν n} (K : Ktx ν n) : Type ν → SimpleType ν → Set where
+  data _⊢_↓_ {ν} (K : ICtx ν) : Type ν → SimpleType ν → Set where
     i-simp : ∀ a → K ⊢ simpl a ↓ a
     i-iabs : ∀ {ρ₁ ρ₂ a} → K ⊢ᵣ ρ₁ → K ⊢ ρ₂ ↓ a → K ⊢ ρ₁ ⇒ ρ₂ ↓ a
     i-tabs : ∀ {ρ a} b → K ⊢ ρ tp[/tp b ] ↓ a → K ⊢ ∀' ρ ↓ a
 
-  data _⊢ᵣ_ {ν n} (K : Ktx ν n) : Type ν → Set where
-    r-simp : ∀ {τ ρ} → (proj₂ K) ⟨ τ ⟩= ρ → K ⊢ ρ ↓ τ → K ⊢ᵣ simpl τ
-    r-iabs : ∀ ρ₁ {ρ₂} → ρ₁ ∷K K ⊢ᵣ ρ₂ → K ⊢ᵣ ρ₁ ⇒ ρ₂
-    r-tabs : ∀ {ρ} → ktx-weaken K ⊢ᵣ ρ → K ⊢ᵣ ∀' ρ
+  data _⊢ᵣ_ {ν} (K : ICtx ν) : Type ν → Set where
+    r-simp : ∀ {τ ρ} → K ⟨ τ ⟩= ρ → K ⊢ ρ ↓ τ → K ⊢ᵣ simpl τ
+    r-iabs : ∀ ρ₁ {ρ₂} → ρ₁ List.∷ K ⊢ᵣ ρ₂ → K ⊢ᵣ ρ₁ ⇒ ρ₂
+    r-tabs : ∀ {ρ} → ictx-weaken K ⊢ᵣ ρ → K ⊢ᵣ ∀' ρ
 
-_⊢ᵣ[_] : ∀ {ν n} → (K : Ktx ν n) → List (Type ν) → Set
+_⊢ᵣ[_] : ∀ {ν} → (K : ICtx ν) → List (Type ν) → Set
 _⊢ᵣ[_] K ρs = All (λ r → K ⊢ᵣ r) ρs
 
 module FirstLemmas where
@@ -49,23 +49,7 @@ module FirstLemmas where
   first-unique {K = r' List.∷ .K} (l-tail ¬px x₁) (l-head px K) = ⊥-elim (¬px px)
   first-unique {K = r₁ List.∷ Δ} (l-tail ¬px x) (l-tail ¬px' y) = first-unique x y
 
-r↓a⟶r◁a : ∀ {ν n} {K : Ktx ν n} {r a} → K ⊢ r ↓ a → r ◁ a
+r↓a⟶r◁a : ∀ {ν} {K : ICtx ν} {r a} → K ⊢ r ↓ a → r ◁ a
 r↓a⟶r◁a (i-simp a) = m-simp
 r↓a⟶r◁a (i-iabs _ x) = m-iabs (r↓a⟶r◁a x)
 r↓a⟶r◁a (i-tabs _ x) = m-tabs (r↓a⟶r◁a x)
-
-{-}
-?? : ∀ {ν} → (a : Type ν) → ∃ λ τ → a ◁ τ
-?? (simpl τ) = τ , m-simp
-?? (a ⇒ b) = let τ , b◁τ = ?? b in τ , (m-iabs b◁τ) 
-?? (∀' x) = let τ , b◁τ = ?? (x tp[/tp {!!} ]) in τ , (m-tabs b◁τ)
--}
-
-{-}
-module Termination where
-
-  data ⊢term {ν} : Type ν → Set where
-    term-simp : ∀ {τ} → ⊢term (simpl τ)
-    term-all  : ∀ {a} → ⊢term a → ⊢term (∀' a)
-    term-rule : ∀ {a b} → ⊢term a → ⊢term b → a ◁ τ₁ → b ◁ τ₂ → τ₁ 
--}
