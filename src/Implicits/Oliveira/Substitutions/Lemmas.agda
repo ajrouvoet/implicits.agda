@@ -3,12 +3,12 @@ open import Prelude renaming (lift to finlift) hiding (id; subst)
 module Implicits.Oliveira.Substitutions.Lemmas (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
+open import Implicits.Oliveira.Terms TC _tc≟_ hiding (var)
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.WellTyped TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Data.Fin.Substitution
-open import Data.Fin.Substitution.Lemmas
+open import Data.Fin.Substitution.Lemmas 
 open import Data.Vec.Properties
 open import Extensions.Substitution
 import Category.Applicative.Indexed as Applicative
@@ -184,7 +184,7 @@ module MetaTypeTypeLemmas where
 module MetaTypeMetaLemmas where
   open MetaTypeMetaSubst using (module Lifted; MetaLift)
   open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_
-  open import Data.Star as Star
+  open import Data.Star as Star hiding (map)
   open import Data.Star.Properties
 
   private module V = VarLemmas
@@ -214,6 +214,20 @@ module MetaTypeMetaLemmas where
 
     tpweaken-subs : ∀ {ν n n'} (ρs : Subs (flip T ν) n n') → Subs (flip T (suc ν)) n n'
     tpweaken-subs ρs = Star.map (λ x → x ↑tp) ρs
+
+    comm-↑-↑tp : ∀ {ν n n'} (s : Sub (flip T ν) n n') → (s ↑) ↑tp ≡ (s ↑tp) ↑
+    comm-↑-↑tp s = begin
+      (s ↑) ↑tp
+        ≡⟨ refl ⟩
+      map tpweaken (var zero ∷ map weaken s)
+        ≡⟨ refl ⟩
+      (tpweaken (var zero)) ∷ (map tpweaken (map weaken s))
+        ≡⟨ cong₂ (λ x xs → x ∷ xs) (tpweaken-var zero) (sym $ map-∘ tpweaken weaken s) ⟩
+      (var zero) ∷ (map (tpweaken ∘ weaken) s)
+        ≡⟨ cong (λ u → var zero ∷ u) (sym $ map-cong comm-weaken-tpweaken s) ⟩
+      (var zero) ∷ (map (weaken ∘ tpweaken) s)
+        ≡⟨ cong (λ u → (var zero) ∷ u) (map-∘ weaken tpweaken s) ⟩
+      (s ↑tp) ↑ ∎
 
     comm-↑⋆-↑tp : ∀ k {ν n n'} (s : Sub (flip T ν) n n') → (s ↑⋆ k) ↑tp ≡ (s ↑tp) ↑⋆ k
     comm-↑⋆-↑tp zero s = refl
@@ -252,10 +266,27 @@ module MetaTypeMetaLemmas where
           ≡⟨ sym $ cong (λ u → ∀' (a /✶ u)) (comm-tpweaken-↑✶ k (x ◅ ρs)) ⟩
         ∀' (a /✶ (tpweaken-subs (x ◅ ρs)) ↑✶ k) ∎
 
-    postulate tpweaken-subs-var : ∀ {ν n n'} x (ρs : Subs (flip T ν) n n') →
-                                  (simpl (mvar x)) /✶ (tpweaken-subs ρs) ≡ MetaTypeTypeSubst.weaken ((simpl (mvar x)) /✶ ρs) 
+    module _ where
+      open MetaTypeTypeSubst using () renaming (weaken to mtt-weaken)
+
+      postulate ↑tp-mtt-weaken : ∀ {ν m n} x (s : Sub (flip T ν) m n) →
+                                 (mtt-weaken x) / (s ↑tp) ≡ mtt-weaken (x / s)
+
+      tpweaken-subs-var : ∀ {ν n n'} x (ρs : Subs (flip T ν) n n') →
+                          (simpl (mvar x)) /✶ (tpweaken-subs ρs)
+                            ≡ mtt-weaken ((simpl (mvar x)) /✶ ρs) 
+      tpweaken-subs-var x ε = refl
+      tpweaken-subs-var x (s ◅ ρs) = begin
+        (simpl (mvar x)) /✶ (Star.map _↑tp (s ◅ ρs))
+          ≡⟨ refl ⟩
+        (simpl (mvar x)) /✶ (tpweaken-subs ρs) / (s ↑tp)
+          ≡⟨ cong (flip _/_ (_↑tp s)) (tpweaken-subs-var x ρs) ⟩
+        (mtt-weaken ((simpl (mvar x)) /✶ ρs)) / (s ↑tp)
+          ≡⟨ ↑tp-mtt-weaken (simpl (mvar x) /✶ ρs) s ⟩
+        mtt-weaken ((simpl (mvar x)) /✶ (s ◅ ρs)) ∎
 
   module _ {T₁ T₂} {lift₁ : MetaLift T₁} {lift₂ : MetaLift T₂} where
+    open MetaTypeTypeSubst using () renaming (weaken to mtt-weaken)
 
     open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_; _↑tp to _↑tp₁)
     open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_; _↑tp to _↑tp₂)
@@ -270,9 +301,9 @@ module MetaTypeMetaLemmas where
         ≡⟨ cong (λ u → simpl (mvar x) /✶₁ u) (comm-tpweaken-↑✶ lift₁ k ρs₁) ⟩
       simpl (mvar x) /✶₁ tpweaken-subs lift₁ (ρs₁ ↑✶₁ k)
         ≡⟨ tpweaken-subs-var lift₁ x (ρs₁ ↑✶₁ k) ⟩
-      MetaTypeTypeSubst.weaken (simpl (mvar x) /✶₁ (ρs₁ ↑✶₁ k))
-        ≡⟨ cong MetaTypeTypeSubst.weaken (hyp k x) ⟩
-      MetaTypeTypeSubst.weaken (simpl (mvar x) /✶₂ (ρs₂ ↑✶₂ k))
+      mtt-weaken (simpl (mvar x) /✶₁ (ρs₁ ↑✶₁ k))
+        ≡⟨ cong mtt-weaken (hyp k x) ⟩
+      mtt-weaken (simpl (mvar x) /✶₂ (ρs₂ ↑✶₂ k))
         ≡⟨ sym $ tpweaken-subs-var lift₂ x (ρs₂ ↑✶₂ k) ⟩
       simpl (mvar x) /✶₂ tpweaken-subs lift₂ (ρs₂ ↑✶₂ k)
         ≡⟨ cong (λ u → simpl (mvar x) /✶₂ u) (sym $ comm-tpweaken-↑✶ lift₂ k ρs₂) ⟩

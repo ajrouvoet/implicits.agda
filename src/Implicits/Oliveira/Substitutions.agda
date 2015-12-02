@@ -232,12 +232,16 @@ module MetaTypeMetaSubst where
     field
       exp-simple : ExpandSimple T
       lift : ∀ {m ν} → T m ν → MetaType m ν
-      _↑tp : ∀ {m m' ν} → MetaSub T ν m m' → MetaSub T (suc ν) m m'
+      tpweaken : ∀ {m ν} → T m ν → T m (suc ν)
 
-    open ExpandSimple exp-simple using (simple; _↑)
+    open ExpandSimple exp-simple using (simple; _↑; weaken) renaming (var to evar)
     
+    _↑tp : ∀ {m m' ν} → MetaSub T ν m m' → MetaSub T (suc ν) m m'
+    _↑tp s = map tpweaken s
+
     field
-      comm-↑-↑tp : ∀ {ν n n'} (s : Sub (flip T ν) n n') → (s ↑) ↑tp ≡ (s ↑tp) ↑
+      comm-weaken-tpweaken : ∀ {m ν} (a : T m ν) → weaken (tpweaken a) ≡ tpweaken (weaken a)
+      tpweaken-var : ∀ {ν m} (n : Fin m) → (tpweaken {ν = ν} (evar n)) ≡ evar n
 
   module MetaTypeApp {T} (l : MetaLift T) where
     open MetaLift l
@@ -267,13 +271,20 @@ module MetaTypeMetaSubst where
     open MetaLift lift public
     open ExpandSimple exp-simple public
 
-  varLift : MetaLift Fin′
-  varLift = record {
-      _↑tp = Prelude.id
-      ; exp-simple = record { simple = record { var = Prelude.id ; weaken = suc }}
-      ; lift = (λ n → simpl (mvar n))
-      ; comm-↑-↑tp = λ s → refl
-    }
+  module _ where
+    private
+      exp-simple : ExpandSimple Fin′
+      exp-simple = record { simple = record { var = Prelude.id ; weaken = suc }}
+
+    open ExpandSimple exp-simple
+
+    varLift : MetaLift Fin′
+    varLift = record {
+        tpweaken = Prelude.id
+        ; exp-simple = exp-simple
+        ; lift = (λ n → simpl (mvar n))
+        ; comm-weaken-tpweaken = λ s → refl
+        ; tpweaken-var = λ n → refl }
 
   infixl 8 _/Var_
 
@@ -288,14 +299,15 @@ module MetaTypeMetaSubst where
     exp-simple = record { simple = simple }
 
     open ExpandSimple exp-simple
+    module MTTS = MetaTypeTypeSubst
 
     _↑tp : ∀ {m m' ν} → MetaSub MetaType ν m m' → MetaSub MetaType (suc ν) m m'
-    _↑tp = λ x → map MetaTypeTypeSubst.weaken x
+    _↑tp = λ x → map MTTS.weaken x
 
-    tp-weaken = MetaTypeTypeSubst.weaken
+    tp-weaken = MTTS.weaken
 
     comm-tp/var-/var : ∀ {ν ν' m m'} (a : MetaType m ν) {s : Sub Fin ν ν'} {s' : Sub Fin m m'} →
-                       (a MetaTypeTypeSubst./Var s) /Var s' ≡ (a /Var s') MetaTypeTypeSubst./Var s
+                       (a MTTS./Var s) /Var s' ≡ (a /Var s') MTTS./Var s
     comm-tp/var-/var (a ⇒ b) = cong₂ _⇒_ (comm-tp/var-/var a) (comm-tp/var-/var b)
     comm-tp/var-/var (∀' a) = cong ∀' (comm-tp/var-/var a)
     comm-tp/var-/var (simpl (tvar x)) = refl
@@ -317,18 +329,11 @@ module MetaTypeMetaSubst where
 
     termLift : MetaLift MetaType
     termLift = record {
-        _↑tp = _↑tp
+        tpweaken = MetaTypeTypeSubst.weaken
         ; exp-simple = exp-simple
         ; lift = Prelude.id 
-        ; comm-↑-↑tp = λ s → begin
-          (s ↑) ↑tp
-            ≡⟨ cong (λ u → simpl (mvar zero) ∷ u) (sym $ map-∘ tp-weaken weaken s) ⟩
-          (simpl (mvar zero)) ∷ (map (tp-weaken ∘ weaken) s)
-            ≡⟨ cong (λ u → simpl (mvar zero) ∷ u)
-                 (sym $ map-cong comm-weaken-tpweaken s) ⟩
-          (simpl (mvar zero)) ∷ (map (weaken ∘ tp-weaken) s)
-            ≡⟨ cong (λ u → simpl (mvar zero) ∷ u) (map-∘ weaken tp-weaken s) ⟩
-          s ↑tp ↑ ∎ }
+        ; comm-weaken-tpweaken = comm-weaken-tpweaken
+        ; tpweaken-var = λ n → refl}
 
   private
     module ExpandSubst {n : ℕ} where
