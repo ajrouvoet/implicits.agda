@@ -109,10 +109,14 @@ mutual
 
   data _&_⊢ᵣ_ {ν} (Δ : ICtx ν) : Stack Δ → Type ν → Set where
     r-simp : ∀ {r τ s} → (r∈Δ : r List.∈ Δ) → Δ & s , r∈Δ ⊢ r ↓ τ → Δ & s ⊢ᵣ simpl τ
-    r-iabs : ∀ {ρ₁ ρ₂} {s : Stack Δ} → ((ρ₁ List.∷ Δ) & (s prepend ρ₂) ⊢ᵣ ρ₂) →
+    r-iabs : ∀ {ρ₁ ρ₂} {s : Stack Δ} → ((ρ₁ List.∷ Δ) & (s prepend ρ₁) ⊢ᵣ ρ₂) →
              Δ & s ⊢ᵣ (ρ₁ ⇒ ρ₂)
     r-tabs : ∀ {ρ s} → ictx-weaken Δ & stack-weaken s ⊢ᵣ ρ → Δ & s ⊢ᵣ ∀' ρ
 
+-- TODO: This doesn't hold.
+-- e.g. we can unify (a → b) with the codomain of a rule (a → b → a) ⇒ (a → b)
+-- so the subgoal is larger than the initial goal.
+--
 -- We instantiate the stack with types that act as 'infinity' on the goal.
 -- Every possible 'subgoal' we encounter and push to the stack will certainly
 -- be smaller than r

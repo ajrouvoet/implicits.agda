@@ -409,34 +409,6 @@ module MetaTypeMetaLemmas where
 
   open-tvar-suc : ∀ {ν m} (x : Fin m) → open-meta {ν} (simpl (tvar (suc x))) ≡ simpl (tvar x)
   open-tvar-suc x = MetaTypeTypeLemmas.suc-/-sub {t = (simpl (tvar x))}
-  
-  
-  postulate lem' : ∀ {m ν} (a : MetaType m (suc ν)) u us → from-meta ((open-meta a) / us ↑ / (sub u)) ≡ from-meta (a / (us ↑tp)) tp[/tp from-meta u ]
-  postulate lem : ∀ {ν} (a : MetaType zero (suc ν)) (u : MetaType zero ν) →
-                  (from-meta a) tp[/tp from-meta u ] ≡ from-meta ((open-meta a) / (sub u))
-  {-}
-  lem (a ⇒ b) u = cong₂ _⇒_ (lem a u) (lem b u)
-  lem (∀' a) u = begin
-    ∀' ((from-meta a) TypeSubst./ TypeSubst.sub (from-meta u) TypeSubst.↑)
-      ≡⟨ {!!} ⟩
-    (∀' (from-meta a)) tp[/tp from-meta u ]
-      ≡⟨ {!!} ⟩
-    (from-meta (∀' ((open-meta a) / (sub u) ↑tp)))
-      ≡⟨ refl ⟩
-    (from-meta ((∀' (open-meta a)) / (sub u)))
-      ≡⟨ {!refl!} ⟩
-    (from-meta ((open-meta (∀' a) / (sub u)))) ∎
-  lem (simpl (tvar zero)) u = refl
-  lem (simpl (tvar (suc x))) u = begin
-    (from-meta (simpl (tvar (suc x)))) tp[/tp from-meta u ]
-      ≡⟨ TypeLemmas.suc-/-sub {t = (from-meta u)}⟩
-    (simpl (tvar x))
-      ≡⟨ cong (λ v → from-meta (_/_ v (sub u))) (sym $ open-tvar-suc x) ⟩
-    from-meta ((open-meta (simpl (tvar (suc x)))) / (sub u)) ∎
-  lem (simpl (mvar ())) u
-  lem (simpl (a →' b)) u = cong₂ (λ w v → simpl (w →' v)) (lem a u) (lem b u)
-  lem (simpl (tc c)) u = refl
-  -}
 
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
 

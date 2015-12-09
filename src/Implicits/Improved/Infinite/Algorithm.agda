@@ -81,7 +81,7 @@ mutual
                 ≡⟨ cong from-meta (/-⊙ (open-meta a)) ⟩
               from-meta ((open-meta a) M./ us M.↑ M./ (M.sub u))
                 ≡⟨ lem' a u us ⟩
-              from-meta (M._/_ a (us M.↑tp)) tp[/tp from-meta u ] ∎) p))
+              from-meta (a M./ (us M.↑tp)) tp[/tp from-meta u ] ∎) p))
             where open MetaTypeMetaLemmas hiding (subst)
 
     -- The only thing left to do is to try and unify τ and x.

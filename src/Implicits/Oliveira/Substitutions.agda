@@ -76,21 +76,6 @@ module TypeSubst where
   stp-weaken (tvar n) = tvar (suc n)
   stp-weaken (a →' b) = weaken a →' weaken b
 
-  private
-    lem : ∀ y (x : Fin (suc y)) → ∃ λ a → y ≡ (toℕ x) N+ a
-    lem zero zero = zero , refl
-    lem zero (suc ())
-    lem (suc x) zero = suc x , refl
-    lem (suc x) (suc y) = , cong suc (proj₂ $ lem x y)
-
-  embed : ∀ {ν} (α : Fin (suc ν)) → Sub Type (toℕ α) ν → Sub Type ν ν
-  embed {ν} α s = Prelude.subst
-    (λ u → Sub Type u ν)
-    (sym eq)
-    (s ++ (drop (toℕ α) (Prelude.subst (λ u → Vec (Type ν) u) eq (id {ν}))))
-      where
-          eq = proj₂ $ lem ν α
-
 module KtxSubst where
 
   ktx-map : ∀ {ν μ n} → (Type ν → Type μ) →  Ktx ν n → Ktx μ n

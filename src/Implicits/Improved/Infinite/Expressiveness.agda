@@ -13,10 +13,10 @@ open import Implicits.Improved.Infinite.Resolution TC _tc≟_ as I
 
 module OliveiraDeterministic⊆Infinite where
 
-  p : ∀ {ν n} {a : Type ν} {K : Ktx ν n} → K D.⊢ᵣ a → (proj₂ K) I.⊢ᵣ a
+  p : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ D.⊢ᵣ a → Δ I.⊢ᵣ a
   p (r-simp x r↓a) = r-simp (proj₁ $ FirstLemmas.first⟶∈ x) (lem r↓a)
     where
-        lem : ∀ {ν n} {K : Ktx ν n} {r a} → K D.⊢ r ↓ a → proj₂ K I.⊢ r ↓ a
+        lem : ∀ {ν} {Δ : ICtx ν} {r a} → Δ D.⊢ r ↓ a → Δ I.⊢ r ↓ a
         lem (i-simp a) = i-simp a
         lem (i-iabs x₁ x₂) = i-iabs (♯ (p x₁)) (lem x₂)
         lem (i-tabs b x₁) = i-tabs b (lem x₁)

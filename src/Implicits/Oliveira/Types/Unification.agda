@@ -53,5 +53,8 @@ postulate mgu-id : ∀ {ν} → (a : SimpleType ν) → Unifiable {m = zero} (si
 postulate mgu-sound : ∀ {m ν} → (a : MetaType m ν) → (b : SimpleType ν) →
                       mgu a b ≡ nothing → ¬ Unifiable a b
 
+postulate mgu-sound' : ∀ {m ν} → (a : MetaType m ν) → (b : SimpleType ν) →
+                       mgu a b ≡ nothing → ¬ ∃ λ u → from-meta (a M./ u) ≡ (simpl b)
+
 postulate mgu-unifies : ∀ {m ν} (a : MetaType m ν) (b : SimpleType ν) → (u : Unifiable a b) →
                         from-meta (a M./ (asub (proj₁ u))) ≡ (simpl b)

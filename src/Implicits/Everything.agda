@@ -12,6 +12,9 @@ open import Prelude
 open import Implicits.Oliveira.Ambiguous.Resolution
 open import Implicits.Oliveira.Deterministic.Resolution
 
+-- and prove soundness of det. resolution w.r.t the ambiguous one
+open import Implicits.Oliveira.Deterministic.Expressiveness
+
 -- we show that Oliveira's deterministic rules are incomplete w.r.t.
 -- the ambiguous resolution
 open import Implicits.Oliveira.Deterministic.Incomplete

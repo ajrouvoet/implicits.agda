@@ -166,6 +166,7 @@ simpl x ◁ = , simpl x
 
 h||_|| : ∀ {ν} → Type ν → ℕ
 h|| a || = || proj₂ (a ◁) ||
+
 _ρ<_ : ∀ {ν} → (a b : Type ν) → Set
 a ρ< b = h|| a || N< h|| b ||
 

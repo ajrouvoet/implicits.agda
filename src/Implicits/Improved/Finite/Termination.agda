@@ -123,7 +123,8 @@ module MetaSubstSizeLemmas where
     ||a/Var|| : ∀ {ν m n} (a : MetaType m ν) (s : Sub Fin m n) →
                 m|| a /Var s || ≡ m|| a ||
     ||a/Var|| (a ⇒ b) s = cong₂ (λ u v → 1 N+ u N+ v) (||a/Var|| a s) (||a/Var|| b s)
-    ||a/Var|| (∀' a) s = cong (λ u → 1 N+ u) (||a/Var|| a s)
+    ||a/Var|| {ν = ν} (∀' a) s =
+      cong (λ u → 1 N+ u) (||a/Var|| a ((varLift MetaLift.↑tp) {ν = ν} s))
     ||a/Var|| (simpl (tvar x)) s = refl
     ||a/Var|| (simpl (mvar x)) s = refl
     ||a/Var|| (simpl (a →' b)) s = cong₂ (λ u v → 1 N+ u N+ v) (||a/Var|| a s) (||a/Var|| b s)
