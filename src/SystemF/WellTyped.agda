@@ -17,12 +17,12 @@ data _⊢_∈_ {ν n} (Γ : Ctx ν n) : Term ν n → Type ν → Set where
 _⊢_∉_ : ∀ {ν n} → (Γ : Ctx ν n) → Term ν n → Type ν → Set
 _⊢_∉_ Γ t τ = ¬ Γ ⊢ t ∈ τ
   
-⊢erase : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ t ∈ τ → Term ν n
-⊢erase (var x) = var x
-⊢erase (Λ {t} x) = Λ t
-⊢erase (λ' {t} a x) = λ' a t
-⊢erase (_[_] {t} x b) = t
-⊢erase (_·_ {f} x x₁) = f
+erase : ∀ {ν n} {Γ : Ctx ν n} {t τ} → Γ ⊢ t ∈ τ → Term ν n
+erase (var x) = var x
+erase (Λ {t} x) = Λ t
+erase (λ' {t} a x) = λ' a t
+erase (_[_] {t} x b) = t
+erase (_·_ {f} x x₁) = f
 
 ⊢f·a-inversion : ∀ {ν n f t b} {Γ : Ctx ν n} → Γ ⊢ f · t ∈ b → 
                  ∃ λ a → Γ ⊢ f ∈ a →' b × Γ ⊢ t ∈ a

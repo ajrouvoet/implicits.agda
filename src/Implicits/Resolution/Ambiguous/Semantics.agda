@@ -33,14 +33,23 @@ private
   ⟦_⟧ctx→ : ∀ {ν} → (Δ : ICtx ν) → Vec (F.Type ν) (List.length (List.map ⟦_⟧tp→ Δ))
   ⟦ Δ ⟧ctx→ = fromList (List.map ⟦_⟧tp→ Δ)
 
-  ⟦_⟧term→ : ∀ {ν} {Δ : ICtx ν} {r} → Δ ⊢ᵣ r → F.Term ν (List.length Δ)
-  ⟦_⟧term→ {ν} {Δ} (r-tabs x) = F.Λ p
-    where
-      p : F.Term (suc ν) (List.length Δ)
-      p = subst (λ u → F.Term (suc ν) u) (length-map _ Δ) ⟦ x ⟧term→
+       
+  length-weaken-Δ : ∀ {ν} (Δ : ICtx ν) →
+    (List.length (List.map ⟦_⟧tp→ (ictx-weaken Δ))) ≡ (List.length (List.map ⟦_⟧tp→ Δ))
+  length-weaken-Δ Δ = begin 
+    (List.length (List.map ⟦_⟧tp→ (List.map (λ s → s / wk) Δ)))
+      ≡⟨ cong List.length (sym $ map-compose Δ) ⟩
+    (List.length (List.map (⟦_⟧tp→ ∘ (λ s → s / wk)) Δ))
+      ≡⟨ length-map _ Δ ⟩
+    List.length Δ
+      ≡⟨ sym $ length-map _ Δ ⟩
+    (List.length (List.map ⟦_⟧tp→ Δ)) ∎
+
+  ⟦_⟧term→ : ∀ {ν} {Δ : ICtx ν} {r} → Δ ⊢ᵣ r → F.Term ν (List.length (List.map ⟦_⟧tp→ Δ))
+  ⟦_⟧term→ {ν} {Δ} (r-tabs x) = F.Λ (subst (F.Term (suc ν)) (length-weaken-Δ Δ) ⟦ x ⟧term→)
   ⟦ r-tapp a x ⟧term→ = ⟦ x ⟧term→ F.[ ⟦ a ⟧tp→ ]
-  ⟦ r-ivar x ⟧term→ = F.var (index x)
-    where open import Data.List.Any
+  ⟦_⟧term→ {Δ = Δ} (r-ivar x) =
+    F.var (subst Fin (sym $ length-map _ Δ) (proj₁ $ ∈⟶index (VP.List-∈⇒∈ x)))
   ⟦ r-iabs {a = a} x ⟧term→ = F.λ' ⟦ a ⟧tp→ ⟦ x ⟧term→
   ⟦ r-iapp f e ⟧term→ = ⟦ f ⟧term→ F.· ⟦ e ⟧term→
 
@@ -131,17 +140,6 @@ private
     ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ TS.wk) 
       ≡⟨ cong (λ e → ⟦ tp ⟧tp→ F./ e) ⟦wk⟧tp→ ⟩
     ⟦ tp ⟧tp→ F./ F.wk ∎
-       
-  length-weaken-Δ : ∀ {ν} (Δ : ICtx ν) →
-    (List.length (List.map ⟦_⟧tp→ (ictx-weaken Δ))) ≡ (List.length (List.map ⟦_⟧tp→ Δ))
-  length-weaken-Δ Δ = begin 
-    (List.length (List.map ⟦_⟧tp→ (List.map (λ s → s / wk) Δ)))
-      ≡⟨ cong List.length (sym $ map-compose Δ) ⟩
-    (List.length (List.map (⟦_⟧tp→ ∘ (λ s → s / wk)) Δ))
-      ≡⟨ length-map _ Δ ⟩
-    List.length Δ
-      ≡⟨ sym $ length-map _ Δ ⟩
-    (List.length (List.map ⟦_⟧tp→ Δ)) ∎
 
   ⟦weaken⟧ctx→ : ∀ {ν} (Δ : ICtx ν) → F.ctx-weaken ⟦ Δ ⟧ctx→ H.≅ ⟦ ictx-weaken Δ ⟧ctx→
   ⟦weaken⟧ctx→ List.[] = H.refl
@@ -182,16 +180,19 @@ private
       ≡⟨ cong ⟦_⟧tp→ eq ⟩
     ⟦ r ⟧tp→ ∎
 
-  ⟦_⟧ᵣ : ∀ {ν} {Δ : ICtx ν} {r} → (p : Δ ⊢ᵣ r) → ∃ λ t → ⟦ Δ ⟧ctx→ F.⊢ t ∈ ⟦ r ⟧tp→
+  ⟦_⟧ᵣ : ∀ {ν} {Δ : ICtx ν} {r} → (p : Δ ⊢ᵣ r) → ⟦ Δ ⟧ctx→ F.⊢ ⟦ p ⟧term→ ∈ ⟦ r ⟧tp→
   ⟦_⟧ᵣ {Δ = Δ} (r-tabs {r = r} p) with ⟦ p ⟧ᵣ
-  ⟦_⟧ᵣ {Δ = Δ} (r-tabs {r = r} p) | _ , x =
-    , F.Λ (⊢subst-n (length-weaken-Δ Δ) (H.sym $ ⟦weaken⟧ctx→ Δ) x)
+  ⟦_⟧ᵣ {Δ = Δ} (r-tabs {r = r} p) | x =
+    F.Λ (⊢subst-n (length-weaken-Δ Δ) (H.sym (⟦weaken⟧ctx→ Δ)) x)
   ⟦_⟧ᵣ (r-tapp a p) with ⟦ p ⟧ᵣ
-  ⟦_⟧ᵣ {Δ = Δ} (r-tapp {r = a} b p) | _ , x =
-    , subst (λ u → ⟦ Δ ⟧ctx→ F.⊢ _ ∈ u) (sym $ ⟦a/sub⟧tp→ a b) (x F.[ ⟦ b ⟧tp→ ])
-  ⟦_⟧ᵣ {Δ = Δ} (r-ivar x) =
-    , let i , eq = ∈⟶index (VP.List-∈⇒∈ x) in
+  ⟦_⟧ᵣ {Δ = Δ} (r-tapp {r = a} b p) | x =
+    subst
+      (λ u → ⟦ Δ ⟧ctx→ F.⊢ ⟦ p ⟧term→ F.[ ⟦ b ⟧tp→ ] ∈ u)
+      (sym $ ⟦a/sub⟧tp→ a b)
+      (x F.[ ⟦ b ⟧tp→ ])
+  ⟦_⟧ᵣ {Δ = Δ} {r = r} (r-ivar x) =
+    let i , eq = ∈⟶index (VP.List-∈⇒∈ x) in 
         let i' = (subst Fin (sym $ length-map _ Δ) i) in
           subst (λ u → ⟦ Δ ⟧ctx→ F.⊢ (F.var i') ∈ u) (lookup⟦⟧ Δ i eq) (F.var i')
-  ⟦_⟧ᵣ (r-iabs {a = a} p) = , F.λ' ⟦ a ⟧tp→ (proj₂ ⟦ p ⟧ᵣ)
-  ⟦_⟧ᵣ (r-iapp p p₁) = , (proj₂ $ ⟦ p ⟧ᵣ) F.· (proj₂ ⟦ p₁ ⟧ᵣ)
+  ⟦_⟧ᵣ (r-iabs {a = a} p) = F.λ' ⟦ a ⟧tp→ ⟦ p ⟧ᵣ
+  ⟦_⟧ᵣ (r-iapp p p₁) = ⟦ p ⟧ᵣ F.· ⟦ p₁ ⟧ᵣ
