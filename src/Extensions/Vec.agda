@@ -4,6 +4,11 @@ open import Data.Product hiding (map; zip)
 open import Data.Fin
 open import Data.Vec
 open import Relation.Binary.PropositionalEquality public hiding ([_])
+open import Data.List as L using ()
+open import Relation.Binary.HeterogeneousEquality as H using ()
+
+private
+  module HR = H.≅-Reasoning
 
 lookup⋆map : ∀ {a b : Set} {n} (v : Vec a n) (f : a → b) x → 
              f (lookup x v) ≡ lookup x (map f v)
@@ -23,3 +28,16 @@ lookup⋆map (x ∷ xs) f (suc y) = lookup⋆map xs f y
 ∈⋆map : ∀ {A B : Set} {n} {v : Vec A n} {a} → a ∈ v → (f : A → B) → (f a) ∈ (map f v)
 ∈⋆map here f = here
 ∈⋆map (there a∈v) f = there (∈⋆map a∈v f)
+
+∷-cong : ∀ {l n n'} {A : Set l} {x : A} {xs : Vec A n} {xs' : Vec A n'} →
+         n ≡ n' →
+         xs H.≅ xs' →
+         x ∷ xs H.≅ x ∷ xs'
+∷-cong refl H.refl = H.refl
+
+fromList-map : ∀ {l} {A B : Set l} (f : A → B) (xs : L.List A) →
+               (fromList ((L.map f xs))) H.≅ (map f (fromList xs))
+fromList-map f L.[] = H.refl
+fromList-map f (x L.∷ xs) = ∷-cong (length-map _ xs) (fromList-map f xs)
+  where open import Data.List.Properties
+  

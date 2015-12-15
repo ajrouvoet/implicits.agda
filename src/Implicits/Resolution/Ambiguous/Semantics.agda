@@ -131,11 +131,6 @@ private
     ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ TS.wk) 
       ≡⟨ cong (λ e → ⟦ tp ⟧tp→ F./ e) ⟦wk⟧tp→ ⟩
     ⟦ tp ⟧tp→ F./ F.wk ∎
-
-  private
-    ∷cong : ∀ {ν n n'} {x : F.Type ν} {xs : F.Ctx ν n} {xs' : F.Ctx ν n'} → n ≡ n' → xs H.≅ xs' →
-            x ∷ xs H.≅ x ∷ xs'
-    ∷cong refl H.refl = H.refl
        
   length-weaken-Δ : ∀ {ν} (Δ : ICtx ν) →
     (List.length (List.map ⟦_⟧tp→ (ictx-weaken Δ))) ≡ (List.length (List.map ⟦_⟧tp→ Δ))
@@ -154,7 +149,7 @@ private
     F.ctx-weaken ⟦ x List.∷ xs ⟧ctx→
       HR.≅⟨ H.refl ⟩
     (⟦ x ⟧tp→ F./ F.wk) ∷ F.ctx-weaken ⟦ xs ⟧ctx→
-      HR.≅⟨ ∷cong (sym (length-weaken-Δ xs)) (⟦weaken⟧ctx→ xs) ⟩
+      HR.≅⟨ ∷-cong (sym (length-weaken-Δ xs)) (⟦weaken⟧ctx→ xs) ⟩
     (⟦ x ⟧tp→ F./ F.wk) ∷ ⟦ ictx-weaken xs ⟧ctx→
       HR.≅⟨ H.cong (flip _∷_ ⟦ ictx-weaken xs ⟧ctx→) (H.≡-to-≅ $ sym $ ⟦a/wk⟧tp→ x) ⟩
     ⟦ x / wk ⟧tp→ ∷ ⟦ ictx-weaken xs ⟧ctx→
@@ -168,8 +163,24 @@ private
                        Γ' F.⊢ (subst (F.Term ν) n-eq t) ∈ a
   ⊢subst-n refl H.refl p = p
 
-  postulate lookup⟦⟧ : ∀ {ν} (Δ : ICtx ν) {r} i → lookup i (fromList Δ) ≡ r →
-                          (lookup (subst Fin (sym $ length-map _ Δ) i) ⟦ Δ ⟧ctx→) ≡ ⟦ r ⟧tp→
+  lookup-subst-n : ∀ {n n' l} {A : Set l} {v : Vec A n} {v' : Vec A n'} {i : Fin n} →
+                   (n-eq : n ≡ n') →
+                   (v H.≅ v') →
+                   (lookup i v) ≡ (lookup (subst Fin n-eq i) v')
+  lookup-subst-n refl H.refl = refl
+
+  lookup⟦⟧ : ∀ {ν} (Δ : ICtx ν) {r} i → lookup i (fromList Δ) ≡ r →
+             (lookup (subst Fin (sym $ length-map _ Δ) i) ⟦ Δ ⟧ctx→) ≡ ⟦ r ⟧tp→
+  lookup⟦⟧ Δ {r = r} i eq = begin
+    (lookup (subst Fin (sym $ length-map _ Δ) i) ⟦ Δ ⟧ctx→)
+      ≡⟨ refl ⟩
+    (lookup (subst Fin (sym $ length-map _ Δ) i) (fromList $ (List.map ⟦_⟧tp→ Δ)))
+      ≡⟨ sym $ lookup-subst-n (sym $ length-map _ Δ) (H.sym $ fromList-map _ Δ) ⟩
+    (lookup i (map ⟦_⟧tp→ (fromList Δ)))
+      ≡⟨ sym $ lookup⋆map (fromList Δ) ⟦_⟧tp→ i ⟩
+    ⟦ lookup i (fromList Δ) ⟧tp→
+      ≡⟨ cong ⟦_⟧tp→ eq ⟩
+    ⟦ r ⟧tp→ ∎
 
   ⟦_⟧ᵣ : ∀ {ν} {Δ : ICtx ν} {r} → (p : Δ ⊢ᵣ r) → ∃ λ t → ⟦ Δ ⟧ctx→ F.⊢ t ∈ ⟦ r ⟧tp→
   ⟦_⟧ᵣ {Δ = Δ} (r-tabs {r = r} p) with ⟦ p ⟧ᵣ
