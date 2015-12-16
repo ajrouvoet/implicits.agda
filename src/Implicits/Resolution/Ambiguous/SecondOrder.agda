@@ -12,7 +12,6 @@ open import Implicits.Syntax TC _tc≟_
 open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
 open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Resolution.Ambiguous.Semantics TC _tc≟_
 open TypeSubst hiding (subst)
 
 private
@@ -32,24 +31,6 @@ open import SystemF TC as F using ()
 
 ⟦_⟧ctx← : ∀ {ν n} → Vec (F.Type ν) n → List (Type ν)
 ⟦ v ⟧ctx← = toList $ map ⟦_⟧tp← v
-
-tp→← : ∀ {ν} (a : Type ν) → ⟦ ⟦ a ⟧tp→ ⟧tp← ≡ a
-tp→← (simpl (tc x)) = refl
-tp→← (simpl (tvar n)) = refl
-tp→← (simpl (x →' x₁)) = cong₂ (λ u v → simpl (u →' v)) (tp→← x) (tp→← x₁)
-tp→← (a ⇒ b) = cong₂ _⇒_ (tp→← a) (tp→← b)
-tp→← (∀' a) = cong ∀' (tp→← a)
-
-ctx→← : ∀ {ν} (Δ : ICtx ν) → ⟦ ⟦ Δ ⟧ctx→ ⟧ctx← ≡ Δ
-ctx→← List.[] = refl
-ctx→← (x List.∷ xs) = begin
-  ⟦ ⟦ x List.∷ xs ⟧ctx→ ⟧ctx←
-    ≡⟨ refl ⟩
-  toList (map ⟦_⟧tp← (fromList (List.map ⟦_⟧tp→ (x List.∷ xs))))
-    ≡⟨ refl ⟩
-  ⟦ ⟦ x ⟧tp→ ⟧tp← List.∷ (toList (map ⟦_⟧tp← (fromList (List.map ⟦_⟧tp→ xs))))
-    ≡⟨ cong₂ List._∷_ (tp→← x) (ctx→← xs) ⟩
-  (x List.∷ xs) ∎
 
 ⟦a/var⟧tp← : ∀ {ν ν'} (a : F.Type ν) (s : Vec (Fin ν') ν) → ⟦ a F./Var s ⟧tp← ≡ ⟦ a ⟧tp← /Var s
 ⟦a/var⟧tp← (F.tc x) s = refl
@@ -167,8 +148,3 @@ from {Γ = Γ} (F._[_] {a = a} x b) = subst
   (sym (⟦a/sub⟧tp← a b))
   (r-tapp ⟦ b ⟧tp← (from x))
 from (a F.· b) = r-iapp (from a) (from b)
-
-iso : ∀ {ν} {Δ : ICtx ν} r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ F.⊢ t ∈ ⟦ r ⟧tp→)
-iso r = equivalence
-  (λ x → , ⟦ x ⟧ᵣ)
-  (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from (proj₂ x)))
