@@ -363,18 +363,27 @@ module Lemmas where
     (λ x → , ⟦ x ⟧ᵣ)
     (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from (proj₂ x)))
 
+  
+{-
+  Assuming undecidability of the type inhabitation problem for System F
+  (as proven by e.g. Barendregt) we can prove the undecidability of Ambiguous resolution
+-}
+
 private
+  -- type of inhabitation problem decider
   ?:-dec : Set
   ?:-dec = ∀ {ν} → (a : F.Type ν) → Dec (∃ λ t → [] F.⊢ t ∈ a)
-  
+
 module Undecidable (?:-undec : ¬ ?:-dec) where
 
   open Embedding
   open Lemmas
 
+  -- type of decider for ambiguous resolution
   ⊢ᵣ-dec : Set
   ⊢ᵣ-dec = ∀ {ν} (Δ : ICtx ν) → (a : Type ν) → Dec (Δ ⊢ᵣ a)
 
+  -- proof that such a decider would imply a decider for type inhabitation problem
   reduction : ⊢ᵣ-dec → ?:-dec
   reduction f x = Dec.map (
     subst
@@ -382,5 +391,6 @@ module Undecidable (?:-undec : ¬ ?:-dec) where
       (tp←→ x)
       (iso List.[] ⟦ x ⟧tp←)) (f List.[] ⟦ x ⟧tp←)
 
-  p : ¬ ⊢ᵣ-dec
-  p f = ?:-undec (reduction f) 
+  -- completing the proof
+  undecidable : ¬ ⊢ᵣ-dec
+  undecidable f = ?:-undec (reduction f) 
