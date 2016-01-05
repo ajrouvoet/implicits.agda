@@ -12,14 +12,12 @@ tc-int tc≟ tc-bool = no (λ ())
 tc-bool tc≟ tc-int = no (λ ())
 tc-bool tc≟ tc-bool = yes refl
 
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.WellTyped TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Improved.Finite.Resolution TC _tc≟_
-open import Implicits.Improved.Finite.Algorithm TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.WellTyped TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Resolution.Finite.Resolution TC _tc≟_
+open import Implicits.Resolution.Finite.Algorithm TC _tc≟_
 open import Data.Maybe
 open import Data.List
 open import Category.Monad.Partiality

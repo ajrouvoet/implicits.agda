@@ -9,15 +9,15 @@ open import Prelude
 
 -- We give a well-scoped version of Oliveira's ambiguous and deterministic
 -- resolution rules
-open import Implicits.Oliveira.Ambiguous.Resolution
-open import Implicits.Oliveira.Deterministic.Resolution
+open import Implicits.Resolution.Ambiguous.Resolution
+open import Implicits.Resolution.Deterministic.Resolution
 
 -- and prove soundness of det. resolution w.r.t the ambiguous one
-open import Implicits.Oliveira.Deterministic.Expressiveness
+open import Implicits.Resolution.Deterministic.Expressiveness
 
 -- we show that Oliveira's deterministic rules are incomplete w.r.t.
 -- the ambiguous resolution
-open import Implicits.Oliveira.Deterministic.Incomplete
+open import Implicits.Resolution.Deterministic.Incomplete
 
 --
 -- Coinductive (partial) resolution
@@ -29,7 +29,7 @@ open import Implicits.Oliveira.Deterministic.Incomplete
 -- to circumvent the weakness of Oliveira's deterministic rules.
 -- In order to maintain strict-positiveness of the rules, we drop determinacy.
 -- We will regain determinacy in the algorithmic description of resolution.
-open import Implicits.Improved.Infinite.Resolution
+open import Implicits.Resolution.Infinite.Resolution
 
 -- By strengthening r-simp's hypothesis, we make the rules more powerful (but resolution
 -- is more difficult).
@@ -40,14 +40,14 @@ open import Implicits.Improved.Infinite.Resolution
 -- as it terminates for the current instantiation.
 
 -- We show that the coinductive rules are complete w.r.t. the deterministic rules
-open import Implicits.Improved.Infinite.Expressiveness
+open import Implicits.Resolution.Infinite.Expressiveness
 -- An open question is whether the coinductive rules are complete w.r.t. the ambiguous rules,
 -- in the sense: Δ Ambiguous.⊢ᵣ r → Δ Coinductive.⊢ᵣ r
 
 -- Furthermore we give a partial algorithm A₁ for Δ Coinductive.⊢ᵣ r
 -- The type guarantees soundness, but the algorithm may never terminate
 -- even for finite resolutions
-open import Implicits.Improved.Infinite.Algorithm
+open import Implicits.Resolution.Infinite.Algorithm
 -- We'd love to show that the existence of a finite resolution Δ ⊢ᵣ r guarantees
 -- termination of the partial resolution algorithm on input r;
 -- but this clearly isn't a theorem: it's easy to imagine an implicit context that both has
@@ -61,12 +61,11 @@ open import Implicits.Improved.Infinite.Algorithm
 -- We then present an ambiguous, syntax-directed and inductive version of resolution.
 -- Very similar to the coinductive rules, but with an added hypothesis for using rules,
 -- ensuring that recursive use of rules is only allowed if the goal is shrinking
-open import Implicits.Improved.Finite.Resolution
+-- open import Implicits.Resolution.Finite.Resolution
 
 -- We give an algorithm for it
-open import Implicits.Improved.Finite.Algorithm
+-- open import Implicits.Improved.Finite.Algorithm
 
 -- examples of types and polymorphic type orderings
-open import Examples.Types
 open import Examples.PartialResolution
-open import Examples.CompleteResolution
+-- open import Examples.CompleteResolution

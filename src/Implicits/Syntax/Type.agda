@@ -44,8 +44,7 @@ module Functions where
   data IsFunction {ν : ℕ} : Type ν → Set where
     lambda : (a b : Type ν) → IsFunction (simpl $ a →' b)
     ∀'-lambda : ∀ {f} → IsFunction f → IsFunction (∀' f)
-
-  -- decision procedure for IsFunction
+-- decision procedure for IsFunction
   is-function : ∀ {ν} → (a : Type ν) → Dec (IsFunction a)
   is-function (simpl (tc _)) = no (λ ())
   is-function (simpl (tvar n)) = no (λ ())

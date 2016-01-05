@@ -1,16 +1,14 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Finite.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
 open import Induction
 open import Induction.Nat
-open import Implicits.Improved.Finite.Termination.Stack TC _tc≟_
+open import Implicits.Resolution.Finite.Termination.Stack TC _tc≟_
 
 infixl 5 _⊢ᵣ_
 infixl 5 _&_⊢ᵣ_ _&_,_⊢_↓_

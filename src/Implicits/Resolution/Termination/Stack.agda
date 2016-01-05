@@ -1,20 +1,18 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Termination.Stack
+module Implicits.Resolution.Finite.Termination.Stack
   (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Induction.WellFounded
 open import Induction.Nat
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Substitutions.Lemmas TC _tc≟_
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 
-open import Implicits.Improved.Finite.Termination.SizeMeasures TC _tc≟_
+open import Implicits.Resolution.Finite.Termination.SizeMeasures TC _tc≟_
 
 -- on the stack we maintain, for each rule in Δ,
 -- the last goal type that resulted from using the rule

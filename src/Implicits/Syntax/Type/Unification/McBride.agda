@@ -1,8 +1,9 @@
 open import Prelude hiding (id; _>>=_)
 
-module Implicits.Oliveira.Types.Unification.McBride (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.Type.Unification.McBride (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
-open import Implicits.Oliveira.Types TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.MetaType TC _tc≟_
 open import Data.Vec.Properties
 open import Data.Nat as N using ()
 open import Data.Nat.Properties.Simple
@@ -16,9 +17,8 @@ open RawFunctor {level₀} functor
 open import Data.Star hiding (_>>=_)
 
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_ public
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Substitutions.Lemmas TC _tc≟_
 
 private
   module M = MetaTypeMetaSubst

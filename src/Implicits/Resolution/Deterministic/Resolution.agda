@@ -1,13 +1,11 @@
 open import Prelude
 
-module Implicits.Oliveira.Deterministic.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Deterministic.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
 
 infixl 4 _⊢ᵣ_ _⊢_↓_ _⟨_⟩=_
 infixl 6 _◁_

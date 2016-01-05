@@ -1,13 +1,12 @@
 open import Prelude
 
-module Implicits.Improved.Finite3.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Finite3.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Resolution.Termination TC _tc≟_
 open import Induction
 open import Induction.Nat
 open import Relation.Binary using (Rel)
@@ -16,7 +15,7 @@ mutual
 
   data _⊢_↓_ {ν} (Δ : ICtx ν) : Type ν → SimpleType ν → Set where
     i-simp : ∀ a → Δ ⊢ simpl a ↓ a
-    i-iabs : ∀ {ρ₁ ρ₂ a} → ρ₁ ρ< ρ₂ → Δ ⊢ᵣ ρ₁ → Δ ⊢ ρ₂ ↓ a → Δ ⊢ ρ₁ ⇒ ρ₂ ↓ a
+    i-iabs : ∀ {ρ₁ ρ₂ a} → (, ρ₁) hρ< (, ρ₂) → Δ ⊢ᵣ ρ₁ → Δ ⊢ ρ₂ ↓ a → Δ ⊢ ρ₁ ⇒ ρ₂ ↓ a
     i-tabs : ∀ {ρ a} b → Δ ⊢ ρ tp[/tp b ] ↓ a → Δ ⊢ ∀' ρ ↓ a
 
   data _⊢ᵣ_ {ν} (Δ : ICtx ν) : Type ν → Set where

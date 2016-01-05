@@ -1,13 +1,11 @@
 open import Prelude
 
-module Implicits.Improved.Infinite.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
 
 infixl 5 _⊢ᵣ_ _⊢_↓_
 mutual

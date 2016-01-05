@@ -17,6 +17,8 @@ open Applicative.Morphism using (op-<$>)
 module TypeLemmas where
   open import Implicits.Substitutions.Lemmas.Type TC _tc≟_ public
 
+open import Implicits.Substitutions.Lemmas.MetaType TC _tc≟_ public
+
 {-
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
 
@@ -300,4 +302,3 @@ module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
   open WtTermLemmas public using ()
     renaming (_/_ to _⊢/tp_; _[/_] to _⊢[/_]; weaken to ⊢weaken)
   -}
-  

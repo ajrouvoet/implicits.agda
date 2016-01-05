@@ -1,14 +1,12 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Termination.SizeMeasures (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Termination.SizeMeasures (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Induction.WellFounded
 open import Induction.Nat
 open import Data.Nat.Base using (_<′_)
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 
@@ -42,7 +40,7 @@ m|| ∀' a || = 1 N+ m|| a ||
 _hρ<_ : (a b : ∃ Type) → Set
 (_ , a) hρ< (_ , b) = h|| a || N< h|| b ||
 
-_hρ<?_ : ∀ {ν μ} → (a : Type ν) → (b : Type μ) → Dec ((, a) hρ< (, b))
+_hρ<?_ : ∀ {ν μ} → (a : Type ν) → (b : Type μ) → Dec ((ν , a) hρ< (μ , b))
 a hρ<? b with h|| a || | h|| b ||
 a hρ<? b | y | z = (suc y) N≤? z
 

@@ -1,6 +1,6 @@
 open import Prelude hiding (id; Bool)
 
-module Implicits.Oliveira.Deterministic.Incomplete where
+module Implicits.Resolution.Deterministic.Incomplete where
 
 data TC : Set where
   tc-int : TC
@@ -12,11 +12,9 @@ tc-int tc≟ tc-bool = no (λ ())
 tc-bool tc≟ tc-int = no (λ ())
 tc-bool tc≟ tc-bool = yes refl
 
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.WellTyped TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.WellTyped TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
 
 Bool : Type 0
 Bool = simpl $ tc tc-bool
@@ -35,7 +33,7 @@ module Example₁ where
   Δ = (Int ⇒ Bool) List.∷ Bool List.∷ List.[]
 
   module Deterministic where
-    open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_
+    open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_
     open TypingRules _⊢ᵣ_
   
     -- proof that Bool is not derivable under the deterministic resolution rules
@@ -49,7 +47,7 @@ module Example₁ where
         ¬r◁Int ( _ , l-tail _ (l-tail _ ()))
   
   module Ambiguous where
-    open import Implicits.Oliveira.Ambiguous.Resolution TC _tc≟_
+    open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_
     open TypingRules _⊢ᵣ_
   
     -- proof that Bool is derivable under the "Ambiguous" resolution rules

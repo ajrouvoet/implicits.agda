@@ -1,9 +1,9 @@
 open import Prelude hiding (id; _>>=_)
 
-module Implicits.Oliveira.Types.Unification (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.Type.Unification (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Types.Unification.McBride TC _tc≟_ as McBride using (
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.Type.Unification.McBride TC _tc≟_ as McBride using (
   substitute; asub; AList; _//_) public
 open import Data.Vec.Properties
 open import Data.Nat as N using ()
@@ -11,9 +11,9 @@ open import Data.Nat.Properties.Simple
 open import Category.Monad
 
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Types.Unification.Types TC _tc≟_ public
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.MetaType TC _tc≟_ public
+open import Implicits.Substitutions.Lemmas TC _tc≟_
 open McBride using (substitute; asub; AList; ASub; _//_; asub-weaken) public
 
 private

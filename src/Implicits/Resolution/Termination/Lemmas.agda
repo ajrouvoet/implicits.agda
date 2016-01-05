@@ -1,23 +1,22 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Termination.Lemmas
+module Implicits.Resolution.Termination.Lemmas
   (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Induction.WellFounded
 open import Induction.Nat
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Substitutions.Lemmas TC _tc≟_
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 open import Relation.Binary using (module DecTotalOrder)
 open DecTotalOrder decTotalOrder using () renaming (refl to ≤-refl)
+open import Extensions.Nat
 
-open import Implicits.Improved.Finite.Termination.SizeMeasures TC _tc≟_
+open import Implicits.Resolution.Termination.SizeMeasures TC _tc≟_
 
 -- we can show that our size measure a ρ< b is well founded
 -- by relating it to the well-foundedness proof of _<'_
@@ -175,6 +174,13 @@ module SubstSizeLemmas where
   open TypeLemmas
 
   mutual
+    ||a|| : ∀ {ν} (a : Type ν) → || a || ≥ 1
+    ||a|| (simpl (tc x)) = s≤s z≤n
+    ||a|| (simpl (tvar n)) = s≤s z≤n
+    ||a|| (simpl (a →' b)) = s≤s z≤n
+    ||a|| (a ⇒ b) = s≤s z≤n
+    ||a|| (∀' a) = s≤s z≤n
+
     ||a/Var|| : ∀ {ν μ} (a : Type ν) (s : Sub Fin ν μ) → || a /Var s || ≡ || a ||
     ||a/Var|| (a ⇒ b) s = cong₂ (λ u v → 1 N+ u N+ v) (||a/Var|| a s) (||a/Var|| b s)
     ||a/Var|| (∀' a) s = cong (λ u → 1 N+ u) (||a/Var|| a (s VarSubst.↑))
@@ -219,6 +225,20 @@ module SubstSizeLemmas where
 
     ||a/wk↑k|| : ∀ {ν} k (a : Type (k N+ ν)) → || a / wk ↑⋆ k || ≡ || a ||
     ||a/wk↑k|| k a = ||a/s|| a (wk ↑⋆ k) (λ x → cong ||_|| (lookup-wk-↑⋆ k x))
+
+    ||a/s||' : ∀ {ν μ} (a : Type ν) (s : Sub Type ν μ) → || a || N≤ || a / s ||
+    ||a/s||' (simpl (tc x)) s = s≤s z≤n
+    ||a/s||' (simpl (tvar n)) s = ||a|| (lookup n s)
+    ||a/s||' (simpl (a →' b)) s = s≤s (<-+ (||a/s||' a s) (||a/s||' b s))
+    ||a/s||' (a ⇒ b) s = s≤s (<-+ (||a/s||' a s) (||a/s||' b s))
+    ||a/s||' (∀' b) s = s≤s (||a/s||' b (s TypeSubst.↑))
+
+    h||a/s|| : ∀ {ν μ} (a : Type ν) (s : Sub Type ν μ) → h|| a || N≤ h|| a / s ||
+    h||a/s|| (simpl (tc x)) s = s≤s z≤n
+    h||a/s|| (simpl (tvar n)) s = ||a|| (proj₂ (lookup n s ◁))
+    h||a/s|| (simpl (a →' b)) s = s≤s (<-+ (||a/s||' a s) (||a/s||' b s))
+    h||a/s|| (a ⇒ b) s = h||a/s|| b s
+    h||a/s|| (∀' b) s = h||a/s|| b (s TypeSubst.↑)
 
 a-ρ<-∀a : ∀ {n} a → (suc n , a) ρ< (, ∀' a)
 a-ρ<-∀a _ = ≤-refl

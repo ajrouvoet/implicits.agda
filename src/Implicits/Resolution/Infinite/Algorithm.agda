@@ -1,18 +1,17 @@
 open import Prelude hiding (All; module All; _>>=_; ⊥)
 
-module Implicits.Improved.Infinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any
 open Membership-≡
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Improved.Infinite.Resolution TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Substitutions.Lemmas.MetaType TC _tc≟_
+open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
 
 open import Category.Monad
 open import Category.Functor
@@ -40,6 +39,9 @@ ResM : ∀ {ν} → (ICtx ν) → Type ν → SimpleType ν → Set₁
 ResM Δ r τ = (Δ ⊢ r ↓ τ) ?⊥P
 
 module M = MetaTypeMetaSubst
+
+module Lemmas where
+  postulate lem₄ : ∀ {m ν} (a : MetaType m (suc ν)) u us → from-meta ((M.open-meta a) M./ (us M.↑) M./ (M.sub u)) ≡ (from-meta (a M./ (us M.↑tp))) tp[/tp from-meta u ]
 
 -- helpful shortcut for when we need partiality- & failure-monad-like behaviour on bind
 _?>>=_ : ∀ {A B : Set} → A ?⊥P → (f : A → B ?⊥P) → B ?⊥P
@@ -80,7 +82,7 @@ mutual
               from-meta ((open-meta a) M./ (us M.↑ M.⊙ (M.sub u)))
                 ≡⟨ cong from-meta (/-⊙ (open-meta a)) ⟩
               from-meta ((open-meta a) M./ us M.↑ M./ (M.sub u))
-                ≡⟨ lem' a u us ⟩
+                ≡⟨ Lemmas.lem₄ a u us ⟩
               from-meta (a M./ (us M.↑tp)) tp[/tp from-meta u ] ∎) p))
             where open MetaTypeMetaLemmas hiding (subst)
 

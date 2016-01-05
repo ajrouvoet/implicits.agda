@@ -1,14 +1,12 @@
 {-# OPTIONS --no-positivity-check #-}
 open import Prelude
 
-module Implicits.Improved.Undecidable.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Undecidable.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.MetaType TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
 open import Extensions.ListFirst
 
 infixl 4 _⊢ᵣ_ _⊢_↓_ _⟨_⟩=_

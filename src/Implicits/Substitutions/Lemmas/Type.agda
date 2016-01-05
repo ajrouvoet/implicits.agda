@@ -76,6 +76,3 @@ simpl-wk : ∀ {ν} k (τ : SimpleType (k N+ ν)) → ∃ λ τ' → (simpl τ) 
 simpl-wk k (tc x) = , refl
 simpl-wk k (tvar n) = , var-/-wk-↑⋆ k n
 simpl-wk k (x →' x₁) = , refl
-
--- ◁-wk : ∀ {ν} (a : Type ν) → proj₂ ((weaken a) ◁) ≡ weaken (proj₂ (a ◁))
--- ◁-wk a = ?

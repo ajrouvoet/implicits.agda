@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Improved.Finite3.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Finite3.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Induction.WellFounded
 open import Induction.Nat
@@ -8,21 +8,20 @@ open import Data.Fin.Substitution
 open import Data.Nat.Base using (_<′_)
 open import Data.List.Any
 open Membership-≡
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Improved.Finite2.Resolution TC _tc≟_
-open import Implicits.Improved.Finite.Termination TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Resolution.Finite3.Resolution TC _tc≟_
+open import Implicits.Resolution.Termination TC _tc≟_
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong; flip; const)
 open import Data.List.Any.Properties using (Any↔)
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 open import Relation.Binary using (module DecTotalOrder)
-open DecTotalOrder decTotalOrder using () renaming (refl to ≤-refl)
+open DecTotalOrder decTotalOrder using () renaming
+  (refl to ≤-refl; trans to ≤-trans)
 open Lexicographic using (left; right)
 
 module M = MetaTypeMetaSubst
@@ -56,6 +55,15 @@ module Lemmas where
 
   open Arg<-well-founded using (Arg<-Acc; arg<-well-founded) public
 
+  lem₆ : ∀ {ν μ} (a : Type ν) (b : Type (suc μ)) c → (, a) hρ< (, b) → (, a) hρ< (, b tp[/tp c ])
+  lem₆ a b c p = ≤-trans p (h||a/s|| b (TypeSubst.sub c))
+    where open SubstSizeLemmas
+
+  lem₅ : ∀ {ν μ} {Δ : ICtx ν} {b τ} (a : Type μ) → Δ ⊢ b ↓ τ → (, a) hρ< (, b) → (, a) hρ< (, simpl τ)
+  lem₅ {τ = τ} a (i-simp .τ) q = q
+  lem₅ a (i-iabs _ _ p) q = lem₅ a p q
+  lem₅ a (i-tabs {ρ = b} c p) q = lem₅ a p (lem₆ a b c q)
+
 open Lemmas
 
 mutual
@@ -74,11 +82,11 @@ mutual
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) with match' Δ r∈Δ τ b (acc f) (g _ (b-m<-a⇒b a b))
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | nothing = nothing
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ)
-    with (from-meta (a M./ u)) hρ<? (simpl τ)
-  match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ) | yes p
-    with resolve' Δ (from-meta (a M./ u)) (f _ (left p))
-  match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ) | yes _ | just ⊢ᵣa =
-    just (u , i-iabs ⊢ᵣa b/u↓τ)
+    with (from-meta (a M./ u)) hρ<? (from-meta (b M./ u))
+  match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ) | yes ρ₁<
+    with resolve' Δ (from-meta (a M./ u)) (f _ (left (lem₅ (from-meta (a M./ u)) b/u↓τ ρ₁<)))
+  match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ) | yes ρ₁< | just ⊢ᵣa =
+    just (u , i-iabs ρ₁< ⊢ᵣa b/u↓τ)
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ) | yes _ | nothing = nothing
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | just (u , b/u↓τ) | no p = nothing
 

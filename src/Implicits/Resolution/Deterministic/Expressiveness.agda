@@ -1,14 +1,12 @@
 open import Prelude
 
-module Implicits.Oliveira.Deterministic.Expressiveness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Deterministic.Expressiveness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Ambiguous.Resolution TC _tc≟_ as A
-open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_ as D
+open import Implicits.Syntax TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
+open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
 
 module Deterministic⊆Ambiguous where
   open FirstLemmas
