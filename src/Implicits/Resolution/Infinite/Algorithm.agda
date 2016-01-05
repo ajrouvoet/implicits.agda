@@ -9,7 +9,6 @@ open Membership-≡
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
 open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Substitutions.Lemmas.MetaType TC _tc≟_
 open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
 open import Implicits.Syntax.Type.Unification TC _tc≟_
 
