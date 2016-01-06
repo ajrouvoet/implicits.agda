@@ -16,7 +16,7 @@ all: $(MAIN)i
 # generate browsable documentation for our main proofs
 .PHONY: doc
 doc:
-	$(AGDA_DOC) $(MAIN)
+	$(AGDA_DOC) $(SRC)/Implicits/Everything.agda
 
 # rules for typechecking agda sourcecode
 .SUFFIXES: .agdai .agda
@@ -32,4 +32,4 @@ clean-all:
 	find . -iname "*.agdai" -exec rm {} \;
 
 push-doc:
-	scp -r doc legolas:/srv/http/arjen.inkworks.nl/thesis/
+	scp -r doc/html/ legolas:/srv/http/arjen.inkworks.nl/thesis/
