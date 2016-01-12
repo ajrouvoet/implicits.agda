@@ -53,3 +53,14 @@ _ρ<?_ : (a b : ∃ Type) → Dec (a ρ< b)
 
 _m<_ : ∃₂ MetaType → ∃₂ MetaType → Set
 (_ , _ , a) m< (_ , _ , b) = m|| a || N< m|| b ||
+
+_occ[_]<_ : ∀ {ν μ} (a : Type ν) (x : ℕ) (b : Type μ) → Set
+a occ[ x ]< b = (occ x (proj₂ (a ◁))) N≤ (occ x (proj₂ (b ◁)))
+
+-- oliveira's termination condition on types
+data ⊢term {ν} : (Type ν) → Set where
+  term-simp : ∀ {τ} → ⊢term (simpl τ)
+  term-tabs : ∀ {a} → ⊢term a → ⊢term (∀' a)
+  term-iabs : ∀ {a b} → ⊢term a → ⊢term b → (, a) hρ< (, b) →
+              All (λ x → a occ[ toℕ x ]< b) (fvars a List.++ fvars b) →
+              ⊢term (a ⇒ b)

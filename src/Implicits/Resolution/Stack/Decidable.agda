@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Decidable (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Stack.Decidable (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
 
 open import Coinduction
 open import Data.Fin.Substitution
@@ -11,7 +11,7 @@ open import Implicits.Oliveira.Terms TC _tc≟_
 open import Implicits.Oliveira.Contexts TC _tc≟_
 open import Implicits.Oliveira.Substitutions TC _tc≟_
 open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Improved.Finite.Resolution TC _tc≟_
+open import Implicits.Improved.Stack.Resolution TC _tc≟_
 open import Implicits.Oliveira.Types.Unification TC _tc≟_
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong)

@@ -37,6 +37,15 @@ fvars (simpl (x →' y)) = fvars x List.++ fvars y
 fvars (a ⇒ b) = fvars a List.++ fvars b
 fvars (∀' a) = List.gfilter (λ{ (Fin.zero) → nothing; (suc n) → just n}) (fvars a)
 
+occ : ∀ {ν} → ℕ → Type ν → ℕ
+occ α (simpl (tc x)) = 0
+occ α (simpl (tvar n)) with α N≟ (toℕ n)
+occ α (simpl (tvar n)) | yes p = 1
+occ α (simpl (tvar n)) | no ¬p = 0
+occ α (simpl (a →' b)) = occ α a N+ occ α b
+occ α (a ⇒ b) = occ α a N+ occ α b
+occ α (∀' b) = occ α b
+
 module Functions where
 
   -- proposition that states that the given polytype
@@ -44,7 +53,8 @@ module Functions where
   data IsFunction {ν : ℕ} : Type ν → Set where
     lambda : (a b : Type ν) → IsFunction (simpl $ a →' b)
     ∀'-lambda : ∀ {f} → IsFunction f → IsFunction (∀' f)
--- decision procedure for IsFunction
+
+  -- decision procedure for IsFunction
   is-function : ∀ {ν} → (a : Type ν) → Dec (IsFunction a)
   is-function (simpl (tc _)) = no (λ ())
   is-function (simpl (tvar n)) = no (λ ())

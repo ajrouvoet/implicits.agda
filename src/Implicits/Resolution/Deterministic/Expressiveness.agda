@@ -22,3 +22,10 @@ module Deterministic⊆Ambiguous where
       lem (i-tabs b ih) hyp = lem ih (r-tapp b hyp)
   soundness (r-iabs _ ih) = r-iabs (soundness ih)
   soundness (r-tabs ih) = r-tabs (soundness ih)
+
+
+  soundness' : ∀ {ν} {Δ : ICtx ν} {r} → Δ D.⊢ᵣ r → Δ A.⊢ᵣ r
+  soundness' (r-simp x x₁) = {!!}
+  soundness' (r-iabs ρ₁ x) = {!!}
+  soundness' (r-tabs x) = {!!}
+  

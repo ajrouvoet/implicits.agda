@@ -21,6 +21,7 @@ module OliveiraDeterministic⊆Infinite where
   p (r-iabs ρ₁ x) = r-iabs (p x)
   p (r-tabs x) = r-tabs (p x)
 
+module Infinite>Deterministic where
   -- proof that polymorphic id derives every type
   -- this corresponds to the non-terminating expression:
   --   x : ∀ {a : Set} → a
