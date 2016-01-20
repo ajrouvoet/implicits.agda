@@ -4,17 +4,20 @@ module Implicits.Resolution.Infinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) 
 
 open import Coinduction
 open import Data.Fin.Substitution
+open import Data.Maybe as Maybe using ()
 open import Data.List.Any
 open Membership-≡
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
 open import Implicits.Substitutions.Lemmas TC _tc≟_
 open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
+open Inductive
 open import Implicits.Syntax.Type.Unification TC _tc≟_
 
 open import Category.Monad
 open import Category.Functor
 open import Category.Monad.Partiality as P
+open import Category.Monad.Partiality.All
 
 open import Data.Maybe using (monad; functor)
 private module MaybeF {f} = RawFunctor (functor {f})
@@ -42,10 +45,6 @@ module M = MetaTypeMetaSubst
 module Lemmas where
   postulate lem₄ : ∀ {m ν} (a : MetaType m (suc ν)) u us → from-meta ((M.open-meta a) M./ (us M.↑) M./ (M.sub u)) ≡ (from-meta (a M./ (us M.↑tp))) tp[/tp from-meta u ]
 
--- helpful shortcut for when we need partiality- & failure-monad-like behaviour on bind
-_?>>=_ : ∀ {A B : Set} → A ?⊥P → (f : A → B ?⊥P) → B ?⊥P
-x ?>>= f = x >>= (λ{ (just y) → f y ; nothing → now nothing })
-
 mutual
   private
     ResM' : ∀ {m ν} → (ICtx ν) → MetaType m ν → SimpleType ν → Set₁
@@ -60,12 +59,12 @@ mutual
     -- If this is the case, we use the unifier to instantiate the unification vars in a and
     -- recursively try to resolve the result.
     -- If that succeeds as well, we use i-iabs to return a result
-    match' Δ τ (a ⇒ b) = later (♯ (match' Δ τ b >>= lem))
+    match' Δ τ (a ⇒ b) = (match' Δ τ b >>= lem)
       where
         lem : Maybe (∃ λ u → Δ ⊢ (from-meta (b M./ u)) ↓ τ) → ResM' Δ (a ⇒ b) τ
         lem (just (u , b/u↓τ)) =
-          resolve' Δ (from-meta (a M./ u)) >>=
-            (λ{ (just Δ⊢ᵣa) → now (just (u , (i-iabs (♯ Δ⊢ᵣa) b/u↓τ))) ; nothing → now nothing })
+          later (♯ (resolve' Δ (from-meta (a M./ u)))) >>=
+            (λ{ (just Δ⊢ᵣa) → now (just (u , (i-iabs Δ⊢ᵣa) b/u↓τ)) ; nothing → now nothing })
         lem nothing = now nothing
 
     -- On type vars we simply open it up, adding the tvar to the set of unification variables.
@@ -143,3 +142,12 @@ mutual
 
   _resolves_after_steps : ∀ {ν} (Δ : ICtx ν) (r : Type ν) → ℕ → Bool
   Δ resolves r after n steps = (run_for_steps (resolve Δ r) n) resolved?
+
+  -- soundness of the partial algorithm means:
+  -- for all terminating runs of the algorithm, we have a resolution derivation
+  soundness : ∀ {ν} (Δ : ICtx ν) r → (p : (Maybe (Δ ⊢ᵣ r)) ⊥) → All (Maybe.All (λ _ → Δ ⊢ᵣ r)) p
+  soundness Δ r (now (just x)) = now (just x)
+  soundness Δ r (now nothing) = now nothing
+  soundness Δ r (later x) = later (♯ (soundness Δ r (♭ x)))
+
+  postulate completeness : ∀ {ν} {Δ : ICtx ν} {r} → Δ ⊢ᵣ r → All (Maybe.Any (λ _ → Δ ⊢ᵣ r)) (resolve Δ r)
