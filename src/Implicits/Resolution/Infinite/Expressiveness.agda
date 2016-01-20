@@ -7,17 +7,21 @@ open import Data.Fin.Substitution
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
 open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
-open import Implicits.Resolution.Infinite.Resolution TC _tc≟_ as I
+open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
+module I = Coinductive
+open import Extensions.ListFirst
 
 module OliveiraDeterministic⊆Infinite where
 
+  open I
+
   p : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ D.⊢ᵣ a → Δ I.⊢ᵣ a
-  p (r-simp x r↓a) = r-simp (proj₁ $ FirstLemmas.first⟶∈ x) (lem r↓a)
+  p (r-simp x r↓a) = r-simp (proj₁ $ first⟶∈ x) (lem r↓a)
     where
-        lem : ∀ {ν} {Δ : ICtx ν} {r a} → Δ D.⊢ r ↓ a → Δ I.⊢ r ↓ a
-        lem (i-simp a) = i-simp a
-        lem (i-iabs x₁ x₂) = i-iabs (♯ (p x₁)) (lem x₂)
-        lem (i-tabs b x₁) = i-tabs b (lem x₁)
+      lem : ∀ {ν} {Δ : ICtx ν} {r a} → Δ D.⊢ r ↓ a → Δ I.⊢ r ↓ a
+      lem (i-simp a) = i-simp a
+      lem (i-iabs x₁ x₂) = i-iabs (♯ (p x₁)) (lem x₂)
+      lem (i-tabs b x₁) = i-tabs b (lem x₁)
   p (r-iabs ρ₁ x) = r-iabs (p x)
   p (r-tabs x) = r-tabs (p x)
 
@@ -27,6 +31,8 @@ module Infinite>Deterministic where
   --   x : ∀ {a : Set} → a
   --   x = x
 
+  open I
+
   tid : ∀ {n} → Type n
   tid = (∀' (simpl (tvar zero) ⇒ simpl (tvar zero)))
 
@@ -35,7 +41,7 @@ module Infinite>Deterministic where
 
   [tid]⊢a : ∀ {ν} {a : Type ν} → (tid List.∷ List.[]) I.⊢ᵣ a
   [tid]⊢a {a = simpl x} = r-simp (here refl) tid↓a
-  [tid]⊢a {a = a ⇒ b} = r-iabs (⊆-Δ⊢a [tid]⊢a sub)
+  [tid]⊢a {a = a ⇒ b} = r-iabs (I.⊆-Δ⊢a [tid]⊢a sub)
     where
       sub : ∀ {a x} → a List.∈ (tid List.∷ List.[]) → a List.∈ (x List.∷ tid List.∷ List.[])
       sub (here px) = there (here px)
