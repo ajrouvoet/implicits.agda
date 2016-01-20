@@ -7,6 +7,7 @@ open import Implicits.Syntax TC _tc≟_
 open import Implicits.Syntax.Type.Unification TC _tc≟_
 open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
 open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
+open import Extensions.ListFirst
 
 module Deterministic⊆Ambiguous where
   open FirstLemmas
@@ -15,17 +16,9 @@ module Deterministic⊆Ambiguous where
   soundness : ∀ {ν} {Δ : ICtx ν} {r} → Δ D.⊢ᵣ r → Δ A.⊢ᵣ r
   soundness (r-simp r x) = lem x (r-ivar (proj₁ $ first⟶∈ r))
     where
-      lem : ∀ {ν} {a τ} {Δ : ICtx ν} →
-            Δ ⊢ a ↓ τ → Δ A.⊢ᵣ a → Δ A.⊢ᵣ simpl τ
+      lem : ∀ {ν} {a τ} {Δ : ICtx ν} → Δ ⊢ a ↓ τ → Δ A.⊢ᵣ a → Δ A.⊢ᵣ simpl τ
       lem (i-simp τ) hyp = hyp
       lem (i-iabs ih₁ ih₂) hyp = lem ih₂ (r-iapp hyp (soundness ih₁))
       lem (i-tabs b ih) hyp = lem ih (r-tapp b hyp)
   soundness (r-iabs _ ih) = r-iabs (soundness ih)
   soundness (r-tabs ih) = r-tabs (soundness ih)
-
-
-  soundness' : ∀ {ν} {Δ : ICtx ν} {r} → Δ D.⊢ᵣ r → Δ A.⊢ᵣ r
-  soundness' (r-simp x x₁) = {!!}
-  soundness' (r-iabs ρ₁ x) = {!!}
-  soundness' (r-tabs x) = {!!}
-  
