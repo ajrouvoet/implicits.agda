@@ -12,7 +12,7 @@ open Membership-≡
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
 open import Implicits.Substitutions.Lemmas.MetaType TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Syntax.Type.Unification TC _tc≟_ as Unification hiding (complete)
 open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
 open import Implicits.Resolution.Infinite.Algorithm TC _tc≟_
 open import Data.Fin.Substitution
@@ -46,6 +46,11 @@ module Lemmas where
       ≡⟨ Prelude.sym (cong from-meta (MetaTypeMetaLemmas.id-vanishes (to-meta {zero} a))) ⟩
     from-meta (MetaTypeMetaSubst._/_ (to-meta {zero} a) MetaTypeMetaSubst.id) ∎) x
 
+  lem : ∀ {ν m} {Δ : ICtx ν} x u {τ} →
+        Δ ⊢ (from-meta ((simpl {m = m} x) MetaTypeMetaSubst./ u)) ↓ τ →
+        (from-meta ((simpl x) MetaTypeMetaSubst./ u)) ≡ simpl τ
+  lem p = {!!}
+
 private
   open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
   open module PartialEq = P.Equality  {A = Bool} _≡_
@@ -54,14 +59,17 @@ private
 match-u-complete : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) →
                    (∃ λ u → Δ ⊢ from-meta (r MetaTypeMetaSubst./ u) ↓ τ) →
                    AllP (Maybe.Any (const ⊤)) (match-u Δ τ r)
-match-u-complete Δ τ r p = {!!}
+match-u-complete Δ τ (a ⇒ b) p = {!!}
+match-u-complete Δ τ (∀' r) p = {!!}
+match-u-complete Δ τ (simpl x) (u , x/u↓τ) with mgu (simpl x) τ |
+                                                Unification.complete (simpl x) τ (Lemmas.lem x u x/u↓τ)
+match-u-complete Δ τ (simpl x) (u , x/u↓τ) | just x₁ | just _ = now (just tt)
+match-u-complete Δ τ (simpl x) (u , x/u↓τ) | nothing | ()
 
--- For all terminating runs of match-u, ⊤ holds ofcourse.
--- Useful if we don't care about the returned value and have no knowledge about
--- what's going to be returned.
-match-u-all : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) →
-              AllP (Maybe.All (const ⊤)) (match-u Δ τ r)
-match-u-all Δ τ r = {!!}
+-- the trivial predicate holds for all terminating problems
+trivial-allP : ∀ {a} {A : Set a} (a : A ⊥) → AllP (const ⊤) a
+trivial-allP (now x) = now tt
+trivial-allP (later x) = later (♯ (trivial-allP (♭ x)))
 
 -- Match succeeds if we have a proof Δ ⊢ r ↓ τ
 match-complete : ∀ {ν} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : Type ν) → Δ ⊢ r ↓ τ →
@@ -73,12 +81,6 @@ match-complete Δ τ r p = _
     lem : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) zero zero)} →
                      (Maybe.Any (const ⊤) v) → AllP (_≡_ true) (⟦ (now ∘ Maybe.is-just) v ⟧P)
     lem  (just tt) = now refl
-
--- ... unit holds for all terminating runs of match.
--- Useful if we don't care about what match returns
-match-all : ∀ {ν} (Δ : ICtx ν) (τ : SimpleType ν) (r : Type ν) → AllP (λ v → ⊤) (match Δ τ r)
-match-all Δ τ r = _
-  ≅⟨ match-comp Δ τ r ⟩P match-u-all Δ τ (to-meta {zero} r) >>=-congP (λ x → now tt)
 
 -- 'recovery' of a non failed match succeeds
 recover-true-complete : ∀ {ν} {Δ : ICtx ν} {ρs τ v} → v ≡ true →
@@ -105,7 +107,7 @@ match1st-complete Δ (x List.∷ ρs) τ (here refl) r↓τ =
 match1st-complete Δ (x List.∷ ρs) τ (there r∈Δ) r↓τ =
   _
     ≅⟨ match1st-comp Δ x ρs τ ⟩P
-  (match-all Δ τ x >>=-congP
+  ((trivial-allP (match Δ τ x)) >>=-congP
     (λ {v} _ → recover-false-complete Δ ρs τ v (match1st-complete Δ ρs τ r∈Δ r↓τ)))
 
 -- Mirroring Abel & Altenkirch's work on partial type checking, we say:

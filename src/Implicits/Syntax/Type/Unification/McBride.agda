@@ -7,9 +7,10 @@ open import Implicits.Syntax.MetaType TC _tc≟_
 open import Data.Vec.Properties
 open import Data.Nat as N using ()
 open import Data.Nat.Properties.Simple
+
 open import Category.Monad
 
-open import Data.Maybe using (monad; functor)
+open import Data.Maybe as Maybe using (monad; functor)
 open import Level using () renaming (zero to level₀)
 open RawMonad {level₀} monad using (_>>=_; return)
 open import Category.Functor
