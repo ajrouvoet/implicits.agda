@@ -61,8 +61,7 @@ module Inductive where
   open import Data.List.Any
   open Membership-≡
 
-  mutual
-    -- extending contexts is safe: it preserves the r ↓ a relation
+  mutual -- extending contexts is safe: it preserves the r ↓ a relation
     -- (this is not true for Oliveira's deterministic calculus)
     ⊆-r↓a : ∀ {ν} {Δ Δ' : ICtx ν} {a r} → Δ ⊢ r ↓ a → Δ ⊆ Δ' → Δ' ⊢ r ↓ a
     ⊆-r↓a (i-simp a) _ = i-simp a
@@ -78,3 +77,5 @@ module Inductive where
     ⊆-Δ⊢a (r-tabs x) f = r-tabs (⊆-Δ⊢a x f')
       where
         f' = map-mono (flip TypeSubst._/_ TypeSubst.wk) f
+
+open Inductive public
