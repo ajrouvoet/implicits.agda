@@ -7,7 +7,7 @@ open import Data.Unit.Base
 open import Data.Maybe as Maybe using ()
 open import Coinduction
 open import Data.Fin.Substitution
-open import Data.List.Any
+open import Data.List.Any hiding (tail)
 open Membership-≡
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
@@ -16,55 +16,106 @@ open import Implicits.Syntax.Type.Unification TC _tc≟_ as Unification hiding (
 open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
 open import Implicits.Resolution.Infinite.Algorithm TC _tc≟_
 open import Data.Fin.Substitution
-open Inductive
+open import Relation.Binary.HeterogeneousEquality as H using ()
+module HR = H.≅-Reasoning
 
 open import Category.Monad.Partiality as P
 open Workaround
 open import Category.Monad.Partiality.All using (All; module Alternative)
 open Alternative renaming (sound to AllP-sound) hiding (complete)
 
+open import Category.Functor
+private module MaybeFunctor {f} = RawFunctor (Maybe.functor {f})
+
 module Lemmas where
 
-  from-to-meta-id : ∀ {ν} {a : Type ν} {s} → from-meta (to-meta {zero} a MetaTypeMetaSubst./ s) ≡ a
-  from-to-meta-id {a = a} {s = []} = begin
-    from-meta (MetaTypeMetaSubst._/_ (to-meta {zero} a) [])
-      ≡⟨ cong (λ q → from-meta q) (MetaTypeMetaLemmas.id-vanishes (to-meta {zero} a)) ⟩
-    from-meta (to-meta {zero} a)
-      ≡⟨ to-meta-zero-vanishes ⟩
-    a ∎
-
+  {-}
   from-to-meta-↓τ : ∀ {ν} {Δ : ICtx ν} {a τ} →
-                    ∃ (λ u → Δ ⊢ from-meta (to-meta {zero} a MetaTypeMetaSubst./ u) ↓ τ) → Δ ⊢ a ↓ τ
-  from-to-meta-↓τ {Δ = Δ} {τ = τ} ([] , proj₂) = subst (λ u → Δ ⊢ u ↓ τ) from-to-meta-id proj₂
+                    ∃ (λ u → Δ ⊢ from-meta (to-meta {zero} a MetaTypeMetaSubst./ u) ↓ τ) →
+                    Δ ⊢ a ↓ τ
+  from-to-meta-↓τ {Δ = Δ} {τ = τ} ([] , proj₂) =
+    subst (λ u → Δ ⊢ u ↓ τ) from-to-meta-/-vanishes proj₂
 
   from-to-meta-↓τ' : ∀ {ν} {Δ : ICtx ν} {a τ} →
                      Δ ⊢ a ↓ τ → ∃ (λ u → Δ ⊢ from-meta (to-meta {zero} a MetaTypeMetaSubst./ u) ↓ τ)
-  from-to-meta-↓τ' {Δ = Δ} {a} {τ} x = MetaTypeMetaSubst.id , subst (λ u → Δ ⊢ u ↓ τ) (begin
-    a
-      ≡⟨ Prelude.sym to-meta-zero-vanishes ⟩
-    from-meta (to-meta {zero} a)
-      ≡⟨ Prelude.sym (cong from-meta (MetaTypeMetaLemmas.id-vanishes (to-meta {zero} a))) ⟩
-    from-meta (MetaTypeMetaSubst._/_ (to-meta {zero} a) MetaTypeMetaSubst.id) ∎) x
+  from-to-meta-↓τ' {Δ = Δ} {a} {τ} x =
+    MetaTypeMetaSubst.id , subst (λ u → Δ ⊢ u ↓ τ) (Prelude.sym from-to-meta-/-vanishes) x
+  -}
 
-  lem : ∀ {ν m} {Δ : ICtx ν} x u {τ} →
-        Δ ⊢ (from-meta ((simpl {m = m} x) MetaTypeMetaSubst./ u)) ↓ τ →
-        (from-meta ((simpl x) MetaTypeMetaSubst./ u)) ≡ simpl τ
-  lem p = {!!}
+  _◁m : ∀ {ν m} (r : MetaType m ν) → ∃ (flip MetaType ν)
+  _◁m {m} (simpl x) = , simpl x
+  (a ⇒ b) ◁m = b ◁m
+  ∀' r ◁m = , open-meta (proj₂ (r ◁m))
+
+  ◁-Unifiable : ∀ {m ν} → MetaType m ν → SimpleType ν → Set
+  ◁-Unifiable x τ = Unifiable (proj₂ (x ◁m)) τ
+
+  unifiable-subst : ∀ {m m' ν} {a : MetaType m ν} {a' : MetaType m' ν} {τ} → (m-eq : m ≡ m') →
+                    a H.≅ a' → Unifiable a τ → Unifiable a' τ
+  unifiable-subst refl H.refl p = p
+
+  open-meta-◁m : ∀ {ν m} (a : MetaType m (suc ν)) →
+                 (proj₂ ((open-meta a) ◁m)) H.≅ open-meta (proj₂ (a ◁m))
+  open-meta-◁m (a ⇒ b) = open-meta-◁m b
+  open-meta-◁m (∀' a) = {!!}
+    where open MetaTypeMetaSubst hiding (open-meta)
+  open-meta-◁m (simpl (tvar zero)) = H.refl
+  open-meta-◁m (simpl (tvar (suc x))) =
+    H.cong (λ u → proj₂ (zero , u)) (H.≡-to-≅ (MetaTypeTypeLemmas.lookup-sub-↑⋆ zero x))
+  open-meta-◁m (simpl (mvar x)) = H.refl
+  open-meta-◁m (simpl (a →' b)) = H.refl
+  open-meta-◁m (simpl (tc c)) = H.refl
+
+  open-meta-◁m-m : ∀ {ν m} (a : MetaType m (suc ν)) →
+                 (proj₁ ((open-meta a) ◁m)) ≡ suc (proj₁ (a ◁m))
+  open-meta-◁m-m a = {!!}
+
+  ↓-◁-unifiable : ∀ {ν} {Δ : ICtx ν} {r τ} → Δ ⊢ r ↓ τ → ◁-Unifiable (to-meta {zero} r) τ
+  ↓-◁-unifiable (i-simp τ) = mgu-id τ
+  ↓-◁-unifiable (i-iabs x p) = ↓-◁-unifiable p 
+  ↓-◁-unifiable (i-tabs {ρ = a} b p) = lem₂ a b (↓-◁-unifiable p)
+    where
+      -- lem₁: because a tp[/tp b] ≡ (open-meta a M./ M.sub b)
+      -- so let's define u ≔ the unifier of a tp[/tp b] and τ
+      -- then (to-meta b) ∷ u is a unifier for a and τ
+      postulate lem₁ : ∀ {ν} (a : Type (suc ν)) b {τ} →
+                        ◁-Unifiable (to-meta {zero} (a tp[/tp b ])) τ →
+                        ◁-Unifiable (open-meta (to-meta {zero} a)) τ
+
+      -- goal:
+      --   Unifiable (proj₂ ((to-meta {zero} (∀' a)) ◁m)) τ ≡⟨ ? ⟩
+      --   Unifiable (proj₂ ((∀' (to-meta {zero} a)) ◁m)) τ ≡⟨ ? ⟩
+      --   Unifiable (proj₂ (, open-meta (proj₂ ((to-meta a) ◁m)))) τ ≡⟨ ? ⟩
+      --   Unifiable (proj₂ ((open-meta (to-meta {zero} a)) ◁m)) τ
+      -- completing the proof with (lem₁ a b p)
+      postulate lem₂ : ∀ {ν} (a : Type (suc ν)) b {τ} →
+                       ◁-Unifiable (to-meta {zero} (a tp[/tp b ])) τ →
+                       ◁-Unifiable (to-meta {zero} (∀' a)) τ
 
 private
   open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
   open module PartialEq = P.Equality  {A = Bool} _≡_
   open module PartialReasoning  = P.Reasoning (PEq.isEquivalence {A = Bool})
+  open Lemmas
 
-match-u-complete : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) →
-                   (∃ λ u → Δ ⊢ from-meta (r MetaTypeMetaSubst./ u) ↓ τ) →
+match-u-complete : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) → ◁-Unifiable r τ →
                    AllP (Maybe.Any (const ⊤)) (match-u Δ τ r)
 match-u-complete Δ τ (a ⇒ b) p = {!!}
-match-u-complete Δ τ (∀' r) p = {!!}
-match-u-complete Δ τ (simpl x) (u , x/u↓τ) with mgu (simpl x) τ |
-                                                Unification.complete (simpl x) τ (Lemmas.lem x u x/u↓τ)
-match-u-complete Δ τ (simpl x) (u , x/u↓τ) | just x₁ | just _ = now (just tt)
-match-u-complete Δ τ (simpl x) (u , x/u↓τ) | nothing | ()
+match-u-complete {m = m} Δ τ (∀' r) u =
+  _
+    ≅⟨ match-u-tabs-comp Δ τ r ⟩P
+  later (♯ match-u-complete Δ τ (open-meta r) u') >>=-congP lem 
+  where
+    lem : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) (suc m) zero)} →
+          Maybe.Any (const ⊤) v → AllP (Maybe.Any (const ⊤)) ((now ∘ (MaybeFunctor._<$>_ tail)) v)
+    lem (just px) = now (just tt)
+
+    u' : Unifiable (proj₂ ((open-meta r) ◁m)) τ
+    u' = unifiable-subst (Prelude.sym (open-meta-◁m-m r)) (H.sym (open-meta-◁m r)) u
+match-u-complete Δ τ (simpl x) u
+  with mgu (simpl x) τ | Unification.complete (simpl x) τ (proj₂ u)
+match-u-complete Δ τ (simpl x) _ | just _  | just _ = now (just tt)
+match-u-complete Δ τ (simpl x) _ | nothing | ()
 
 -- the trivial predicate holds for all terminating problems
 trivial-allP : ∀ {a} {A : Set a} (a : A ⊥) → AllP (const ⊤) a
@@ -76,10 +127,10 @@ match-complete : ∀ {ν} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : Type 
                  AllP (_≡_ true) (match Δ τ r)
 match-complete Δ τ r p = _
     ≅⟨ match-comp Δ τ r ⟩P
-  match-u-complete Δ τ (to-meta {zero} r) (Lemmas.from-to-meta-↓τ' p) >>=-congP lem
+  match-u-complete Δ τ (to-meta {zero} r) (↓-◁-unifiable p) >>=-congP lem
   where
     lem : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) zero zero)} →
-                     (Maybe.Any (const ⊤) v) → AllP (_≡_ true) (⟦ (now ∘ Maybe.is-just) v ⟧P)
+          (Maybe.Any (const ⊤) v) → AllP (_≡_ true) (⟦ (now ∘ Maybe.is-just) v ⟧P)
     lem  (just tt) = now refl
 
 -- 'recovery' of a non failed match succeeds

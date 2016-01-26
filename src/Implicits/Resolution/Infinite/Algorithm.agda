@@ -4,19 +4,21 @@ module Implicits.Resolution.Infinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) 
 
 open import Data.Bool
 open import Data.Unit.Base
-open import Data.Maybe using (is-just)
+open import Data.Maybe using (is-just; functor)
 open import Coinduction
 open import Data.Fin.Substitution
-open import Data.List.Any
+open import Data.List.Any hiding (tail)
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
 open import Implicits.Substitutions.Lemmas TC _tc≟_
 open import Implicits.Syntax.Type.Unification TC _tc≟_
 
 open import Category.Monad
+open import Category.Functor
 open import Category.Monad.Partiality as P
 open import Category.Monad.Partiality.All
 private module M {f} = RawMonad (monad {f})
+private module MaybeFunctor {f} = RawFunctor (functor {f})
 
 module _ where
   open P.Workaround
@@ -42,13 +44,10 @@ module _ where
     -- If that succeeds as well, we use i-iabs to return a result
     match-u' {ν} {m} Δ τ (a ⇒ b) = (match-u' Δ τ b) >>= (resolve-context' Δ a)
 
-  -- On type vars we simply open it up, adding the tvar to the set of unification variables.
+    -- On type vars we simply open it up, adding the tvar to the set of unification variables.
     -- and recursively try to match.
     -- If matching succeeds, we can use i-tabs to return a result
-    match-u' Δ τ (∀' a) = (later (♯ (match-u' Δ τ (open-meta a)))) >>= (λ{
-        (just (u ∷ us)) → now (just us);
-        nothing → now nothing
-      })
+    match-u' Δ τ (∀' a) = (later (♯ (match-u' Δ τ (open-meta a)))) >>= (now ∘ (MaybeFunctor._<$>_ tail))
 
     -- The only thing left to do is to try and unify τ and x.
     -- If we succeed, we use  i-simpl to return a result.
@@ -76,10 +75,10 @@ module _ where
   open P.Workaround.Correct
   open M
 
-  private
-    open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
-    open module Eq = P.Equality  {A = Bool} _≡_
-    open module R  = P.Reasoning (PEq.isEquivalence {A = Bool})
+  module Eq {l} {A : Set l} where
+    open import Relation.Binary.PropositionalEquality as PEq using (_≡_) public
+    open module Eq = P.Equality  {A = A} _≡_ public
+    open module R  = P.Reasoning (PEq.isEquivalence {A = A}) public
 
   resolve-context : ∀ {ν m} (Δ : ICtx ν) a → (Maybe (Sub (flip MetaType ν) m zero)) →
                       (Maybe (Sub (flip MetaType ν) m zero)) ⊥
@@ -105,16 +104,27 @@ module _ where
   -- compositionality of resolution functions
   --
 
-  match-comp : ∀ {ν} (Δ : ICtx ν) τ r →
-               match Δ τ r ≅ ((match-u Δ τ (to-meta {zero} r)) >>= (now ∘ is-just))
-  match-comp Δ τ r = match Δ τ r
-    ≅⟨ >>=-hom (match-u' Δ τ (to-meta {zero} r)) _ ⟩ _>>=_
-      (match-u Δ τ (to-meta {zero} r)) (now ∘ is-just) ∎
+  postulate match-u-tabs-comp : ∀ {m ν} (Δ : ICtx ν) τ (r : MetaType m (suc ν)) →
+                                  (match-u Δ τ (∀' r))
+                                    Eq.≅
+                                  ((later (♯ (match-u Δ τ (open-meta r)))) >>= (now ∘ (MaybeFunctor._<$>_ tail)))
+  {-}
+  match-u-tabs-comp Δ τ r =
+    match-u Δ τ (∀' r)
+      Eq.≅⟨ ? ⟩
+    ((later (♯ (match-u Δ τ (open-meta r)))) >>= (now ∘ (MaybeFunctor._<$>_ tail))) Eq.∎
+  -}
 
-  match1st-comp : ∀ {ν} (Δ : ICtx ν) x ρs τ → match1st Δ (x List.∷ ρs) τ ≅ ((match Δ τ x) >>=
+  match-comp : ∀ {ν} (Δ : ICtx ν) τ r →
+               match Δ τ r Eq.≅ ((match-u Δ τ (to-meta {zero} r)) >>= (now ∘ is-just))
+  match-comp Δ τ r = match Δ τ r
+    Eq.≅⟨ >>=-hom (match-u' Δ τ (to-meta {zero} r)) _ ⟩ _>>=_
+      (match-u Δ τ (to-meta {zero} r)) (now ∘ is-just) Eq.∎
+
+  match1st-comp : ∀ {ν} (Δ : ICtx ν) x ρs τ → match1st Δ (x List.∷ ρs) τ Eq.≅ ((match Δ τ x) >>=
                     (match1st-recover Δ ρs τ))
   match1st-comp Δ x ρs τ =
     match1st Δ (x List.∷ ρs) τ
-      ≅⟨ >>=-hom (match' Δ τ x) _ ⟩
-    ((match Δ τ x) >>= (match1st-recover Δ ρs τ)) ∎
+      Eq.≅⟨ >>=-hom (match' Δ τ x) _ ⟩
+    ((match Δ τ x) >>= (match1st-recover Δ ρs τ)) Eq.∎
 

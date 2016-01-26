@@ -38,7 +38,7 @@ module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
     ⊢substTp refl hyp = hyp 
   
   module WtTermLemmas where
-    postulate weaken : ∀ {ν n} {K : Ktx ν n} {t : Term ν n} {a b : Type ν} →
+    weaken : ∀ {ν n} {K : Ktx ν n} {t : Term ν n} {a b : Type ν} →
                        K ⊢ t ∈ a → b ∷Γ K ⊢ tmtm-weaken t ∈ a
     -- weaken {Γ = Γ} {b = b} ⊢t = Var.wk /Var ⊢substCtx (C.wkVar-/Var-∷ Γ b) ⊢t
   
@@ -165,7 +165,7 @@ module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
     var x             / σ = ⊢substTp (lookup-⊙ x) (var x)
     _/_ {Γ = Γ} (Λ ⊢t)  σ = Λ (⊢substCtx eq (⊢t / σ ↑))
       where
-        postulate eq : (ktx-weaken Γ) ktx/ (σ Tp.↑) ≡ ktx-weaken (Γ ktx/ σ)
+        eq : (ktx-weaken Γ) ktx/ (σ Tp.↑) ≡ ktx-weaken (Γ ktx/ σ)
     {-
         eq = begin 
           (ktx-map (λ s → s tp/tp Tp.wk) Γ) ktx/ (σ Tp.↑) 

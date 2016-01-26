@@ -31,17 +31,20 @@ mgu a b | just (zero , u) = just (asub u)
 mgu a b | just (suc m , _) = nothing
 mgu a b | nothing = nothing
 
-Unifiable : ∀ {m ν} → (MetaType m ν) → SimpleType ν → (Sub (flip MetaType ν) m zero) → Set
-Unifiable {m} a b u = from-meta (a M./ u) ≡ (simpl b)
+Unifier : ∀ {m ν} → (MetaType m ν) → SimpleType ν → (Sub (flip MetaType ν) m zero) → Set
+Unifier {m} a b u = from-meta (a M./ u) ≡ (simpl b)
+
+Unifiable : ∀ {m ν} → (MetaType m ν) → SimpleType ν → Set
+Unifiable a τ = ∃ (Unifier a τ)
 
 -- the following properties of mgu are assumed to hold here but have been proven by
 -- Conor McBride (and verified using the LEGO dependently typed language)
 
 postulate sound : ∀ {m ν} (a : MetaType m ν) (b : SimpleType ν) →
-                      Maybe.All (Unifiable a b) (mgu a b)
+                      Maybe.All (Unifier a b) (mgu a b)
 
 postulate complete : ∀ {m ν} (a : MetaType m ν) (b : SimpleType ν) {u} →
-                         Unifiable a b u →
+                         Unifier a b u →
                          Maybe.Any (const ⊤) (mgu a b)
 
 meta-weaken = M.weaken
@@ -56,4 +59,17 @@ to-meta-zero-vanishes {a = simpl (a →' b)} =
 to-meta-zero-vanishes {a = a ⇒ b} = cong₂ _⇒_ to-meta-zero-vanishes to-meta-zero-vanishes
 to-meta-zero-vanishes {a = ∀' a} = cong ∀' to-meta-zero-vanishes
 
-postulate mgu-id : ∀ {ν} → (a : SimpleType ν) → ∃ (Unifiable {m = zero} (simpl (to-smeta a)) a)
+from-to-meta-/-vanishes : ∀ {ν} {a : Type ν} {s} →
+                          from-meta (to-meta {zero} a MetaTypeMetaSubst./ s) ≡ a
+from-to-meta-/-vanishes {a = a} {s = []} = begin 
+  from-meta (MetaTypeMetaSubst._/_ (to-meta {zero} a) [])
+    ≡⟨ cong (λ q → from-meta q) (MetaTypeMetaLemmas.id-vanishes (to-meta {zero} a)) ⟩
+  from-meta (to-meta {zero} a)
+    ≡⟨ to-meta-zero-vanishes ⟩
+  a ∎
+
+mgu-id : ∀ {ν} → (a : SimpleType ν) → Unifiable {m = zero} (simpl (to-smeta a)) a
+mgu-id a = [] , (begin
+  from-meta (MetaTypeMetaSubst._/_ (simpl (to-smeta a)) [])
+    ≡⟨ from-to-meta-/-vanishes ⟩
+  simpl a ∎)
