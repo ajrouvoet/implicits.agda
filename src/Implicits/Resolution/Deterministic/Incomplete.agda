@@ -15,6 +15,7 @@ tc-bool tc≟ tc-bool = yes refl
 open import Implicits.Syntax TC _tc≟_
 open import Implicits.WellTyped TC _tc≟_
 open import Implicits.Substitutions TC _tc≟_
+open import Extensions.ListFirst
 
 Bool : Type 0
 Bool = simpl $ tc tc-bool
@@ -28,45 +29,28 @@ Int = simpl $ tc tc-int
 -- proof that determinstic resolution is sound w.r.t. ambiguous resolution, we have the
 -- result that deterministic resolution is incomplete (or ambiguous resolution is strictly stronger)
 
-module Example₁ where
-  Δ : ICtx 0
-  Δ = (Int ⇒ Bool) List.∷ Bool List.∷ List.[]
+Δ : ICtx 0
+Δ = (Int ⇒ Bool) List.∷ Bool List.∷ List.[]
 
-  module Deterministic where
-    open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_
-    open TypingRules _⊢ᵣ_
-  
-    -- proof that Bool is not derivable under the deterministic resolution rules
-    p : ¬ (Δ ⊢ᵣ Bool)
-    p (r-simp fst fst↓bool) with FirstLemmas.first-unique (l-head (m-iabs m-simp) (Bool List.∷ List.[])) fst
-    p (r-simp fst (i-iabs (r-simp r _) b)) | refl = ¬r◁Int (, r)
-      where
-        ¬r◁Int : ¬ (∃ λ r → Δ ⟨ tc tc-int ⟩= r)
-        ¬r◁Int (._ , l-head (m-iabs ()) ._)
-        ¬r◁Int (._ , l-tail _ (l-head () .List.[]))
-        ¬r◁Int ( _ , l-tail _ (l-tail _ ()))
-  
-  module Ambiguous where
-    open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_
-    open TypingRules _⊢ᵣ_
-  
-    -- proof that Bool is derivable under the "Ambiguous" resolution rules
-    p : Δ ⊢ᵣ Bool
-    p = r-ivar (there (here refl))
-  
-  -- just showing that the improved rules CAN derive Bool here
-  {-}
-  module Improved where
-    open import Implicits.Improved.Ambiguous.Resolution TC _tc≟_
-    open SyntaxDirected
-    open TypingRules _⊢ᵣ_
-    open import Extensions.ListFirst
-  
-    ¬r₁ : ¬ Δ ⊢ (Int ⇒ Bool) ↓ tc tc-bool
-    ¬r₁ (i-iabs (r-simp (here (i-iabs x ()) ._)) _)
-    ¬r₁ (i-iabs (r-simp (there ._ _ (here () .List.[]))) _)
-    ¬r₁ (i-iabs (r-simp (there ._ _ (there ._ _ ()))) _)
-    
-    p : Δ ⊢ᵣ Bool
-    p = r-simp (there (Int ⇒ Bool) ¬r₁ (here (i-simp (tc tc-bool)) List.[]))
-  -}
+open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
+open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
+open import Extensions.ListFirst
+
+private
+  -- proof that Bool is not derivable under the deterministic resolution rules
+  deterministic-cant : ¬ (Δ D.⊢ᵣ Bool)
+  deterministic-cant (r-simp fst fst↓bool) with
+    FirstLemmas.first-unique (here (m-iabs m-simp) (Bool List.∷ List.[])) fst
+  deterministic-cant (r-simp fst (i-iabs (r-simp r _) b)) | refl = ¬r◁Int (, r)
+    where
+      ¬r◁Int : ¬ (∃ λ r → Δ ⟨ tc tc-int ⟩= r)
+      ¬r◁Int (._ , here (m-iabs ()) ._)
+      ¬r◁Int (._ , there _ _ (here () .List.[]))
+      ¬r◁Int ( _ , there _ _ (there _ _ ()))
+
+  -- proof that Bool is derivable under the "Ambiguous" resolution rules
+  ambiguous-can : Δ A.⊢ᵣ Bool
+  ambiguous-can = r-ivar (there (here refl)) 
+
+incomplete : ∃ λ ν → ∃₂ λ (Δ : ICtx ν) r → (Δ A.⊢ᵣ r) × (¬ Δ D.⊢ᵣ r)
+incomplete = , (Δ , (Bool , (ambiguous-can , deterministic-cant)))
