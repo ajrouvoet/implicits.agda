@@ -34,8 +34,7 @@ module DerivationSemantics where
                 ∃ λ tτ → ⟦ K ⟧ctx→ F.⊢ tτ ∈ ⟦ simpl τ ⟧tp→
       ⟦ ⊢ta , i-simp τ , m ⟧r↓ = , ⊢ta
       ⟦ ⊢ta , i-iabs {ρ₁ = a} ⊢ᵣa b↓τ , m ⟧r↓ =
-        , F.λ' ⟦ a ⟧tp→
-          (proj₂ ⟦ F.⊢weaken ⊢ta F.· F.var zero , b↓τ , #var a m ⟧r↓) F.· proj₂ ⟦ ⊢ᵣa , m ⟧r
+        , (proj₂ ⟦ ⊢ta F.· (proj₂ ⟦ ⊢ᵣa , m ⟧r) , b↓τ , m ⟧r↓)
       ⟦ ⊢ta , i-tabs {ρ = a} b p , m ⟧r↓ =
         ⟦ subst (λ u → _ F.⊢ _ ∈ u) (sym $ ⟦a/sub⟧tp→ a b) (⊢ta F.[ ⟦ b ⟧tp→ ]) , p , m ⟧r↓ 
 
