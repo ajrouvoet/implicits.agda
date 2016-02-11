@@ -357,7 +357,6 @@ module Lemmas where
   ⟦_⟧ᵣ (r-iabs {a = a} p) = F.λ' ⟦ a ⟧tp→ ⟦ p ⟧ᵣ
   ⟦_⟧ᵣ (r-iapp p p₁) = ⟦ p ⟧ᵣ F.· ⟦ p₁ ⟧ᵣ
   
-  -- proof that
   iso : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ F.⊢ t ∈ ⟦ r ⟧tp→)
   iso Δ r = equivalence
     (λ x → , ⟦ x ⟧ᵣ)
