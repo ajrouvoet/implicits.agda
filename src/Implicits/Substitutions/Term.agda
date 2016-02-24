@@ -1,14 +1,14 @@
 open import Prelude hiding (lift; Fin′; subst; id)
 
-module Implicits.Substitutions.Term (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions.Term where
 
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Syntax.Term TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Syntax.Term
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
 
-open import Implicits.Substitutions.Type TC _tc≟_ as TypeSubst using () 
+open import Implicits.Substitutions.Type as TypeSubst using () 
 
 module TermTypeSubst where
 

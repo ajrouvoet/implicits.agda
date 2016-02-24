@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Resolution.GenericFinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.GenericFinite.Algorithm where
 
 open import Induction.WellFounded
 open import Induction.Nat
@@ -12,15 +12,16 @@ open import Data.Nat.Properties
 open import Relation.Binary using (module DecTotalOrder)
 open DecTotalOrder decTotalOrder using () renaming (refl to ≤-refl; trans to ≤-trans)
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Resolution.GenericFinite.Resolution TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Resolution.GenericFinite.Resolution
 open import Implicits.Resolution.GenericFinite.TerminationCondition
-open import Implicits.Resolution.Termination TC _tc≟_
+open import Implicits.Resolution.Termination
 
-module M = MetaTypeMetaSubst
+private
+  module M = MetaTypeMetaSubst
 
 module Lemmas where
   m<-Acc : ∀ {m ν} → MetaType m ν → Set
@@ -66,9 +67,9 @@ module ResolutionAlgorithm (cond : TerminationCondition) where
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) with match' Δ Φ τ b (acc f) (g _ (b-m<-a⇒b a b))
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | nothing = nothing
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u
-      with (step Φ) <? Φ
+      with (step Φ (from-meta (a M./ u))) <? Φ
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ<
-      with resolve' Δ (step Φ) (from-meta (a M./ u)) (f _ Φ<)
+      with resolve' Δ (step Φ (from-meta (a M./ u))) (from-meta (a M./ u)) (f _ Φ<)
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ< | true = just u
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ< | false = nothing
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | no φ> = nothing

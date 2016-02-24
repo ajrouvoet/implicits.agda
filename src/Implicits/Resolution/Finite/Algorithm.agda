@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Resolution.Finite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Finite.Algorithm where
 
 open import Induction.WellFounded
 open import Induction.Nat
@@ -8,12 +8,12 @@ open import Data.Fin.Substitution
 open import Data.Nat.Base using (_<′_)
 open import Data.List.Any
 open Membership-≡
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Resolution.Finite.Resolution TC _tc≟_
-open import Implicits.Resolution.Termination TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Resolution.Finite.Resolution
+open import Implicits.Resolution.Termination
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong; flip; const)
 open import Data.List.Any.Properties using (Any↔)
@@ -72,12 +72,10 @@ mutual
            Arg<-Acc (simpl τ) →
            m<-Acc r →
            Maybe (∃ λ u → Δ ⊢ from-meta (r M./ u) ↓ τ)
-  match' Δ r∈Δ τ (simpl x) f g with mgu (simpl x) τ 
-  match' Δ r∈Δ τ (simpl x) f g | just (u , p) =
-    just (
-      (asub u) ,
-      subst (λ a → Δ ⊢ a ↓ τ) (sym $ mgu-unifies (simpl x) τ (u , p)) (i-simp τ))
-  match' Δ r∈Δ τ (simpl x) f g | nothing = nothing
+  match' Δ r∈Δ τ (simpl x) f g with mgu (simpl x) τ | sound (simpl x) τ
+  match' Δ r∈Δ τ (simpl x) f g | just u | just u-unifies =
+    just (u , subst (λ a → Δ ⊢ a ↓ τ) (sym u-unifies) (i-simp τ))
+  match' Δ r∈Δ τ (simpl x) f g | nothing | _ = nothing
 
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) with match' Δ r∈Δ τ b (acc f) (g _ (b-m<-a⇒b a b))
   match' Δ r∈Δ τ (a ⇒ b) (acc f) (acc g) | nothing = nothing

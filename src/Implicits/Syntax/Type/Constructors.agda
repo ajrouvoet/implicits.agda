@@ -1,8 +1,8 @@
-module Implicits.Syntax.Type.Constructors (TC : Set) _tc≟_ where
+module Implicits.Syntax.Type.Constructors where
 
 open import Prelude
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Substitutions
 open TypeSubst
 
 -- polymorphic identity

@@ -1,8 +1,8 @@
 open import Prelude hiding (lift; Fin′; subst; id)
 
-module Implicits.Substitutions.Type (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions.Type where
 
-open import Implicits.Syntax.Type TC _tc≟_
+open import Implicits.Syntax.Type
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties

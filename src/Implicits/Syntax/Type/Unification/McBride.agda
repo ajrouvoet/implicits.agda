@@ -1,9 +1,9 @@
 open import Prelude hiding (id; _>>=_)
 
-module Implicits.Syntax.Type.Unification.McBride (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.Type.Unification.McBride where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Syntax.MetaType TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Syntax.MetaType
 open import Data.Vec.Properties
 open import Data.Nat as N using ()
 open import Data.Nat.Properties.Simple
@@ -18,8 +18,8 @@ open RawFunctor {level₀} functor
 open import Data.Star hiding (_>>=_)
 
 open import Data.Fin.Substitution
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
 
 private
   module M = MetaTypeMetaSubst
@@ -111,7 +111,7 @@ mgu {ν} s t = amgu s t (ν , ε)
     -- matching constructors
     amgu (a ⇒ b) (a' ⇒ b') acc = _>>=_ (amgu b b' acc) (amgu a a')
     amgu (simpl (a →' b)) (simpl (a' →' b')) acc = _>>=_ (amgu b b' acc) (amgu a a')
-    amgu (simpl (tc x)) (simpl (tc y)) acc with x tc≟ y 
+    amgu (simpl (tc x)) (simpl (tc y)) acc with x N≟ y 
     amgu (simpl (tc x)) (simpl (tc y)) acc | yes p = just (, ε)
     amgu (simpl (tc x)) (simpl (tc y)) acc | no ¬p = nothing
     amgu (∀' a) (∀' b) (m , acc) = σ >>= strengthen'

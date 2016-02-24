@@ -1,14 +1,14 @@
 open import Prelude hiding (lift; Fin′; subst; id)
 
-module Implicits.Substitutions (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions where
 
-import Implicits.Substitutions.Context TC _tc≟_ as CtxSubst
-open import Implicits.Substitutions.Term TC _tc≟_
+import Implicits.Substitutions.Context as CtxSubst
+open import Implicits.Substitutions.Term
 
 module TypeSubst where
-  open import Implicits.Substitutions.Type TC _tc≟_ public
+  open import Implicits.Substitutions.Type public
 
-open import Implicits.Substitutions.MetaType TC _tc≟_ public
+open import Implicits.Substitutions.MetaType public
 
 open TypeSubst public using (_∙_; stp-weaken)
   renaming (_simple/_ to _stp/tp_; _/_ to _tp/tp_; _[/_] to _tp[/tp_]; weaken to tp-weaken)

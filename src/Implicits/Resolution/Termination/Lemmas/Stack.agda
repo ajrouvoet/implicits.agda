@@ -1,19 +1,19 @@
 open import Prelude
 
 module Implicits.Resolution.Termination.Lemmas.Stack
-  (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+  where
 
 open import Induction.WellFounded
 open import Induction.Nat
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 
-open import Implicits.Resolution.Termination.SizeMeasures TC _tc≟_
-open import Implicits.Resolution.Termination.Stack TC _tc≟_
+open import Implicits.Resolution.Termination.SizeMeasures
+open import Implicits.Resolution.Termination.Stack
 
 
 open import Data.Nat.Base

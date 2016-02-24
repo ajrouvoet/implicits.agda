@@ -1,17 +1,15 @@
 open import Prelude
 
-module Implicits.Semantics.Preservation
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Semantics.Preservation where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.WellTyped TC _tc≟_
-open import Implicits.Semantics.Type TC _tc≟_
-open import Implicits.Semantics.Context TC _tc≟_
-open import Implicits.Semantics.Lemmas TC _tc≟_
-open import Implicits.Semantics.RewriteContext TC _tc≟_
-open import Implicits.Semantics.Term TC _tc≟_
-open import SystemF TC as F using ()
+open import Implicits.Syntax
+open import Implicits.WellTyped
+open import Implicits.Semantics.Type
+open import Implicits.Semantics.Context
+open import Implicits.Semantics.Lemmas
+open import Implicits.Semantics.RewriteContext
+open import Implicits.Semantics.Term
+open import SystemF as F using ()
 
 module Preservation
   (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set)

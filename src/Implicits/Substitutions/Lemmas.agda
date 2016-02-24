@@ -1,12 +1,12 @@
 open import Prelude renaming (lift to finlift) hiding (id; subst)
 
-module Implicits.Substitutions.Lemmas (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions.Lemmas where
 
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Syntax.Term TC _tc≟_ hiding (var)
-open import Implicits.Syntax.Context TC _tc≟_
-open import Implicits.WellTyped TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Syntax.Term hiding (var)
+open import Implicits.Syntax.Context
+open import Implicits.WellTyped
+open import Implicits.Substitutions
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas 
 open import Data.Vec.Properties
@@ -15,9 +15,9 @@ import Category.Applicative.Indexed as Applicative
 open Applicative.Morphism using (op-<$>)
 
 module TypeLemmas where
-  open import Implicits.Substitutions.Lemmas.Type TC _tc≟_ public
+  open import Implicits.Substitutions.Lemmas.Type public
 
-open import Implicits.Substitutions.Lemmas.MetaType TC _tc≟_ public
+open import Implicits.Substitutions.Lemmas.MetaType public
 
 {-
 module SubstLemmas (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where

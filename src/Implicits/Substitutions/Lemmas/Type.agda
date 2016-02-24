@@ -1,9 +1,9 @@
 open import Prelude renaming (lift to finlift) hiding (id; subst)
 
-module Implicits.Substitutions.Lemmas.Type (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions.Lemmas.Type where
 
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Substitutions
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas 
 open import Data.Vec.Properties

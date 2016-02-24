@@ -1,6 +1,6 @@
 open import Prelude hiding (lift; id)
 
-module Implicits.Syntax.Type (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.Type where
 
 open import Data.Fin.Substitution
 open import Data.Nat.Properties as NatProps
@@ -13,7 +13,7 @@ infixr 10 _⇒_
  
 mutual
   data SimpleType (ν : ℕ) : Set where
-    tc   : TC → SimpleType ν
+    tc   : ℕ → SimpleType ν
     tvar : (n : Fin ν) → SimpleType ν
     _→'_ : Type ν → Type ν → SimpleType ν
 
@@ -104,7 +104,7 @@ module Rules where
 
 -- decidable equality on types
 _≟_ : ∀ {ν} → (a b : Type ν) → Dec (a ≡ b)
-simpl (tc x) ≟ simpl (tc y) with x tc≟ y
+simpl (tc x) ≟ simpl (tc y) with x N≟ y
 simpl (tc x) ≟ simpl (tc y) | yes p = yes (cong (simpl ∘ tc) p)
 simpl (tc x) ≟ simpl (tc y) | no ¬p = no (λ x=y → ¬p $ helper x=y )
   where

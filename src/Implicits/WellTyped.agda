@@ -1,14 +1,12 @@
 open import Prelude hiding (id)
 
-module Implicits.WellTyped
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.WellTyped where
 
 open import Data.Fin.Substitution
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Syntax.Term TC _tc≟_
-open import Implicits.Syntax.Context TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Syntax.Term
+open import Implicits.Syntax.Context
+open import Implicits.Substitutions
 
 module TypingRules (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set) where
   infixl 6 _⊢unamb_

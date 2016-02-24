@@ -2,26 +2,16 @@ open import Prelude hiding (id; Bool)
 
 module Implicits.Resolution.Deterministic.Incomplete where
 
-data TC : Set where
-  tc-int : TC
-  tc-bool : TC
-
-_tc≟_ : (a b : TC) → Dec (a ≡ b)
-tc-int tc≟ tc-int = yes refl
-tc-int tc≟ tc-bool = no (λ ())
-tc-bool tc≟ tc-int = no (λ ())
-tc-bool tc≟ tc-bool = yes refl
-
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.WellTyped TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.WellTyped
+open import Implicits.Substitutions
 open import Extensions.ListFirst
 
 Bool : Type 0
-Bool = simpl $ tc tc-bool
+Bool = simpl $ tc 0
 
 Int : Type 0
-Int = simpl $ tc tc-int
+Int = simpl $ tc 1
 
 -- We'll proof incompleteness with a simple example that we'll be able to resolve
 -- using the ambigous resolution rules, but not with the deterministic rules.
@@ -32,8 +22,8 @@ Int = simpl $ tc tc-int
 Δ : ICtx 0
 Δ = (Int ⇒ Bool) List.∷ Bool List.∷ List.[]
 
-open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
-open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
+open import Implicits.Resolution.Deterministic.Resolution as D
+open import Implicits.Resolution.Ambiguous.Resolution as A
 open import Extensions.ListFirst
 
 private
@@ -43,7 +33,7 @@ private
     FirstLemmas.first-unique (here (m-iabs m-simp) (Bool List.∷ List.[])) fst
   deterministic-cant (r-simp fst (i-iabs (r-simp r _) b)) | refl = ¬r◁Int (, r)
     where
-      ¬r◁Int : ¬ (∃ λ r → Δ ⟨ tc tc-int ⟩= r)
+      ¬r◁Int : ¬ (∃ λ r → Δ ⟨ tc 1 ⟩= r)
       ¬r◁Int (._ , here (m-iabs ()) ._)
       ¬r◁Int (._ , there _ _ (here () .List.[]))
       ¬r◁Int ( _ , there _ _ (there _ _ ()))

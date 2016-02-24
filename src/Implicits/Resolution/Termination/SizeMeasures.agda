@@ -1,12 +1,12 @@
 open import Prelude
 
-module Implicits.Resolution.Termination.SizeMeasures (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Termination.SizeMeasures where
 
 open import Induction.WellFounded
 open import Induction.Nat
 open import Data.Nat.Base using (_<′_)
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Syntax.Type.Unification
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 
@@ -37,6 +37,9 @@ m|| ∀' a || = 1 N+ m|| a ||
 -- We could express that as ∀ {ν μ} → Type ν → Type μ → Set,
 -- but Well-founded _sρ<_ unifies ν and μ,
 -- such that the well-founded proof would be too narrow
+_hρ≤_ : (a b : ∃ Type) → Set
+(_ , a) hρ≤ (_ , b) = h|| a || N≤ h|| b ||
+
 _hρ<_ : (a b : ∃ Type) → Set
 (_ , a) hρ< (_ , b) = h|| a || N< h|| b ||
 

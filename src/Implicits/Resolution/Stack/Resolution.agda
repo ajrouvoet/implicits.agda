@@ -1,14 +1,14 @@
 open import Prelude
 
-module Implicits.Resolution.Stack.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Stack.Resolution where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
 open import Induction
 open import Induction.Nat
-open import Implicits.Resolution.Termination.Stack TC _tc≟_
+open import Implicits.Resolution.Termination.Stack
 
 infixl 5 _⊢ᵣ_
 infixl 5 _&_⊢ᵣ_ _&_,_⊢_↓_

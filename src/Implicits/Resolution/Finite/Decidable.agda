@@ -1,18 +1,18 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Decidable (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Finite.Decidable where
 
 open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any
 open Membership-≡
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Improved.Finite.Resolution TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Oliveira.Types
+open import Implicits.Oliveira.Terms
+open import Implicits.Oliveira.Contexts
+open import Implicits.Oliveira.Substitutions
+open import Implicits.Oliveira.Substitutions.Lemmas
+open import Implicits.Improved.Finite.Resolution
+open import Implicits.Oliveira.Types.Unification
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong)
 open import Data.List.Any.Properties using (Any↔)

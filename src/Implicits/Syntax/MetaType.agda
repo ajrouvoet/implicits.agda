@@ -1,15 +1,15 @@
 open import Prelude hiding (lift; id)
 
-module Implicits.Syntax.MetaType (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.MetaType where
 
-open import Implicits.Syntax.Type TC _tc≟_
+open import Implicits.Syntax.Type
 
 mutual
   data MetaSimpleType (m ν : ℕ) : Set where
     tvar : Fin ν → MetaSimpleType m ν
     mvar : Fin m → MetaSimpleType m ν
     _→'_ : (a b : MetaType m ν) → MetaSimpleType m ν
-    tc   : (c : TC) → MetaSimpleType m ν
+    tc   : ℕ → MetaSimpleType m ν
 
   data MetaType (m ν : ℕ) : Set where
     _⇒_ : (a b : MetaType m ν) → MetaType m ν
@@ -22,7 +22,7 @@ s-tvar n = simpl (tvar n)
 s-mvar : ∀ {ν m} → Fin m → MetaType m ν
 s-mvar n = simpl (mvar n)
 
-s-tc : ∀ {ν m} → TC → MetaType m ν
+s-tc : ∀ {ν m} → ℕ → MetaType m ν
 s-tc c = simpl (tc c)
 
 mutual

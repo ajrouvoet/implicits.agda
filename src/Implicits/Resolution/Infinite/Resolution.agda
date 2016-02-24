@@ -1,11 +1,11 @@
 open import Prelude
 
-module Implicits.Resolution.Infinite.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Resolution where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
 
 module Coinductive where
   infixl 5 _⊢ᵣ_ _⊢_↓_
@@ -77,5 +77,13 @@ module Inductive where
     ⊆-Δ⊢a (r-tabs x) f = r-tabs (⊆-Δ⊢a x f')
       where
         f' = map-mono (flip TypeSubst._/_ TypeSubst.wk) f
+
+
+  {-}
+  trivial : ∀ {ν} {Δ : ICtx ν} {r} → r List.∈ Δ → Δ ⊢ᵣ r
+  trivial {r = simpl x} p = r-simp p (i-simp x)
+  trivial {r = a ⇒ b} p = r-iabs {!!}
+  trivial {r = ∀' r} p = {!!}
+  -}
 
 open Inductive public

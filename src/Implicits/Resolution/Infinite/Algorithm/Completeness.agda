@@ -1,6 +1,6 @@
 open import Prelude hiding (All; module All; _>>=_; ⊥; sym)
 
-module Implicits.Resolution.Infinite.Algorithm.Completeness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Algorithm.Completeness where
 
 open import Data.Bool
 open import Data.Unit.Base
@@ -9,12 +9,12 @@ open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any hiding (tail)
 open Membership-≡
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas.MetaType TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_ as Unification hiding (complete)
-open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
-open import Implicits.Resolution.Infinite.Algorithm TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas.MetaType
+open import Implicits.Syntax.Type.Unification as Unification hiding (complete)
+open import Implicits.Resolution.Infinite.Resolution
+open import Implicits.Resolution.Infinite.Algorithm
 open import Data.Fin.Substitution
 open import Relation.Binary.HeterogeneousEquality as H using ()
 module HR = H.≅-Reasoning

@@ -1,10 +1,10 @@
 open import Prelude
 
-module Implicits.Resolution.Ambiguous.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Ambiguous.Resolution where
 
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
 
 data _⊢ᵣ_ {ν} (Δ : ICtx ν) : Type ν → Set where
   r-tabs : ∀ {r} → ictx-weaken Δ ⊢ᵣ r → Δ ⊢ᵣ ∀' r

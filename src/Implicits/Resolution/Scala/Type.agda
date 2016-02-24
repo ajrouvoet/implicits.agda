@@ -1,18 +1,18 @@
 open import Prelude 
 
-module Implicits.Resolution.Scala.Type (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Scala.Type where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas.Type TC _tc≟_
-open import Implicits.Substitutions.Type TC _tc≟_ as TS using () 
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas.Type
+open import Implicits.Substitutions.Type as TS using () 
 
 -- predicate on types to limit them to non-rule types
 -- (as those don't exist in Scala currently)
 
 mutual
   data ScalaSimpleType {ν} : SimpleType ν → Set where
-    tc   : (c : TC) → ScalaSimpleType (tc c)
+    tc   : (c : ℕ) → ScalaSimpleType (tc c)
     tvar : (n : Fin ν) → ScalaSimpleType (tvar n)
     _→'_ : ∀ {a b} → ScalaType a → ScalaType b → ScalaSimpleType (a →' b)
 

@@ -1,14 +1,12 @@
 open import Prelude
 
-module Implicits.Semantics.Type
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Semantics.Type where
 
-open import Implicits.Syntax TC _tc≟_
-open import SystemF TC as F using ()
+open import Implicits.Syntax
+open import SystemF as F using ()
 
 ⟦_⟧tp→ : ∀ {ν} → Type ν → F.Type ν
-⟦ simpl (tc x) ⟧tp→ = F.tc x
+⟦ simpl (tc n) ⟧tp→ = F.tc n
 ⟦ simpl (tvar n) ⟧tp→ = F.tvar n
 ⟦ simpl (a →' b) ⟧tp→ = ⟦ a ⟧tp→ F.→' ⟦ b ⟧tp→
 ⟦ a ⇒ b ⟧tp→ = ⟦ a ⟧tp→ F.→' ⟦ b ⟧tp→

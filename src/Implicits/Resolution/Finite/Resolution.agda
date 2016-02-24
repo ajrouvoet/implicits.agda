@@ -1,12 +1,12 @@
 open import Prelude
 
-module Implicits.Resolution.Finite.Resolution (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Finite.Resolution where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Resolution.Termination TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Resolution.Termination
 open import Induction
 open import Induction.Nat
 open import Relation.Binary using (Rel)

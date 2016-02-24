@@ -1,18 +1,18 @@
 open import Prelude hiding (All; module All; _>>=_; ⊥)
 
-module Implicits.Resolution.Infinite.Algorithm.Soundness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Algorithm.Soundness where
 
 open import Data.Bool
 open import Data.Unit.Base
 open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
-open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
-open import Implicits.Resolution.Infinite.Algorithm TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Resolution.Infinite.Resolution
+open import Implicits.Resolution.Infinite.Algorithm
 open Inductive
 
 open import Category.Monad.Partiality as P

@@ -1,17 +1,15 @@
 open import Prelude
 
-module Implicits.Oliveira.Deterministic.Decidable
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Oliveira.Deterministic.Decidable where
 
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
+open import Implicits.Oliveira.Types
+open import Implicits.Oliveira.Terms
+open import Implicits.Oliveira.Contexts
+open import Implicits.Oliveira.Substitutions
+open import Implicits.Oliveira.Substitutions.Lemmas
+open import Implicits.Oliveira.Deterministic.Resolution
+open import Implicits.Oliveira.Types.Unification
 open import Data.Star hiding (map)
 
 MICtx : ℕ → ℕ → Set

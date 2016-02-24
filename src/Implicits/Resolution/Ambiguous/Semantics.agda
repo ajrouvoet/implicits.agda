@@ -2,16 +2,16 @@ open import Prelude
 open import Data.List.Properties
 open import Data.List.Any hiding (map)
 
-module Implicits.Resolution.Ambiguous.Semantics TC _tc≟_ where
+module Implicits.Resolution.Ambiguous.Semantics where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Semantics TC _tc≟_
-open import Implicits.Semantics.Lemmas TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Resolution.Ambiguous.Resolution
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Semantics
+open import Implicits.Semantics.Lemmas
 
-open import SystemF TC as F using ()
+open import SystemF as F using ()
 
 module DerivationSemantics where
 

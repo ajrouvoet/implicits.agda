@@ -1,17 +1,17 @@
 open import Prelude
 
-module Implicits.Improved.Stack.Expressiveness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Improved.Stack.Expressiveness where
 
 open import Coinduction
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Deterministic.Resolution TC _tc≟_ as D
-open import Implicits.Oliveira.Ambiguous.Resolution TC _tc≟_ as A
-open import Implicits.Improved.Stack.Resolution TC _tc≟_ as F
-open import Implicits.Improved.Infinite.Resolution TC _tc≟_ as ∞
+open import Implicits.Oliveira.Types
+open import Implicits.Oliveira.Terms
+open import Implicits.Oliveira.Contexts
+open import Implicits.Oliveira.Substitutions
+open import Implicits.Oliveira.Deterministic.Resolution as D
+open import Implicits.Oliveira.Ambiguous.Resolution as A
+open import Implicits.Improved.Stack.Resolution as F
+open import Implicits.Improved.Infinite.Resolution as ∞
 
 module Finite⊆Infinite where
 

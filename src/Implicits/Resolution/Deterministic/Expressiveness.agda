@@ -1,12 +1,12 @@
 open import Prelude
 
-module Implicits.Resolution.Deterministic.Expressiveness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Deterministic.Expressiveness where
 
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
-open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
-open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
+open import Implicits.Syntax
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Resolution.Ambiguous.Resolution as A
+open import Implicits.Resolution.Deterministic.Resolution as D
 open import Extensions.ListFirst
 
 module Deterministic⊆Ambiguous where

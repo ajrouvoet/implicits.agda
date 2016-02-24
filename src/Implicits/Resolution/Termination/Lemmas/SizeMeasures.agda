@@ -1,21 +1,21 @@
 open import Prelude
 
 module Implicits.Resolution.Termination.Lemmas.SizeMeasures
-  (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+  where
 
 open import Induction.WellFounded
 open import Induction.Nat
 open import Data.Fin.Substitution
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
 open import Data.Nat hiding (_<_)
 open import Data.Nat.Properties
 open import Relation.Binary using (module DecTotalOrder)
 open DecTotalOrder decTotalOrder using () renaming (refl to ≤-refl)
 open import Extensions.Nat
-open import Implicits.Resolution.Termination.SizeMeasures TC _tc≟_
+open import Implicits.Resolution.Termination.SizeMeasures
 
 -- we can show that our size measure a ρ< b is well founded
 -- by relating it to the well-foundedness proof of _<'_
@@ -232,7 +232,7 @@ module SubstSizeLemmas where
     ||a/s||' (a ⇒ b) s = s≤s (<-+ (||a/s||' a s) (||a/s||' b s))
     ||a/s||' (∀' b) s = s≤s (||a/s||' b (s TypeSubst.↑))
 
-    h||a/s|| : ∀ {ν μ} (a : Type ν) (s : Sub Type ν μ) → h|| a || N≤ h|| a / s ||
+    h||a/s|| : ∀ {ν μ} (a : Type ν) (s : Sub Type ν μ) → (, a) hρ≤ (, a / s)
     h||a/s|| (simpl (tc x)) s = s≤s z≤n
     h||a/s|| (simpl (tvar n)) s = ||a|| (proj₂ (lookup n s ◁))
     h||a/s|| (simpl (a →' b)) s = s≤s (<-+ (||a/s||' a s) (||a/s||' b s))
@@ -244,6 +244,9 @@ a-ρ<-∀a _ = ≤-refl
 
 b-ρ<-a⇒b : ∀ {ν} (a b : Type ν) → (_ , b) ρ< (_ , a ⇒ b)
 b-ρ<-a⇒b a b = s≤s (≤-steps || a || ≤-refl)
+
+b-hρ≤-a⇒b : ∀ {ν} (a b : Type ν) → (_ , b) hρ≤ (_ , a ⇒ b)
+b-hρ≤-a⇒b a b = subst (λ u → u N≤ h|| a ⇒ b ||) refl ≤-refl
 
 a-m<-∀a : ∀ {m ν} a → (m , suc ν , a) m< (m , ν , ∀' a)
 a-m<-∀a a = ≤-refl 

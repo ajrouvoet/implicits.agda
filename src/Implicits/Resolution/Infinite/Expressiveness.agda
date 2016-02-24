@@ -1,16 +1,16 @@
 open import Prelude hiding (Bool)
 
-module Implicits.Resolution.Infinite.Expressiveness (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Expressiveness where
 
 open import Data.Fin.Substitution
 open import Extensions.ListFirst
 
-module OliveiraDeterministic⊆Infinite where
+module Deterministic⊆Infinite where
 
-  open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
-  open import Implicits.Resolution.Infinite.Resolution TC _tc≟_ as I
-  open import Implicits.Syntax TC _tc≟_
-  open import Implicits.Substitutions TC _tc≟_
+  open import Implicits.Resolution.Deterministic.Resolution as D
+  open import Implicits.Resolution.Infinite.Resolution as I
+  open import Implicits.Syntax
+  open import Implicits.Substitutions
 
   complete : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ D.⊢ᵣ a → Δ I.⊢ᵣ a
   complete (r-simp x r↓a) = r-simp (proj₁ $ first⟶∈ x) (lem r↓a)
@@ -22,12 +22,12 @@ module OliveiraDeterministic⊆Infinite where
   complete (r-iabs ρ₁ x) = r-iabs (complete x)
   complete (r-tabs x) = r-tabs (complete x)
 
-module Infinite>Deterministic where
+module Deterministic⊂Infinite where
 
   open import Implicits.Resolution.Deterministic.Incomplete as Inc
-  open import Implicits.Resolution.Deterministic.Resolution Inc.TC Inc._tc≟_ as D
-  open import Implicits.Resolution.Infinite.Resolution Inc.TC Inc._tc≟_ as I
-  open import Implicits.Syntax Inc.TC Inc._tc≟_
+  open import Implicits.Resolution.Deterministic.Resolution as D
+  open import Implicits.Resolution.Infinite.Resolution as I
+  open import Implicits.Syntax
 
   -- We gave an example of a query that the det rules could not resolve
   --   ((Int ⇒ Bool) List.∷ Bool List.∷ List.[]) ⊢ᵣ Bool
@@ -36,15 +36,15 @@ module Infinite>Deterministic where
   infinite-can : Δ I.⊢ᵣ Bool
   infinite-can = r-simp (there (here refl)) p
     where
-      p : Δ I.⊢ Bool ↓ tc tc-bool
-      p = i-simp (tc tc-bool)
+      p : Δ I.⊢ Bool ↓ tc 0
+      p = i-simp (tc 0)
 
 module Infinite⊆Ambiguous where
 
-  open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
-  open import Implicits.Resolution.Infinite.Resolution TC _tc≟_ as I
-  open import Implicits.Syntax TC _tc≟_
-  open import Implicits.Substitutions TC _tc≟_
+  open import Implicits.Resolution.Ambiguous.Resolution as A
+  open import Implicits.Resolution.Infinite.Resolution as I
+  open import Implicits.Syntax
+  open import Implicits.Substitutions
 
   sound : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ I.⊢ᵣ a → Δ A.⊢ᵣ a
   sound (r-simp x p) = lem p (r-ivar x)

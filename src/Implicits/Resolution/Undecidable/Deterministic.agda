@@ -4,12 +4,12 @@ module Implicits.Oliveira.Improved.Deterministic (TC' : Set) (_tc≟'_ : (a b : 
 
 {-
 open import Data.Fin.Substitution
-open import Implicits.Oliveira.Types TC _tc≟_
-open import Implicits.Oliveira.Types.Unification TC _tc≟_
-open import Implicits.Oliveira.Terms TC _tc≟_
-open import Implicits.Oliveira.Contexts TC _tc≟_
-open import Implicits.Oliveira.Substitutions TC _tc≟_
-open import Implicits.Oliveira.Improved.Resolution TC _tc≟_
+open import Implicits.Oliveira.Types
+open import Implicits.Oliveira.Types.Unification
+open import Implicits.Oliveira.Terms
+open import Implicits.Oliveira.Contexts
+open import Implicits.Oliveira.Substitutions
+open import Implicits.Oliveira.Improved.Resolution
 open import Extensions.ListFirst
 -}
 
@@ -40,12 +40,12 @@ private
   tc-bool tc≟ tc-bool = yes refl
 
   open import Data.Fin.Substitution
-  open import Implicits.Oliveira.Types TC _tc≟_
-  open import Implicits.Oliveira.Types.Unification TC _tc≟_
-  open import Implicits.Oliveira.Terms TC _tc≟_
-  open import Implicits.Oliveira.Contexts TC _tc≟_
-  open import Implicits.Oliveira.Substitutions TC _tc≟_
-  open import Implicits.Oliveira.Improved.Resolution TC _tc≟_
+  open import Implicits.Oliveira.Types
+  open import Implicits.Oliveira.Types.Unification
+  open import Implicits.Oliveira.Terms
+  open import Implicits.Oliveira.Contexts
+  open import Implicits.Oliveira.Substitutions
+  open import Implicits.Oliveira.Improved.Resolution
   open import Extensions.ListFirst
 
 

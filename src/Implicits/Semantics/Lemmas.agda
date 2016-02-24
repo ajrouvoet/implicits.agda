@@ -1,20 +1,18 @@
 open import Prelude
 
-module Implicits.Semantics.Lemmas
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Semantics.Lemmas where
 
-open import SystemF TC as F using ()
+open import SystemF as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec.Properties
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.WellTyped TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Semantics.Type TC _tc≟_
-open import Implicits.Semantics.Context TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.WellTyped
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Semantics.Type
+open import Implicits.Semantics.Context
 
 private
   module TS = TypeSubst

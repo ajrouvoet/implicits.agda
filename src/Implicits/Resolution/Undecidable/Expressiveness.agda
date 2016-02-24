@@ -1,14 +1,14 @@
 open import Prelude hiding (id; Bool)
 
-module Implicits.Resolution.Undecidable.Expressiveness TC _tc≟_ where
+module Implicits.Resolution.Undecidable.Expressiveness where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
 open import Extensions.ListFirst
 
-open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_ as A
-open import Implicits.Resolution.Deterministic.Resolution TC _tc≟_ as D
-open import Implicits.Resolution.Undecidable.Resolution TC _tc≟_ as I
+open import Implicits.Resolution.Ambiguous.Resolution as A
+open import Implicits.Resolution.Deterministic.Resolution as D
+open import Implicits.Resolution.Undecidable.Resolution as I
   
 mutual
   ↓-sound : ∀ {ν} {Δ : ICtx ν} {a r} → Δ D.⊢ r ↓ a → Δ I.⊢ r ↓ a

@@ -1,10 +1,8 @@
 open import Prelude hiding (lift; Fin′; subst)
 
-module Implicits.Syntax.Term
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.Term where
 
-open import Implicits.Syntax.Type TC _tc≟_
+open import Implicits.Syntax.Type
 
 infixl 9 _[_] _·_
 data Term (ν n : ℕ) : Set where

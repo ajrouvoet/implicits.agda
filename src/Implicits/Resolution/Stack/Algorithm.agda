@@ -1,6 +1,6 @@
 open import Prelude
 
-module Implicits.Resolution.Stack.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Stack.Algorithm where
 
 open import Induction.WellFounded
 open import Induction.Nat
@@ -8,12 +8,12 @@ open import Data.Fin.Substitution
 open import Data.Nat.Base using (_<′_)
 open import Data.List.Any
 open Membership-≡
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Resolution.Stack.Resolution TC _tc≟_
-open import Implicits.Resolution.Termination TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Resolution.Stack.Resolution
+open import Implicits.Resolution.Termination
+open import Implicits.Syntax.Type.Unification
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong; flip; const)
 open import Data.List.Any.Properties using (Any↔)

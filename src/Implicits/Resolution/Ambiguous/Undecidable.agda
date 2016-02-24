@@ -7,19 +7,19 @@ module HR = H.≅-Reasoning
 open import Data.Vec.Properties as VP using ()
 open import Relation.Nullary.Decidable as Dec using ()
 
-module Implicits.Resolution.Ambiguous.Undecidable TC _tc≟_ where
+module Implicits.Resolution.Ambiguous.Undecidable where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Resolution.Ambiguous.Resolution TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Resolution.Ambiguous.Semantics TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Resolution.Ambiguous.Resolution
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Resolution.Ambiguous.Semantics
 open TypeSubst hiding (subst)
 
 private
   module TS = TypeSubst
 
-open import SystemF TC as F using ()
+open import SystemF as F using ()
 
 module Embedding where
   ⟦_⟧tp← : ∀ {ν} → F.Type ν → Type ν

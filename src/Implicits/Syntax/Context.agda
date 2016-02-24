@@ -1,8 +1,8 @@
 open import Prelude
 
-module Implicits.Syntax.Context (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Syntax.Context where
 
-open import Implicits.Syntax.Type TC _tc≟_
+open import Implicits.Syntax.Type
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (Type ν) n

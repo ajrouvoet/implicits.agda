@@ -1,12 +1,10 @@
 open import Prelude
 
-module Implicits.Semantics.RewriteContext
-  (TC : Set)
-  (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Semantics.RewriteContext where
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
 
 -- rewrite context (relation between implicit and explicit context)
 _#_ : ∀ {ν n} (Γ : Ctx ν n) (Δ : ICtx ν) → Set

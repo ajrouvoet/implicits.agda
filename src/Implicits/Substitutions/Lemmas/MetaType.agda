@@ -1,12 +1,12 @@
 open import Prelude renaming (lift to finlift) hiding (id; subst)
 
-module Implicits.Substitutions.Lemmas.MetaType (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions.Lemmas.MetaType where
 
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Syntax.Term TC _tc≟_ hiding (var)
-open import Implicits.Syntax.Context TC _tc≟_
-open import Implicits.WellTyped TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Syntax.Term hiding (var)
+open import Implicits.Syntax.Context
+open import Implicits.WellTyped
+open import Implicits.Substitutions
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas 
 open import Data.Vec.Properties
@@ -14,7 +14,7 @@ open import Extensions.Substitution
 
 module MetaTypeTypeLemmas where
   open MetaTypeTypeSubst hiding (_/✶_)
-  open import Implicits.Syntax.MetaType TC _tc≟_
+  open import Implicits.Syntax.MetaType
   open import Data.Star
 
   private module V = VarLemmas
@@ -116,7 +116,7 @@ module MetaTypeTypeLemmas where
 
 module MetaTypeMetaLemmas where
   open MetaTypeMetaSubst using (module Lifted; MetaLift)
-  open import Implicits.Syntax.MetaType TC _tc≟_
+  open import Implicits.Syntax.MetaType
   open import Data.Star as Star hiding (map)
   open import Data.Star.Properties
 
@@ -331,7 +331,7 @@ module MetaTypeMetaLemmas where
 
     open Lemmas₅ lemmas₅ public hiding (lemmas₃)
 
-  open MetaTypeMetaSubst using (open-meta; _↑tp)
+  open MetaTypeMetaSubst using (open-meta; _↑⋆tp_; _↑tp; _◁m; _◁m₁)
 
   us↑-⊙-sub-u≡u∷us : ∀ {ν m} (u : MetaType zero ν) (us : Sub (flip MetaType ν) m zero) →
                      us ↑ ⊙ sub u ≡ u ∷ us

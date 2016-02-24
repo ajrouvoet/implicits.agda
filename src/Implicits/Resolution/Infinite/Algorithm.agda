@@ -1,6 +1,6 @@
 open import Prelude hiding (All; module All; _>>=_; ⊥; _≅⟨_⟩_; _∎)
 
-module Implicits.Resolution.Infinite.Algorithm (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Resolution.Infinite.Algorithm where
 
 open import Data.Bool
 open import Data.Unit.Base
@@ -8,10 +8,10 @@ open import Data.Maybe using (is-just; functor)
 open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any hiding (tail)
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Substitutions.Lemmas TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Syntax.Type.Unification
 
 open import Category.Monad
 open import Category.Functor

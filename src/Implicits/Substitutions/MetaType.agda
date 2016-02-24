@@ -1,9 +1,9 @@
 open import Prelude hiding (lift; Fin′; subst; id)
 
-module Implicits.Substitutions.MetaType (TC : Set) (_tc≟_ : (a b : TC) → Dec (a ≡ b)) where
+module Implicits.Substitutions.MetaType where
 
-open import Implicits.Syntax.Type TC _tc≟_
-open import Implicits.Syntax.MetaType TC _tc≟_
+open import Implicits.Syntax.Type
+open import Implicits.Syntax.MetaType
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
@@ -201,8 +201,12 @@ module MetaTypeMetaSubst where
     open ExpandSimple exp-simple
     module MTTS = MetaTypeTypeSubst
 
+    _↑⋆tp_ : ∀ {m m' ν} → MetaSub MetaType ν m m' → ∀ k → MetaSub MetaType (k N+ ν) m m'
+    x ↑⋆tp zero = x
+    x ↑⋆tp (suc k) = map MTTS.weaken (x ↑⋆tp k)
+
     _↑tp : ∀ {m m' ν} → MetaSub MetaType ν m m' → MetaSub MetaType (suc ν) m m'
-    _↑tp = λ x → map MTTS.weaken x
+    x ↑tp = x ↑⋆tp 1
 
     tp-weaken = MTTS.weaken
 
@@ -252,6 +256,17 @@ module MetaTypeMetaSubst where
 
   open-meta : ∀ {m ν} → (a : MetaType m (suc ν)) → MetaType (suc m) ν
   open-meta x = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (simpl (mvar zero)))
+
+  _◁m₁ : ∀ {ν m} (r : MetaType m ν) → ℕ
+  _◁m₁ (a ⇒ b) = b ◁m₁ 
+  _◁m₁ (∀' r) = 1 N+ r ◁m₁ 
+  _◁m₁ (simpl x) = zero
+
+  -- heads of metatypes
+  _◁m : ∀ {ν m} (r : MetaType m ν) → (MetaType ((r ◁m₁) N+ m) ν)
+  (a ⇒ b) ◁m = b ◁m
+  ∀' r ◁m = open-meta (r ◁m)
+  simpl x ◁m = simpl x
 
   smeta-weaken : ∀ {m ν} → MetaSimpleType m ν → MetaSimpleType (suc m) ν
   smeta-weaken (tc x) = tc x
