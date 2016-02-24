@@ -302,6 +302,11 @@ module Lemmas where
     ≡⟨ cong (λ s → ⟦ a ⟧tp→ F./ (⟦ b ⟧tp→ ∷ s)) ⟦id⟧tp→ ⟩
     (⟦ a ⟧tp→ F./ (F.sub ⟦ b ⟧tp→)) ∎
   
+module Iso where
+
+  open Embedding
+  open Lemmas
+
   from : ∀ {ν n t a} {Γ : F.Ctx ν n} → Γ F.⊢ t ∈ a → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ a ⟧tp←
   from (F.var x) = r-ivar (lem x _)
     where
@@ -377,6 +382,7 @@ module Undecidable (?:-undec : ¬ ?:-dec) where
 
   open Embedding
   open Lemmas
+  open Iso
 
   -- type of decider for ambiguous resolution
   ⊢ᵣ-dec : Set
