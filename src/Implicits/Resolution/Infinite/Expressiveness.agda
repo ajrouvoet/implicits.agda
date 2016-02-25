@@ -1,9 +1,11 @@
-open import Prelude hiding (Bool)
-
 module Implicits.Resolution.Infinite.Expressiveness where
 
+open import Prelude hiding (Bool)
+
 open import Data.Fin.Substitution
+
 open import Extensions.ListFirst
+open import SystemF as F using ()
 
 module Deterministic⊆Infinite where
 
@@ -39,12 +41,18 @@ module Deterministic⊂Infinite where
       p : Δ I.⊢ Bool ↓ tc 0
       p = i-simp (tc 0)
 
-module Infinite⊆Ambiguous where
+module Infinite↔Ambiguous
+  (nf : ∀ {ν n} {Γ : F.Ctx ν n} {t a} → Γ F.⊢ t ∈ a → Γ F.⊢ t ⇑ a)
+  where
 
   open import Implicits.Resolution.Ambiguous.Resolution as A
+  open import Implicits.Resolution.Ambiguous.SystemFIso hiding (iso)
   open import Implicits.Resolution.Infinite.Resolution as I
+  open import Implicits.Resolution.Infinite.NormalFormIso hiding (iso)
+  open import Implicits.Resolution.Embedding.Lemmas
   open import Implicits.Syntax
   open import Implicits.Substitutions
+  open import Function.Equivalence
 
   sound : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ I.⊢ᵣ a → Δ A.⊢ᵣ a
   sound (r-simp x p) = lem p (r-ivar x)
@@ -56,8 +64,8 @@ module Infinite⊆Ambiguous where
   sound (r-iabs p) = r-iabs (sound p)
   sound (r-tabs p) = r-tabs (sound p)
 
-module Infinite⊂Ambiguous where
-  -- but interestingly, we CANNOT use this identity, and use it to derive everything else
-  -- Because we can only derive (polymorphic) rule-types from an empty context.
-  -- counter-example₁ : ¬ List.[] I.⊢ᵣ simpl (tvar {suc zero} zero)
-  -- counter-example₁ (r-simp () _)
+  complete : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ A.⊢ᵣ a → Δ I.⊢ᵣ a
+  complete {a = a} p = subst₂ (λ Δ r → Δ I.⊢ᵣ r) (ctx→← _) (tp→← a) (from-⇑ (nf (to-⊢ p)))
+
+  iso : ∀ {ν} (Δ : ICtx ν) r → Δ I.⊢ᵣ r ⇔ Δ A.⊢ᵣ r
+  iso Δ r = equivalence sound complete

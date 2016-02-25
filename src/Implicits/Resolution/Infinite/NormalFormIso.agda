@@ -1,30 +1,20 @@
-open import Prelude
-
 module Implicits.Resolution.Infinite.NormalFormIso where
+
+open import Prelude
 
 open import Implicits.Syntax
 open import Implicits.Resolution.Infinite.Resolution
-open import Implicits.Resolution.Ambiguous.Undecidable using (module Embedding; module Lemmas)
+open import Implicits.Resolution.Embedding
+open import Implicits.Resolution.Embedding.Lemmas
+
 open import SystemF as F using ()
 open import SystemF.NormalForm
+
 open import Relation.Binary.HeterogeneousEquality as H using ()
-module HR = H.≅-Reasoning
 open import Data.List.Any
 open import Data.List.Properties
 open import Data.Vec.Properties as VP using ()
 open import Function.Equivalence using (_⇔_; equivalence)
-
-open Embedding
-open Lemmas
-
-lookup-∈ : ∀ {ν n} → (x : Fin n) → (v : F.Ctx ν n) → ⟦ lookup x v ⟧tp← List.∈ ⟦ v ⟧ctx←
-lookup-∈ zero (x ∷ xs) = here refl
-lookup-∈ (suc x) (v ∷ vs) = there (lookup-∈ x vs) 
-
-⇑-subst-n : ∀ {ν n n'} {Γ : F.Ctx ν n} {Γ' : F.Ctx ν n'} {t a} → (n-eq : n ≡ n') →
-            Γ H.≅ Γ' → Γ ⊢ t ⇑ a →
-            Γ' ⊢ (subst (F.Term ν) n-eq t) ⇑ a
-⇑-subst-n refl H.refl p = p
 
 mutual
 
@@ -62,8 +52,8 @@ mutual
   to-⇑ {Δ = Δ} (r-tabs {ρ = a} p) =
     , ntabs (⇑-subst-n (length-weaken-Δ Δ) (H.sym $ ⟦weaken⟧ctx→ Δ) (proj₂ (to-⇑ p)))
 
-  -- System F η-long-β-normal forms are isomorphic to infinite resolution derivations
-  iso : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ r ⟧tp→)
-  iso Δ r = equivalence
-    (λ x → to-⇑ x)
-    (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from-⇑ (proj₂ x)))
+-- System F η-long-β-normal forms are isomorphic to infinite resolution derivations
+iso : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ r ⟧tp→)
+iso Δ r = equivalence
+  (λ x → to-⇑ x)
+  (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from-⇑ (proj₂ x)))
