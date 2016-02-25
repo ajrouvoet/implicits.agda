@@ -7,12 +7,13 @@ open import Data.Fin.Substitution
 open import Extensions.ListFirst
 open import SystemF as F using ()
 
-module Deterministic⊆Infinite where
+open import Implicits.Resolution.Ambiguous.Resolution as A
+open import Implicits.Resolution.Deterministic.Resolution as D
+open import Implicits.Resolution.Infinite.Resolution as I
+open import Implicits.Syntax
+open import Implicits.Substitutions
 
-  open import Implicits.Resolution.Deterministic.Resolution as D
-  open import Implicits.Resolution.Infinite.Resolution as I
-  open import Implicits.Syntax
-  open import Implicits.Substitutions
+module Deterministic⊆Infinite where
 
   complete : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ D.⊢ᵣ a → Δ I.⊢ᵣ a
   complete (r-simp x r↓a) = r-simp (proj₁ $ first⟶∈ x) (lem r↓a)
@@ -27,9 +28,6 @@ module Deterministic⊆Infinite where
 module Deterministic⊂Infinite where
 
   open import Implicits.Resolution.Deterministic.Incomplete as Inc
-  open import Implicits.Resolution.Deterministic.Resolution as D
-  open import Implicits.Resolution.Infinite.Resolution as I
-  open import Implicits.Syntax
 
   -- We gave an example of a query that the det rules could not resolve
   --   ((Int ⇒ Bool) List.∷ Bool List.∷ List.[]) ⊢ᵣ Bool
@@ -45,13 +43,9 @@ module Infinite↔Ambiguous
   (nf : ∀ {ν n} {Γ : F.Ctx ν n} {t a} → Γ F.⊢ t ∈ a → Γ F.⊢ t ⇑ a)
   where
 
-  open import Implicits.Resolution.Ambiguous.Resolution as A
   open import Implicits.Resolution.Ambiguous.SystemFIso hiding (iso)
-  open import Implicits.Resolution.Infinite.Resolution as I
   open import Implicits.Resolution.Infinite.NormalFormIso hiding (iso)
   open import Implicits.Resolution.Embedding.Lemmas
-  open import Implicits.Syntax
-  open import Implicits.Substitutions
   open import Function.Equivalence
 
   sound : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ I.⊢ᵣ a → Δ A.⊢ᵣ a
