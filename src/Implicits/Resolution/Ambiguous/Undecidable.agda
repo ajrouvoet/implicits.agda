@@ -301,31 +301,12 @@ module Lemmas where
     (⟦ a ⟧tp→ F./ (⟦ b ⟧tp→ ∷ (map ⟦_⟧tp→ TS.id)) )
     ≡⟨ cong (λ s → ⟦ a ⟧tp→ F./ (⟦ b ⟧tp→ ∷ s)) ⟦id⟧tp→ ⟩
     (⟦ a ⟧tp→ F./ (F.sub ⟦ b ⟧tp→)) ∎
-  
-module Iso where
 
-  open Embedding
-  open Lemmas
-
-  from : ∀ {ν n t a} {Γ : F.Ctx ν n} → Γ F.⊢ t ∈ a → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ a ⟧tp←
-  from (F.var x) = r-ivar (lem x _)
-    where
-      lem : ∀ {ν n} → (x : Fin n) → (v : F.Ctx ν n) → ⟦ lookup x v ⟧tp← List.∈ ⟦ v ⟧ctx←
-      lem zero (x ∷ xs) = here refl
-      lem (suc x) (v ∷ vs) = there (lem x vs) 
-  from {Γ = Γ} (F.Λ x) = r-tabs (subst (λ u → u ⊢ᵣ _) (⟦weaken⟧ctx← Γ) (from x))
-  from (F.λ' {b = b} a x) = r-iabs (from x)
-  from {Γ = Γ} (F._[_] {a = a} x b) = subst
-    (λ u → ⟦ Γ ⟧ctx← ⊢ᵣ u)
-    (sym (⟦a/sub⟧tp← a b))
-    (r-tapp ⟦ b ⟧tp← (from x))
-  from (a F.· b) = r-iapp (from a) (from b)
-  
   ⊢subst-n : ∀ {ν n n'} {Γ : F.Ctx ν n} {Γ' : F.Ctx ν n'} {t a} → (n-eq : n ≡ n') →
              Γ H.≅ Γ' → Γ F.⊢ t ∈ a →
              Γ' F.⊢ (subst (F.Term ν) n-eq t) ∈ a
   ⊢subst-n refl H.refl p = p
-  
+
   lookup-subst-n : ∀ {n n' l} {A : Set l} {v : Vec A n} {v' : Vec A n'} {i : Fin n} →
                    (n-eq : n ≡ n') →
                    (v H.≅ v') →
@@ -344,6 +325,35 @@ module Iso where
     ⟦ lookup i (fromList Δ) ⟧tp→
       ≡⟨ cong ⟦_⟧tp→ eq ⟩
     ⟦ r ⟧tp→ ∎
+
+  ⟦base⟧tp← : ∀ {ν} {a : F.Type ν} → F.Base a → ∃ λ τ → ⟦ a ⟧tp← ≡ (simpl τ)
+  ⟦base⟧tp← (F.tc n) = tc n , refl
+  ⟦base⟧tp← (F.tvar n) = tvar n , refl
+  ⟦base⟧tp← (a F.⟶ b) = ⟦ a ⟧tp← →' ⟦ b ⟧tp← , refl
+
+  ⟦simpl⟧tp→ : ∀ {ν} (τ : SimpleType ν) → F.Base ⟦ simpl τ ⟧tp→
+  ⟦simpl⟧tp→ (tc x) = F.tc x
+  ⟦simpl⟧tp→ (tvar n) = F.tvar n
+  ⟦simpl⟧tp→ (x →' x₁) = ⟦ x ⟧tp→ F.⟶ ⟦ x₁ ⟧tp→
+
+module Iso where
+
+  open Embedding
+  open Lemmas
+
+  from : ∀ {ν n t a} {Γ : F.Ctx ν n} → Γ F.⊢ t ∈ a → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ a ⟧tp←
+  from (F.var x) = r-ivar (lem x _)
+    where
+      lem : ∀ {ν n} → (x : Fin n) → (v : F.Ctx ν n) → ⟦ lookup x v ⟧tp← List.∈ ⟦ v ⟧ctx←
+      lem zero (x ∷ xs) = here refl
+      lem (suc x) (v ∷ vs) = there (lem x vs) 
+  from {Γ = Γ} (F.Λ x) = r-tabs (subst (λ u → u ⊢ᵣ _) (⟦weaken⟧ctx← Γ) (from x))
+  from (F.λ' {b = b} a x) = r-iabs (from x)
+  from {Γ = Γ} (F._[_] {a = a} x b) = subst
+    (λ u → ⟦ Γ ⟧ctx← ⊢ᵣ u)
+    (sym (⟦a/sub⟧tp← a b))
+    (r-tapp ⟦ b ⟧tp← (from x))
+  from (a F.· b) = r-iapp (from a) (from b)
   
   ⟦_⟧ᵣ : ∀ {ν} {Δ : ICtx ν} {r} → (p : Δ ⊢ᵣ r) → ⟦ Δ ⟧ctx→ F.⊢ ⟦ p ⟧term→ ∈ ⟦ r ⟧tp→
   ⟦_⟧ᵣ {Δ = Δ} (r-tabs {r = r} p) with ⟦ p ⟧ᵣ
