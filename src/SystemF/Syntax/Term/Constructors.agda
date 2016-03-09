@@ -1,10 +1,10 @@
-module SystemF.Syntax.Term.Constructors (TC : Set) where
+module SystemF.Syntax.Term.Constructors where
 
 open import Prelude hiding (⊥-elim)
-open import SystemF.WellTyped TC
-open import SystemF.Substitutions.Lemmas TC
-open import SystemF.Substitutions TC
-open import SystemF.Syntax.Type.Constructors TC
+open import SystemF.WellTyped
+open import SystemF.Substitutions.Lemmas
+open import SystemF.Substitutions
+open import SystemF.Syntax.Type.Constructors
 
 -- polymorphic function application
 -- applies a polymorphic function to an argument with the type of the domain

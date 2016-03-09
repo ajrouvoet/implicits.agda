@@ -78,12 +78,4 @@ module Inductive where
       where
         f' = map-mono (flip TypeSubst._/_ TypeSubst.wk) f
 
-
-  {-}
-  trivial : ∀ {ν} {Δ : ICtx ν} {r} → r List.∈ Δ → Δ ⊢ᵣ r
-  trivial {r = simpl x} p = r-simp p (i-simp x)
-  trivial {r = a ⇒ b} p = r-iabs {!!}
-  trivial {r = ∀' r} p = {!!}
-  -}
-
 open Inductive public

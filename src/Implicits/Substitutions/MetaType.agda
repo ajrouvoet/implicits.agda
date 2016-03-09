@@ -7,6 +7,7 @@ open import Implicits.Syntax.MetaType
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
+open import Data.Nat.Properties.Simple
 
 module MetaTypeTypeSubst where
 
@@ -143,6 +144,10 @@ module MetaTypeMetaSubst where
       comm-weaken-tpweaken : ∀ {m ν} (a : T m ν) → weaken (tpweaken a) ≡ tpweaken (weaken a)
       tpweaken-var : ∀ {ν m} (n : Fin m) → (tpweaken {ν = ν} (evar n)) ≡ evar n
 
+    _↑tp⋆_ : ∀ {m m' ν} → MetaSub T ν m m' → (k : ℕ) → MetaSub T (k N+ ν) m m'
+    s ↑tp⋆ zero = s
+    s ↑tp⋆ suc k = (s ↑tp⋆ k) ↑tp
+
   module MetaTypeApp {T} (l : MetaLift T) where
     open MetaLift l
 
@@ -254,8 +259,12 @@ module MetaTypeMetaSubst where
 
   open ExpandSubst public hiding (var; simple)
 
+  open-meta-k : ∀ {m ν} k → (a : MetaType m (k N+ suc ν)) → MetaType (suc m) (k N+ ν)
+  open-meta-k {m} {ν} k a = (weaken a) MetaTypeTypeSubst./ 
+      (MetaTypeTypeSubst.sub (simpl (mvar zero)) MetaTypeTypeSubst.↑⋆ k)
+
   open-meta : ∀ {m ν} → (a : MetaType m (suc ν)) → MetaType (suc m) ν
-  open-meta x = (weaken x) MetaTypeTypeSubst./ (MetaTypeTypeSubst.sub (simpl (mvar zero)))
+  open-meta a = open-meta-k zero a
 
   _◁m₁ : ∀ {ν m} (r : MetaType m ν) → ℕ
   _◁m₁ (a ⇒ b) = b ◁m₁ 

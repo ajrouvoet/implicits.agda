@@ -1,12 +1,11 @@
-module SystemF.WellTyped (TC : Set) where
+module SystemF.WellTyped where
 
 open import Prelude hiding (id)
-open import SystemF.Syntax TC public
-open import SystemF.Substitutions TC
+open import SystemF.Syntax public
+open import SystemF.Substitutions
 open import Data.Vec.Properties
 
-infix 4 _⊢_∈_
-
+infix 4 _⊢_∈_ 
 data _⊢_∈_ {ν n} (Γ : Ctx ν n) : Term ν n → Type ν → Set where
   var : (x : Fin n) → Γ ⊢ var x ∈ lookup x Γ
   Λ   : ∀ {t a} → (ctx-weaken Γ) ⊢ t ∈ a → Γ ⊢ Λ t ∈ ∀' a

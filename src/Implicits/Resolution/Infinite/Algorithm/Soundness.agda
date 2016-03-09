@@ -10,7 +10,7 @@ open import Data.List.Any
 open import Implicits.Syntax
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas
-open import Implicits.Syntax.Type.Unification
+open import Implicits.Syntax.Type.Unification hiding (sound)
 open import Implicits.Resolution.Infinite.Resolution
 open import Implicits.Resolution.Infinite.Algorithm
 open Inductive

@@ -4,172 +4,171 @@ module Implicits.Resolution.Infinite.Algorithm.Completeness where
 
 open import Data.Bool
 open import Data.Unit.Base
-open import Data.Maybe as Maybe using ()
+open import Data.Maybe as Maybe using (Is-just; to-witness)
 open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any hiding (tail)
 open Membership-≡
+open import Data.Fin.Substitution
+open import Relation.Binary.HeterogeneousEquality as H using ()
+open import Induction.WellFounded
+
 open import Implicits.Syntax
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas.MetaType
-open import Implicits.Syntax.Type.Unification as Unification hiding (complete)
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Syntax.Type.Unification.Lemmas as Unification hiding (complete)
 open import Implicits.Resolution.Infinite.Resolution
 open import Implicits.Resolution.Infinite.Algorithm
-open import Data.Fin.Substitution
-open import Relation.Binary.HeterogeneousEquality as H using ()
-module HR = H.≅-Reasoning
+open import Implicits.Resolution.Termination
+
+private
+  module HR = H.≅-Reasoning
 
 open import Category.Monad.Partiality as P
 open Workaround
+open Workaround.Correct
 open import Category.Monad.Partiality.All using (All; module Alternative)
 open Alternative renaming (sound to AllP-sound) hiding (complete)
 
 open import Category.Functor
 private module MaybeFunctor {f} = RawFunctor (Maybe.functor {f})
 
+private
+  module M = MetaTypeMetaSubst
+
 module Lemmas where
-
-  {-}
-  from-to-meta-↓τ : ∀ {ν} {Δ : ICtx ν} {a τ} →
-                    ∃ (λ u → Δ ⊢ from-meta (to-meta {zero} a MetaTypeMetaSubst./ u) ↓ τ) →
-                    Δ ⊢ a ↓ τ
-  from-to-meta-↓τ {Δ = Δ} {τ = τ} ([] , proj₂) =
-    subst (λ u → Δ ⊢ u ↓ τ) from-to-meta-/-vanishes proj₂
-
-  from-to-meta-↓τ' : ∀ {ν} {Δ : ICtx ν} {a τ} →
-                     Δ ⊢ a ↓ τ → ∃ (λ u → Δ ⊢ from-meta (to-meta {zero} a MetaTypeMetaSubst./ u) ↓ τ)
-  from-to-meta-↓τ' {Δ = Δ} {a} {τ} x =
-    MetaTypeMetaSubst.id , subst (λ u → Δ ⊢ u ↓ τ) (Prelude.sym from-to-meta-/-vanishes) x
-  -}
-
-  _◁m : ∀ {ν m} (r : MetaType m ν) → ∃ (flip MetaType ν)
-  _◁m {m} (simpl x) = , simpl x
-  (a ⇒ b) ◁m = b ◁m
-  ∀' r ◁m = , open-meta (proj₂ (r ◁m))
-
-  ◁-Unifiable : ∀ {m ν} → MetaType m ν → SimpleType ν → Set
-  ◁-Unifiable x τ = Unifiable (proj₂ (x ◁m)) τ
-
-  unifiable-subst : ∀ {m m' ν} {a : MetaType m ν} {a' : MetaType m' ν} {τ} → (m-eq : m ≡ m') →
-                    a H.≅ a' → Unifiable a τ → Unifiable a' τ
-  unifiable-subst refl H.refl p = p
-
-  open-meta-◁m : ∀ {ν m} (a : MetaType m (suc ν)) →
-                 (proj₂ ((open-meta a) ◁m)) H.≅ open-meta (proj₂ (a ◁m))
-  open-meta-◁m (a ⇒ b) = open-meta-◁m b
-  open-meta-◁m (∀' a) = {!!}
-    where open MetaTypeMetaSubst hiding (open-meta)
-  open-meta-◁m (simpl (tvar zero)) = H.refl
-  open-meta-◁m (simpl (tvar (suc x))) =
-    H.cong (λ u → proj₂ (zero , u)) (H.≡-to-≅ (MetaTypeTypeLemmas.lookup-sub-↑⋆ zero x))
-  open-meta-◁m (simpl (mvar x)) = H.refl
-  open-meta-◁m (simpl (a →' b)) = H.refl
-  open-meta-◁m (simpl (tc c)) = H.refl
-
-  open-meta-◁m-m : ∀ {ν m} (a : MetaType m (suc ν)) →
-                 (proj₁ ((open-meta a) ◁m)) ≡ suc (proj₁ (a ◁m))
-  open-meta-◁m-m a = {!!}
-
-  ↓-◁-unifiable : ∀ {ν} {Δ : ICtx ν} {r τ} → Δ ⊢ r ↓ τ → ◁-Unifiable (to-meta {zero} r) τ
-  ↓-◁-unifiable (i-simp τ) = mgu-id τ
-  ↓-◁-unifiable (i-iabs x p) = ↓-◁-unifiable p 
-  ↓-◁-unifiable (i-tabs {ρ = a} b p) = lem₂ a b (↓-◁-unifiable p)
-    where
-      -- lem₁: because a tp[/tp b] ≡ (open-meta a M./ M.sub b)
-      -- so let's define u ≔ the unifier of a tp[/tp b] and τ
-      -- then (to-meta b) ∷ u is a unifier for a and τ
-      postulate lem₁ : ∀ {ν} (a : Type (suc ν)) b {τ} →
-                        ◁-Unifiable (to-meta {zero} (a tp[/tp b ])) τ →
-                        ◁-Unifiable (open-meta (to-meta {zero} a)) τ
-
-      -- goal:
-      --   Unifiable (proj₂ ((to-meta {zero} (∀' a)) ◁m)) τ ≡⟨ ? ⟩
-      --   Unifiable (proj₂ ((∀' (to-meta {zero} a)) ◁m)) τ ≡⟨ ? ⟩
-      --   Unifiable (proj₂ (, open-meta (proj₂ ((to-meta a) ◁m)))) τ ≡⟨ ? ⟩
-      --   Unifiable (proj₂ ((open-meta (to-meta {zero} a)) ◁m)) τ
-      -- completing the proof with (lem₁ a b p)
-      postulate lem₂ : ∀ {ν} (a : Type (suc ν)) b {τ} →
-                       ◁-Unifiable (to-meta {zero} (a tp[/tp b ])) τ →
-                       ◁-Unifiable (to-meta {zero} (∀' a)) τ
 
 private
   open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
   open module PartialEq = P.Equality  {A = Bool} _≡_
-  open module PartialReasoning  = P.Reasoning (PEq.isEquivalence {A = Bool})
   open Lemmas
 
-match-u-complete : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) → ◁-Unifiable r τ →
-                   AllP (Maybe.Any (const ⊤)) (match-u Δ τ r)
-match-u-complete Δ τ (a ⇒ b) p = {!!}
-match-u-complete {m = m} Δ τ (∀' r) u =
-  _
-    ≅⟨ match-u-tabs-comp Δ τ r ⟩P
-  later (♯ match-u-complete Δ τ (open-meta r) u') >>=-congP lem 
-  where
-    lem : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) (suc m) zero)} →
-          Maybe.Any (const ⊤) v → AllP (Maybe.Any (const ⊤)) ((now ∘ (MaybeFunctor._<$>_ tail)) v)
-    lem (just px) = now (just tt)
+mutual
+  {-# NO_TERMINATION_CHECK #-}
+  delayed-resolve-complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (delayed-resolve Δ r)
+  delayed-resolve-complete Δ r p = _
+      ≅⟨ later-hom (♯ (resolve' Δ r)) ⟩P
+    later (♯ (complete Δ r p))
 
-    u' : Unifiable (proj₂ ((open-meta r) ◁m)) τ
-    u' = unifiable-subst (Prelude.sym (open-meta-◁m-m r)) (H.sym (open-meta-◁m r)) u
-match-u-complete Δ τ (simpl x) u
-  with mgu (simpl x) τ | Unification.complete (simpl x) τ (proj₂ u)
-match-u-complete Δ τ (simpl x) _ | just _  | just _ = now (just tt)
-match-u-complete Δ τ (simpl x) _ | nothing | ()
+  resolve-context-complete : ∀ {ν m} (Δ : ICtx ν) a (u : Maybe (Sub (flip MetaType ν) m zero)) →
+                            (p : Is-just u) →
+                            Δ ⊢ᵣ (from-meta (a M./ (to-witness p))) → 
+                            AllP Is-just (resolve-context Δ a u)
+  resolve-context-complete Δ a ._ (just {x = u} px) x = 
+    _ ≅⟨ resolve-context-comp Δ a u ⟩P
+    delayed-resolve-complete Δ (from-meta (M._/_ a u)) x >>=-congP lem
+    where
+      lem : ∀ {b} → true ≡ b → AllP Is-just (map-bool u b)
+      lem refl = now (just tt)
 
--- the trivial predicate holds for all terminating problems
-trivial-allP : ∀ {a} {A : Set a} (a : A ⊥) → AllP (const ⊤) a
-trivial-allP (now x) = now tt
-trivial-allP (later x) = later (♯ (trivial-allP (♭ x)))
+  lemx : ∀ {ν m} {Δ : ICtx ν} r c τ (u : M.MetaSub MetaType ν m zero) →
+        Δ ⊢ from-meta (r M./ u M.↑tp) tp[/tp c ] ↓ τ →
+        Δ ⊢ from-meta (open-meta r M./ (to-meta c ∷ u)) ↓ τ
+  lemx r c τ u p = {!!}
 
--- Match succeeds if we have a proof Δ ⊢ r ↓ τ
-match-complete : ∀ {ν} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : Type ν) → Δ ⊢ r ↓ τ →
-                 AllP (_≡_ true) (match Δ τ r)
-match-complete Δ τ r p = _
-    ≅⟨ match-comp Δ τ r ⟩P
-  match-u-complete Δ τ (to-meta {zero} r) (↓-◁-unifiable p) >>=-congP lem
-  where
-    lem : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) zero zero)} →
-          (Maybe.Any (const ⊤) v) → AllP (_≡_ true) (⟦ (now ∘ Maybe.is-just) v ⟧P)
-    lem  (just tt) = now refl
+  postulate a/u-↓-unique : ∀ {ν m} {Δ} (a : MetaType m ν) {τ} u v →
+                          Δ ⊢ from-meta (a M./ u) ↓ τ → Δ ⊢ from-meta (a M./ v) ↓ τ →
+                          u ≡ v
 
--- 'recovery' of a non failed match succeeds
-recover-true-complete : ∀ {ν} {Δ : ICtx ν} {ρs τ v} → v ≡ true →
-                        AllP (_≡_ true) (match1st-recover Δ ρs τ v)
-recover-true-complete refl = now refl
+  match-u-complete' : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) → (ac : m<-Acc r) →
+                    ∀ u → Δ ⊢ from-meta (r M./ u) ↓ τ → 
+                    AllP Is-just (match-u Δ τ r ac)
+  match-u-complete' Δ τ (a ⇒ b) (acc f) u (i-iabs q p) =
+    _
+      ≅⟨ match-u-iabs-comp Δ τ a b f ⟩P
+    match-u-complete' Δ τ b (f _ (b-m<-a⇒b a b)) u p >>=-congP lem
+    where
+      lem : ∀ {v : Maybe (Sub (flip MetaType _) _ zero)} → Is-just v →
+            AllP Is-just (resolve-context Δ a v)
+      lem x = resolve-context-complete Δ a _ x q'
+        where
+          -- from q : Δ ⊢ᵣ a / u
+          -- we derive q' : Δ ⊢ᵣ a / x
+          -- based on the idea that we have Δ ⊢ b / u ↓ τ and
+          -- soundness gives us Δ ⊢ b / (to-witness x) ↓ τ.
+          -- And assuming ⊢unamb b, we should have u ≡ (to-witness x)
+          q' : Δ ⊢ᵣ from-meta (a M./ to-witness x )
+          q' = subst (_⊢ᵣ_ Δ) {!!} q
+  match-u-complete' {m = m} Δ τ (∀' r) (acc f) u (i-tabs c p) =
+    _
+      ≅⟨ match-u-tabs-comp Δ τ r f ⟩P
+    (match-u-complete' Δ τ (open-meta r) (f _ _) (to-meta {zero} c ∷ u) (lemx r c τ u p))
+      >>=-congP now∘tail-compl 
+    where
+      now∘tail-compl : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) (suc m) zero)} →
+                      Is-just v →
+                      AllP Is-just ((now ∘ (MaybeFunctor._<$>_ tail)) v)
+      now∘tail-compl (just px) = now (just tt)
 
--- recovery of a failed match succeeds if we know that the recursive match1st succeeds
-recover-false-complete : ∀ {ν} (Δ : ICtx ν) ρs τ v → AllP (_≡_ true) (match1st Δ ρs τ) →
-                         AllP (_≡_ true) (match1st-recover Δ ρs τ v)
-recover-false-complete Δ ρs τ true p = now refl
-recover-false-complete Δ ρs τ false p = p
+  -- Maybe surprisingly 'u' is ignored in the proofs below.
+  -- But if you think about it, it makes sense: mgu doesn't necessarily find the same unifier.
+  -- All we need to know is that there is a unifier u; the structure of Δ ⊢ (a / u) ↓ τ does the rest
+  match-u-complete' Δ .(tvar x) (simpl (tvar x)) ac u (i-simp .(tvar x)) =
+    now (Unification.complete (simpl (tvar x)) (tvar x) u refl)
+  match-u-complete' Δ .(tc x) (simpl (tc x)) ac u (i-simp .(tc x)) =
+    now (Unification.complete (simpl (tc x)) (tc x) u refl)
+  match-u-complete' Δ τ (simpl (mvar x)) ac u p =
+    let (u' , u'-uni) = mvar-unifiable x τ in
+      now (Unification.complete (simpl (mvar x)) τ u' u'-uni)
+  match-u-complete' Δ ._ (simpl (a →' b)) ac u (i-simp ._) =
+    now (Unification.complete (simpl (a →' b)) _ u refl)
 
--- match1st succeeds if we have a proof that some r from the context
--- should be a match
-match1st-complete : ∀ {ν} (Δ : ICtx ν) {r} →
-                    (ρs : ICtx ν) → (τ : SimpleType ν) →
-                    r List.∈ ρs → Δ ⊢ r ↓ τ →
-                    AllP (_≡_ true) (match1st Δ ρs τ)
-match1st-complete Δ List.[] τ () r↓τ
-match1st-complete Δ (x List.∷ ρs) τ (here refl) r↓τ =
-  _
-    ≅⟨ match1st-comp Δ x ρs τ ⟩P
-  match-complete Δ τ x r↓τ >>=-congP (λ{ v → recover-true-complete (Prelude.sym v)}) 
-match1st-complete Δ (x List.∷ ρs) τ (there r∈Δ) r↓τ =
-  _
-    ≅⟨ match1st-comp Δ x ρs τ ⟩P
-  ((trivial-allP (match Δ τ x)) >>=-congP
-    (λ {v} _ → recover-false-complete Δ ρs τ v (match1st-complete Δ ρs τ r∈Δ r↓τ)))
+  -- the trivial predicate holds for all terminating problems
+  trivial-allP : ∀ {a} {A : Set a} (a : A ⊥) → AllP (const ⊤) a
+  trivial-allP (now x) = now tt
+  trivial-allP (later x) = later (♯ (trivial-allP (♭ x)))
 
--- Mirroring Abel & Altenkirch's work on partial type checking, we say:
--- Because resolution without an additional termination condition
--- seems to be undecidable, an appropriate completeness result would be:
--- if Δ resolves r, then the resolution algorithm searching for a proof of that fact,
--- will not fail finetely. I.e. the algorithm might diverge or succeed, but not report an error.
--- We can make this formal using the *coinductive* resolution rules
--- (Together with soundness we have a 'minimal' completeness result, because the rules allow
--- for many derivations, while the algorithm will only find *one*.)
-complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (resolve Δ r)
-complete Δ (simpl x) (r-simp r∈Δ r↓τ) = (match1st-complete Δ Δ x r∈Δ r↓τ)
-complete Δ (a ⇒ b) (r-iabs p) = complete (a List.∷ Δ) b p
-complete Δ (∀' r) (r-tabs p) = complete (ictx-weaken Δ) r p
+  -- Match succeeds if we have a proof Δ ⊢ r ↓ τ
+  match-complete : ∀ {ν} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : Type ν) → Δ ⊢ r ↓ τ →
+                  AllP (_≡_ true) (match Δ τ r)
+  match-complete Δ τ r p = _
+      ≅⟨ match-comp Δ τ r ⟩P
+    match-u-complete' Δ τ (to-meta {zero} r) (m<-well-founded _) []
+      (subst (λ z → Δ ⊢ z ↓ τ) (Prelude.sym $ from-to-meta-/-vanishes) p)
+      >>=-congP lem
+    where
+      lem : ∀ {ν} {v : Maybe (Sub (flip MetaType ν) zero zero)} →
+            (Is-just v) → AllP (_≡_ true) (⟦ (now ∘ Maybe.is-just) v ⟧P)
+      lem  (just tt) = now refl
+
+  -- 'recovery' of a non failed match succeeds
+  recover-true-complete : ∀ {ν} {Δ : ICtx ν} {ρs τ v} → v ≡ true →
+                          AllP (_≡_ true) (match1st-recover Δ ρs τ v)
+  recover-true-complete refl = now refl
+
+  -- recovery of a failed match succeeds if we know that the recursive match1st succeeds
+  recover-false-complete : ∀ {ν} (Δ : ICtx ν) ρs τ v → AllP (_≡_ true) (match1st Δ ρs τ) →
+                          AllP (_≡_ true) (match1st-recover Δ ρs τ v)
+  recover-false-complete Δ ρs τ true p = now refl
+  recover-false-complete Δ ρs τ false p = p
+
+  -- match1st succeeds if we have a proof that some r from the context
+  -- should be a match
+  match1st-complete : ∀ {ν} (Δ : ICtx ν) {r} →
+                      (ρs : ICtx ν) → (τ : SimpleType ν) →
+                      r List.∈ ρs → Δ ⊢ r ↓ τ →
+                      AllP (_≡_ true) (match1st Δ ρs τ)
+  match1st-complete Δ List.[] τ () r↓τ
+  match1st-complete Δ (x List.∷ ρs) τ (here refl) r↓τ =
+    _
+      ≅⟨ match1st-comp Δ x ρs τ ⟩P
+    match-complete Δ τ x r↓τ >>=-congP (λ{ v → recover-true-complete (Prelude.sym v)}) 
+  match1st-complete Δ (x List.∷ ρs) τ (there r∈Δ) r↓τ =
+    _
+      ≅⟨ match1st-comp Δ x ρs τ ⟩P
+    ((trivial-allP (match Δ τ x)) >>=-congP
+      (λ {v} _ → recover-false-complete Δ ρs τ v (match1st-complete Δ ρs τ r∈Δ r↓τ)))
+
+  -- Mirroring Abel & Altenkirch's work on partial type checking, we say:
+  -- Because resolution without an additional termination condition
+  -- seems to be undecidable, an appropriate completeness result would be:
+  -- if Δ resolves r, then the resolution algorithm searching for a proof of that fact,
+  -- will not fail finetely. I.e. the algorithm might diverge or succeed, but not report an error.
+  -- We can make this formal using the *coinductive* resolution rules
+  -- (Together with soundness we have a 'minimal' completeness result, because the rules allow
+  -- for many derivations, while the algorithm will only find *one*.)
+  complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (resolve Δ r)
+  complete Δ (simpl x) (r-simp r∈Δ r↓τ) = (match1st-complete Δ Δ x r∈Δ r↓τ)
+  complete Δ (a ⇒ b) (r-iabs p) = complete (a List.∷ Δ) b p
+  complete Δ (∀' r) (r-tabs p) = complete (ictx-weaken Δ) r p

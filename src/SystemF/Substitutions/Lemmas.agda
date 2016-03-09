@@ -1,8 +1,8 @@
-module SystemF.Substitutions.Lemmas (TC : Set) where
+module SystemF.Substitutions.Lemmas where
 
 open import Prelude hiding (Fin′; subst; id) renaming (lift to finlift)
-open import SystemF.WellTyped TC
-open import SystemF.Substitutions TC
+open import SystemF.WellTyped
+open import SystemF.Substitutions
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
 open import Extensions.Substitution

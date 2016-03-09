@@ -1,4 +1,4 @@
-module SystemF.Syntax.Type (TC : Set) where
+module SystemF.Syntax.Type where
 
 open import Prelude hiding (lift)
 open import Data.Fin.Substitution
@@ -7,11 +7,16 @@ open import Data.Star using (Star; ε; _◅_)
   
 infixl 10 _→'_
 data Type (ν : ℕ) : Set where
-  tc   : TC → Type ν
+  tc   : ℕ → Type ν
   tvar : (n : Fin ν) → Type ν
   _→'_ : Type ν → Type ν → Type ν
   _⟶_ : Type ν → Type ν → Type ν
   ∀'   : Type (suc ν) → Type ν
+
+data Base {ν} : (Type ν) → Set where
+  tc   : ∀ n → Base (tc n)
+  tvar : ∀ n → Base (tvar n)
+  _⟶_ : ∀ a b → Base (a ⟶ b)
 
 module Functions where
 

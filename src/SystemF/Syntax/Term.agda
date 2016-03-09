@@ -1,7 +1,7 @@
-module SystemF.Syntax.Term (TC : Set) where
+module SystemF.Syntax.Term where
   
 open import Prelude
-open import SystemF.Syntax.Type TC
+open import SystemF.Syntax.Type
 
 infixl 9 _[_] _·_
 data Term (ν n : ℕ) : Set where

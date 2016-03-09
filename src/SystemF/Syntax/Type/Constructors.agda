@@ -1,8 +1,8 @@
-module SystemF.Syntax.Type.Constructors (TC : Set) where
+module SystemF.Syntax.Type.Constructors where
 
 open import Prelude
-open import SystemF.Syntax.Type TC
-open import SystemF.Substitutions.Types TC
+open import SystemF.Syntax.Type
+open import SystemF.Substitutions.Types
 
 -- church numerals
 tnat : Type 0

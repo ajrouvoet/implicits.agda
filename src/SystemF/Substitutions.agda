@@ -1,11 +1,11 @@
-module SystemF.Substitutions (TC : Set) where
+module SystemF.Substitutions where
 
 open import Prelude hiding (lift; Fin′; subst)
-open import SystemF.Syntax TC
+open import SystemF.Syntax
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
 
-open import SystemF.Substitutions.Types TC public
+open import SystemF.Substitutions.Types public
 
 module TermTypeSubst where
 

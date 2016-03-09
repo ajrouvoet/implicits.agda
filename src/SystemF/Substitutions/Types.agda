@@ -1,7 +1,7 @@
-module SystemF.Substitutions.Types (TC : Set) where
+module SystemF.Substitutions.Types where
 
 open import Prelude hiding (lift; Fin′; subst)
-open import SystemF.Syntax.Type TC
+open import SystemF.Syntax.Type
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
 

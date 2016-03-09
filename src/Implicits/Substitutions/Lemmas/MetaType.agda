@@ -10,7 +10,12 @@ open import Implicits.Substitutions
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas 
 open import Data.Vec.Properties
+open import Data.Nat.Properties.Simple
 open import Extensions.Substitution
+open import Relation.Binary.HeterogeneousEquality as H using ()
+
+private
+  module HR = H.≅-Reasoning
 
 module MetaTypeTypeLemmas where
   open MetaTypeTypeSubst hiding (_/✶_)
@@ -331,7 +336,7 @@ module MetaTypeMetaLemmas where
 
     open Lemmas₅ lemmas₅ public hiding (lemmas₃)
 
-  open MetaTypeMetaSubst using (open-meta; _↑⋆tp_; _↑tp; _◁m; _◁m₁)
+  open MetaTypeMetaSubst using (open-meta-k; open-meta; _↑⋆tp_; _↑tp; _◁m; _◁m₁)
 
   us↑-⊙-sub-u≡u∷us : ∀ {ν m} (u : MetaType zero ν) (us : Sub (flip MetaType ν) m zero) →
                      us ↑ ⊙ sub u ≡ u ∷ us
@@ -342,3 +347,114 @@ module MetaTypeMetaLemmas where
 
   open-tvar-suc : ∀ {ν m} (x : Fin m) → open-meta {ν} (simpl (tvar (suc x))) ≡ simpl (tvar x)
   open-tvar-suc x = MetaTypeTypeLemmas.suc-/-sub {t = (simpl (tvar x))}
+
+  open import Implicits.Substitutions.Type as TS using ()
+  open import Implicits.Substitutions.Lemmas.Type as TSLemmas using ()
+
+  private
+    module MTT = MetaTypeTypeSubst 
+
+  postulate open-meta-◁m₁ : ∀ {ν m} k (a : MetaType m (k N+ suc ν)) → (open-meta-k k a) ◁m₁ ≡ a ◁m₁
+  {-}
+  open-meta-◁m₁ k (a ⇒ b) = open-meta-◁m₁ k b
+  open-meta-◁m₁ {ν} {m} k (∀' a) = 
+    cong suc {!!} -- (open-meta-◁m₁ {ν} {m} (suc k) (Prelude.subst (MetaType m) (eq (suc k) ν) a))
+    where
+      eq : ∀ n n' → suc (suc (n N+ n')) ≡ suc ((suc n) N+ n')
+      eq n n' = cong suc (begin
+        (suc (n N+ n')) ≡⟨ sym $ +-suc n n'  ⟩
+        n N+ (suc n') ≡⟨ sym $ +-assoc n 1 n' ⟩
+        ((n N+ 1) N+ n') ≡⟨ cong (flip _N+_ n') (+-comm n 1) ⟩
+        ((suc n) N+ n') ∎)
+  
+  open-meta-◁m₁ k (simpl (tvar x)) = {!refl!}
+  open-meta-◁m₁ k (simpl (mvar x)) = refl
+  open-meta-◁m₁ k (simpl (a →' b)) = refl
+  open-meta-◁m₁ k (simpl (tc x)) = refl
+  -}
+
+  postulate open-meta-◁m : ∀ {ν m} (a : MetaType m (suc ν)) →
+                           ((open-meta a) ◁m) H.≅ open-meta (a ◁m)
+  {-
+  open-meta-◁m (a ⇒ b) = open-meta-◁m b
+  open-meta-◁m (∀' a) = {!!}
+    where open MetaTypeMetaSubst hiding (open-meta)
+  open-meta-◁m (simpl (tvar zero)) = H.refl
+  open-meta-◁m (simpl (tvar (suc x))) = ?
+  open-meta-◁m (simpl (mvar x)) = H.refl
+  open-meta-◁m (simpl (a →' b)) = H.refl
+  open-meta-◁m (simpl (tc c)) = H.refl
+
+  postulate lemx : ∀ {ν} k (a : Type (k N+ suc ν)) (b : Type ν) →
+                  (to-meta (a TS./ (TS.sub b) TS.↑⋆ k)) ≡
+                    ((weaken (to-meta a)) MTT./ (MTT.sub (simpl (mvar zero)) MTT.↑⋆ k) / (sub (to-meta {zero} b) ↑⋆tp k))
+  {-
+  lemx k (simpl (tc x)) b = refl
+  lemx zero (simpl (tvar zero)) b = refl
+  lemx zero (simpl (tvar (suc n))) b = begin
+    to-meta (TS._/_ (simpl (tvar (suc n))) (TS.sub b))
+      ≡⟨ cong to-meta (TSLemmas.lookup-sub-↑⋆ {t = b} zero n) ⟩
+    to-meta (simpl (tvar n))
+      ≡⟨ refl ⟩
+    _/_ (simpl (tvar n)) (sub (to-meta {zero} b))
+      ≡⟨ cong (λ x → _/_ x (sub (to-meta {zero} b))) (sym (open-tvar-suc n)) ⟩
+    _/_ (open-meta (simpl (tvar (suc n)))) (sub (to-meta {zero} b)) ∎
+  lemx (suc k) (simpl (tvar zero)) b = refl
+  lemx (suc k) (simpl (tvar (suc n))) b = {!refl!}
+    {-}
+    begin
+      to-meta ((simpl (tvar n)) TS./ (TS.sub b) TS.↑⋆ k)
+        ≡⟨ refl ⟩
+      to-meta (lookup n ((TS.sub b) TS.↑⋆ k))
+        ≡⟨ {!!} ⟩
+      to-meta (lookup n ((TS.sub b) TS.↑⋆ k))
+        ≡⟨ {!!} ⟩
+      ((weaken (to-meta (simpl (tvar n)))) MTT./ (MTT.sub (simpl (mvar zero)) MTT.↑⋆ k) / (sub (to-meta {zero} b) ↑⋆tp k))
+        ≡⟨ {!!} ⟩
+      ((weaken (to-meta (simpl (tvar n)))) MTT./ (MTT.sub (simpl (mvar zero)) MTT.↑⋆ k) / (sub (to-meta {zero} b) ↑⋆tp k)) ∎
+    -}
+    {-}begin
+    (to-meta (simpl (tvar (suc n)) TS./ (TS.sub b)))
+      ≡⟨ cong to-meta (TSLemmas.lookup-sub-↑⋆ {t = b} zero n) ⟩
+    (to-meta (simpl (tvar n)))
+      ≡⟨ refl ⟩
+    ((simpl (tvar n)) / sub (to-meta {zero} b))
+      ≡⟨ cong (λ x → _/_ x (sub (to-meta {zero} b))) (sym (open-tvar-suc n)) ⟩
+    (open-meta (simpl (tvar (suc n))) / sub (to-meta {zero} b)) ∎-}
+  lemx k (simpl (a →' c)) b = cong₂ (λ u v → simpl (u →' v)) (lemx k a b) (lemx k c b)
+  lemx k (a ⇒ c) b = cong₂ _⇒_ (lemx k a b) (lemx k c b)
+  lemx k (∀' a) b = begin
+    (to-meta ((∀' a) TS./ (TS.sub b) TS.↑⋆ k))
+      ≡⟨ refl ⟩
+    ∀' (to-meta (a TS./ ((TS.sub b) TS.↑⋆ (suc k))))
+      ≡⟨ cong ∀' (lemx (suc k) a b) ⟩
+    ∀' (((weaken (to-meta a)) MTT./ ((MTT.sub (simpl (mvar zero))) MTT.↑⋆ (suc k))) / sub (to-meta {zero} b) ↑⋆tp (suc k))
+      ≡⟨ refl ⟩
+    ((weaken (to-meta (∀' a))) MTT./ (MTT.sub (simpl (mvar zero)) MTT.↑⋆ k) / (sub (to-meta {zero} b) ↑⋆tp k)) ∎
+  -}
+
+  sub-to-meta : ∀ {ν} (a : Type (suc ν)) (b : Type ν) →
+                  (to-meta (a TS./ (TS.sub b))) ≡
+                    (open-meta (to-meta a) / sub (to-meta {zero} b))
+  sub-to-meta a b = lemx zero a b
+
+  {-}
+  open import Relation.Binary.HeterogeneousEquality as H using ()
+  module HR = H.≅-Reasoning
+
+  lem₂ : ∀ {ν} k (a : Type (suc (k N+ ν))) →
+         (open-meta-k k ((to-meta {zero} a) ◁m)) H.≅ (open-meta-k k ((to-meta {zero} a))) ◁m
+  lem₂ k (simpl x) = {!!}
+  lem₂ k (a ⇒ b) = {!!}
+  lem₂ k (∀' a) = H.cong ∀' (lem₂ (suc k) {!a!})
+
+  lem₂ : ∀ {ν m} (x : MetaType (suc m) ν) b u → 
+         -- u has ((x / sub b) ◁m₁ + m) metavars
+         -- x ◁m has (x ◁m₁ + m) metavars
+         --   x ◁m₁ ≡ suc ((x / sub b) ◁m₁)
+         -- x ◁m has (suc ((x / sub) ◁m₁) + m) metavars
+         -- b ∷ u has suc ((x / sub b) ◁m₁ + m)
+         ((x / sub b) ◁m) H.≅ (x ◁m) / sub (subst Prelude.id (+-suc _ _) (b ◁m))
+  lem₂ x b u = ?
+  -}
+  -}

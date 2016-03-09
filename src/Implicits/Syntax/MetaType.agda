@@ -36,13 +36,17 @@ mutual
   to-meta (a ⇒ b) = (to-meta a) ⇒ (to-meta b)
   to-meta (∀' a) = ∀' (to-meta a)
 
-from-meta : ∀ {ν} → MetaType zero ν → Type ν
-from-meta (simpl (tvar x)) = simpl (tvar x)
-from-meta (simpl (mvar ()))
-from-meta (simpl (tc c)) = simpl (tc c)
-from-meta (a ⇒ b) = from-meta a ⇒ from-meta b
-from-meta (simpl (a →' b)) = simpl (from-meta a →' from-meta b)
-from-meta (∀' x) = ∀' (from-meta x)
+mutual
+  from-smeta : ∀ {ν} → MetaSimpleType zero ν → SimpleType ν
+  from-smeta (tvar x) = tvar x
+  from-smeta (mvar ())
+  from-smeta (tc c) = tc c
+  from-smeta (a →' b) = from-meta a →' from-meta b
+
+  from-meta : ∀ {ν} → MetaType zero ν → Type ν
+  from-meta (simpl τ) = simpl (from-smeta τ)
+  from-meta (a ⇒ b) = from-meta a ⇒ from-meta b
+  from-meta (∀' x) = ∀' (from-meta x)
 
 is-m∀' : ∀ {m ν} → MetaType m ν → Set
 is-m∀' (simpl x) = ⊥

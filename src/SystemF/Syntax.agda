@@ -1,5 +1,5 @@
-module SystemF.Syntax (TC : Set) where
+module SystemF.Syntax where
 
-open import SystemF.Syntax.Type TC public
-open import SystemF.Syntax.Term TC public
-open import SystemF.Syntax.Context TC public
+open import SystemF.Syntax.Type public
+open import SystemF.Syntax.Term public
+open import SystemF.Syntax.Context public

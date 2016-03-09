@@ -1,7 +1,7 @@
-module SystemF.Syntax.Context (TC : Set) where
+module SystemF.Syntax.Context where
 
 open import Prelude
-open import SystemF.Syntax.Type TC
+open import SystemF.Syntax.Type
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (Type ν) n
