@@ -4,6 +4,7 @@ open import Prelude
 
 open import Function.Equivalence using (_⇔_; equivalence)
 open import Relation.Nullary.Decidable as Dec using ()
+open import Relation.Binary.HeterogeneousEquality as H using ()
 
 open import Implicits.Syntax
 open import Implicits.Resolution.Ambiguous.Resolution
@@ -22,21 +23,17 @@ open import SystemF as F using ()
 private
   -- type of inhabitation problem decider
   ?:-dec : Set
-  ?:-dec = ∀ {ν} → (a : F.Type ν) → Dec (∃ λ t → [] F.⊢ t ∈ a)
+  ?:-dec = ∀ {n ν} (Γ : F.Ctx ν n) (a : F.Type ν) → Dec (∃ λ t → Γ F.⊢ t ∈ a)
 
 module Undecidable (?:-undec : ¬ ?:-dec) where
 
   -- type of decider for ambiguous resolution
   ⊢ᵣ-dec : Set
-  ⊢ᵣ-dec = ∀ {ν} (Δ : ICtx ν) → (a : Type ν) → Dec (Δ ⊢ᵣ a)
+  ⊢ᵣ-dec = ∀ {ν} (Δ : ICtx ν) (a : Type ν) → Dec (Δ ⊢ᵣ a)
 
   -- proof that such a decider would imply a decider for type inhabitation problem
   reduction : ⊢ᵣ-dec → ?:-dec
-  reduction f x = Dec.map (
-    subst
-      (λ u → List.[] ⊢ᵣ ⟦ x ⟧tp← ⇔ ∃ (λ t → [] F.⊢ t ∈ u))
-      (tp←→ x)
-      (iso List.[] ⟦ x ⟧tp←)) (f List.[] ⟦ x ⟧tp←)
+  reduction f Γ x = Dec.map (iso' Γ x) (f ⟦ Γ ⟧ctx← ⟦ x ⟧tp←)
 
   -- completing the proof
   undecidable : ¬ ⊢ᵣ-dec

@@ -1,11 +1,13 @@
 module Extensions.Vec where
 
 open import Data.Product hiding (map; zip)
+open import Data.Nat
 open import Data.Fin
 open import Data.Vec
-open import Relation.Binary.PropositionalEquality public hiding ([_])
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.List as L using ()
 open import Relation.Binary.HeterogeneousEquality as H using ()
+open ≡-Reasoning public
 
 private
   module HR = H.≅-Reasoning
@@ -41,3 +43,17 @@ fromList-map f L.[] = H.refl
 fromList-map f (x L.∷ xs) = ∷-cong (length-map _ xs) (fromList-map f xs)
   where open import Data.List.Properties
   
+open import Data.List as List
+open import Data.List.Properties
+
+length-toList : ∀ {A : Set } {n} (v : Vec A n) → List.length (toList v) ≡ n
+length-toList [] = refl
+length-toList (x ∷ v) = cong suc (length-toList v)
+
+length-map-toList : ∀ {A B : Set} {n} {f : A → B} (v : Vec A n) → List.length (List.map f (toList v)) ≡ n
+length-map-toList {n = n} {f} v = begin
+  List.length (List.map f (toList v))
+    ≡⟨ length-map f (toList v) ⟩
+  List.length (toList v)
+    ≡⟨ length-toList v ⟩
+  n ∎

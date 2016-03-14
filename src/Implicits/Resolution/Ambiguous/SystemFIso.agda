@@ -6,10 +6,10 @@ open import Function.Equivalence using (_⇔_; equivalence)
 open import Data.List.Properties
 open import Relation.Binary.HeterogeneousEquality as H using ()
 open import Data.Vec.Properties as VP using ()
+open import Extensions.Vec
 
 open import Implicits.Syntax
 open import Implicits.Resolution.Ambiguous.Resolution
-open import Implicits.Resolution.Ambiguous.Semantics
 open import Implicits.Resolution.Embedding
 open import Implicits.Resolution.Embedding.Lemmas
 
@@ -54,3 +54,15 @@ iso : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx�
 iso Δ r = equivalence
   (λ x → , (to-⊢ x))
   (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from-⊢ (proj₂ x)))
+
+⊢subst : ∀ {ν n n'} {a a' : F.Type ν} {Γ : F.Ctx ν n} {Γ' : F.Ctx ν n'} →
+          n ≡ n' → a ≡ a' → Γ H.≅ Γ' →
+          (∃ λ t → Γ F.⊢ t ∈ a) →
+          ∃ λ t → Γ' F.⊢ t ∈ a'
+⊢subst refl refl H.refl p = p
+
+iso' : ∀ {ν n} (Γ : F.Ctx ν n) r → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ r ⟧tp← ⇔ (∃ λ t → Γ F.⊢ t ∈ r)
+iso' Γ r = equivalence
+  (λ x → ⊢subst
+    (length-map-toList (map ⟦_⟧tp← Γ)) (tp←→ r) (ctx←→ Γ) (, to-⊢ x))
+  (λ x → (from-⊢ (proj₂ x)))

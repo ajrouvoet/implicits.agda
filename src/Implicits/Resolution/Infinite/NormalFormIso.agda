@@ -21,7 +21,7 @@ mutual
   from-⇓ : ∀ {ν n t a τ} {Γ : F.Ctx ν n} → Γ ⊢ t ⇓ a → ⟦ Γ ⟧ctx← ⊢ ⟦ a ⟧tp← ↓ τ →
            ∃ λ i → ⟦ Γ ⟧ctx← ⊢ ⟦ lookup i Γ ⟧tp← ↓ τ
   from-⇓ {Γ = Γ} (nvar i) ↓τ = i , ↓τ
-  from-⇓ (napp p x) ↓τ = from-⇓ p (i-iabs (from-⇑ x) ↓τ)
+  from-⇓ (napp p x) ↓τ = from-⇓ p (i-iabs (from-⇑ x) ↓τ) 
   from-⇓ {Γ = Γ} (ntapp {a = a} b p) ↓τ = from-⇓ p
     (i-tabs ⟦ b ⟧tp← (subst (λ z → ⟦ Γ ⟧ctx← ⊢ z ↓ _) (⟦a/sub⟧tp← a b) ↓τ))
 

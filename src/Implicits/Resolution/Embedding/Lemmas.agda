@@ -53,6 +53,20 @@ ctx→← (x List.∷ xs) = begin
     ≡⟨ cong₂ List._∷_ (tp→← x) (ctx→← xs) ⟩
   (x List.∷ xs) ∎
 
+Γ-cong₂ : ∀ {ν n n'} {x x' : F.Type ν} {xs : F.Ctx ν n} {xs' : F.Ctx ν n'} →
+          n ≡ n' → x ≡ x' → xs H.≅ xs' →
+          (x ∷ xs) H.≅ (x' ∷ xs')
+Γ-cong₂ refl refl H.refl = H.refl
+
+ctx←→ : ∀ {ν n} (Γ : F.Ctx ν n) → ⟦ ⟦ Γ ⟧ctx← ⟧ctx→ H.≅ Γ
+ctx←→ [] = H.refl
+ctx←→ {ν = ν} (x ∷ xs) = HR.begin
+  ⟦ ⟦ x ∷ xs ⟧ctx← ⟧ctx→
+    HR.≡⟨ refl ⟩
+  ⟦ ⟦ x ⟧tp← ⟧tp→ ∷ ⟦ ⟦ xs ⟧ctx← ⟧ctx→
+    HR.≅⟨ Γ-cong₂ (length-map-toList (map ⟦_⟧tp← xs)) (tp←→ x) (ctx←→ xs) ⟩
+  (x ∷ xs) HR.∎
+
 ⟦a/var⟧tp← : ∀ {ν ν'} (a : F.Type ν) (s : Vec (Fin ν') ν) → ⟦ a F./Var s ⟧tp← ≡ ⟦ a ⟧tp← /Var s
 ⟦a/var⟧tp← (F.tc x) s = refl
 ⟦a/var⟧tp← (F.tvar n) s = refl
