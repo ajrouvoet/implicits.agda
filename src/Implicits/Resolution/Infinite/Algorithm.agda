@@ -56,24 +56,21 @@ module _ where
     -- For rule types we first check if b matches our query τ.
     -- If this is the case, we use the unifier to instantiate the unification vars in a and
     -- recursively try to resolve the result.
-    -- If that succeeds as well, we use i-iabs to return a result
     match-u' {ν} {m} Δ τ (a ⇒ b) (acc f) =
       (match-u' Δ τ b (f _ (b-m<-a⇒b a b))) >>= (resolve-context' Δ a)
 
     -- On type vars we simply open it up, adding the tvar to the set of unification variables.
     -- and recursively try to match.
-    -- If matching succeeds, we can use i-tabs to return a result
     match-u' Δ τ (∀' a) (acc f) = (match-u' Δ τ (open-meta a) (f _ (open-meta-a-m<-∀'a a))) >>=
       (now ∘ (MaybeFunctor._<$>_ tail))
 
     -- The only thing left to do is to try and unify τ and x.
-    -- If we succeed, we use  i-simpl to return a result.
     match-u' Δ τ (simpl x) _ = now (mgu (simpl x) τ)
 
     match' : ∀ {ν} (Δ : ICtx ν) → (τ : SimpleType ν) → Type ν → Bool ⊥P
     match' {ν} Δ τ r = match-u' Δ τ (to-meta {zero} r) (m<-well-founded _) >>= (now ∘ is-just)
 
-    match1st-recover' : ∀ {ν} (Δ : ICtx ν) → (ρs : ICtx ν) → (τ : SimpleType ν) → Bool → Bool ⊥P
+    match1st-recover' : ∀ {ν} (Δ ρs : ICtx ν) → (τ : SimpleType ν) → Bool → Bool ⊥P
     match1st-recover' _ _ _ true = now true
     match1st-recover' Δ ρs τ false = match1st' Δ ρs τ
 

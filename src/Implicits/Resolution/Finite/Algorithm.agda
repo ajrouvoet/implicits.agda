@@ -10,6 +10,7 @@ open import Data.List.Any
 open Membership-≡
 open import Implicits.Syntax
 open import Implicits.Syntax.Type.Unification
+open import Implicits.Syntax.Type.Unification.Lemmas 
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas
 open import Implicits.Resolution.Finite.Resolution

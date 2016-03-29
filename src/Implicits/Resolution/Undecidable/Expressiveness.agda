@@ -16,25 +16,20 @@ mutual
   ↓-sound (i-iabs x x₁) = i-iabs (≥-deterministic x) (↓-sound x₁)
   ↓-sound (i-tabs b x) = i-tabs b (↓-sound x)
 
-  Δ⟨τ⟩-sound : ∀ {ν} {Δ : ICtx ν} {a r} →
-              Δ D.⟨ a ⟩= r → Δ D.⊢ r ↓ a → 
-              first r ∈ Δ ⇔ (λ r' → Δ I.⊢ r' ↓ a)
-  Δ⟨τ⟩-sound x y = lem₁ x y
-    where
-      lem₃ : ∀ {ν} {Δ : ICtx ν} {a r} → Δ I.⊢ r ↓ a → r ◁ a
-      lem₃ (i-simp _) = m-simp
-      lem₃ (i-iabs _ r2↓a) = m-iabs (lem₃ r2↓a)
-      lem₃ (i-tabs _ r↓a) = m-tabs (lem₃ r↓a)
-
-      lem₂ : ∀ {ν} {Δ : ICtx ν} {a r} → ¬ r ◁ a → ¬ Δ I.⊢ r ↓ a
-      lem₂ ¬a◁a (i-simp a) = ¬a◁a m-simp
-      lem₂ ¬r◁a (i-iabs ⊢ᵣr₁ r₂↓a) = ¬r◁a (m-iabs (lem₃ r₂↓a))
-      lem₂ ¬r◁a (i-tabs b r[/]↓a) = ¬r◁a (m-tabs (lem₃ r[/]↓a))
-
-      lem₁ : ∀ {ν} {Δ Δ' : ICtx ν} {a r} → Δ D.⟨ a ⟩= r → Δ' D.⊢ r ↓ a → 
+  Δ⟨τ⟩-sound : ∀ {ν} {Δ Δ' : ICtx ν} {a r} → Δ D.⟨ a ⟩= r → Δ' D.⊢ r ↓ a → 
               first r ∈ Δ ⇔ (λ r' → Δ' I.⊢ r' ↓ a)
-      lem₁ (l-head x Δ) y = here (↓-sound y) Δ
-      lem₁ (l-tail {r = r} x x₁) y = there r (lem₂ x) (lem₁ x₁ y)
+  Δ⟨τ⟩-sound (here p v) y = here (↓-sound y) v
+  Δ⟨τ⟩-sound (there x ¬x◁τ p) y = there x (¬◁-¬↓ ¬x◁τ) (Δ⟨τ⟩-sound p y)
+    where
+      ↓-◁ : ∀ {ν} {Δ : ICtx ν} {a r} → Δ I.⊢ r ↓ a → r ◁ a
+      ↓-◁ (i-simp _) = m-simp
+      ↓-◁ (i-iabs _ r2↓a) = m-iabs (↓-◁ r2↓a)
+      ↓-◁ (i-tabs b r↓a) = m-tabs b (↓-◁ r↓a)
+
+      ¬◁-¬↓ : ∀ {ν} {Δ : ICtx ν} {a r} → ¬ r ◁ a → ¬ Δ I.⊢ r ↓ a
+      ¬◁-¬↓ ¬a◁a (i-simp a) = ¬a◁a m-simp
+      ¬◁-¬↓ ¬r◁a (i-iabs ⊢ᵣr₁ r₂↓a) = ¬r◁a (m-iabs (↓-◁ r₂↓a))
+      ¬◁-¬↓ ¬r◁a (i-tabs b r[/]↓a) = ¬r◁a (m-tabs b (↓-◁ r[/]↓a))
 
   ≥-deterministic : ∀ {ν} {Δ : ICtx ν} {a} → Δ D.⊢ᵣ a → Δ I.⊢ᵣ a
   ≥-deterministic (r-simp {τ = a} Δ⟨a⟩=r r↓a) = r-simp (Δ⟨τ⟩-sound Δ⟨a⟩=r r↓a)

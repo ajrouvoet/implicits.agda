@@ -45,11 +45,8 @@ private
   open Lemmas
 
 mutual
-  {-# NO_TERMINATION_CHECK #-}
   delayed-resolve-complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (delayed-resolve Δ r)
-  delayed-resolve-complete Δ r p = _
-      ≅⟨ later-hom (♯ (resolve' Δ r)) ⟩P
-    later (♯ (complete Δ r p))
+  delayed-resolve-complete Δ r p = later (♯ (complete' Δ r p))
 
   resolve-context-complete : ∀ {ν m} (Δ : ICtx ν) a (u : Maybe (Sub (flip MetaType ν) m zero)) →
                             (p : Is-just u) →
@@ -67,9 +64,12 @@ mutual
         Δ ⊢ from-meta (open-meta r M./ (to-meta c ∷ u)) ↓ τ
   lemx r c τ u p = {!!}
 
-  postulate a/u-↓-unique : ∀ {ν m} {Δ} (a : MetaType m ν) {τ} u v →
-                          Δ ⊢ from-meta (a M./ u) ↓ τ → Δ ⊢ from-meta (a M./ v) ↓ τ →
-                          u ≡ v
+  a/u-↓-unique : ∀ {ν m} {Δ} (a : MetaType m ν) {τ} u v →
+                 Δ ⊢ from-meta (a M./ u) ↓ τ → Δ ⊢ from-meta (a M./ v) ↓ τ →
+                 (a M./ u) ≡ (a M./ v)
+  a/u-↓-unique (a ⇒ b) u v (i-iabs _ p) (i-iabs _ q) = {!a/u-↓-unique b u v p q!} 
+  a/u-↓-unique (∀' a) u v p q = {!!}
+  a/u-↓-unique (simpl x) u v p q = {!!}
 
   match-u-complete' : ∀ {ν m} (Δ : ICtx ν) → (τ : SimpleType ν) → (r : MetaType m ν) → (ac : m<-Acc r) →
                     ∀ u → Δ ⊢ from-meta (r M./ u) ↓ τ → 
@@ -168,7 +168,18 @@ mutual
   -- We can make this formal using the *coinductive* resolution rules
   -- (Together with soundness we have a 'minimal' completeness result, because the rules allow
   -- for many derivations, while the algorithm will only find *one*.)
-  complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (resolve Δ r)
-  complete Δ (simpl x) (r-simp r∈Δ r↓τ) = (match1st-complete Δ Δ x r∈Δ r↓τ)
-  complete Δ (a ⇒ b) (r-iabs p) = complete (a List.∷ Δ) b p
-  complete Δ (∀' r) (r-tabs p) = complete (ictx-weaken Δ) r p
+  complete' : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (resolve Δ r)
+  complete' Δ (simpl x) (r-simp r∈Δ r↓τ) = (match1st-complete Δ Δ x r∈Δ r↓τ)
+  complete' Δ (a ⇒ b) (r-iabs p) = complete' (a List.∷ Δ) b p
+  complete' Δ (∀' r) (r-tabs p) = complete' (ictx-weaken Δ) r p
+
+  complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → All (_≡_ true) (resolve Δ r)
+  complete Δ r p = AllP-sound (complete' Δ r p)
+
+
+module Test where
+
+  open import Category.Monad.Partiality.All
+
+  trivial-all : ∀ {a p} {A : Set a} (P : A → Set p) → All P never
+  trivial-all p = later (♯ (trivial-all p))
