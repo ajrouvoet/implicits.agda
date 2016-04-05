@@ -64,12 +64,13 @@ module ResolutionAlgorithm (cond : TerminationCondition) where
             Maybe (Sub (flip MetaType ν) m zero)
     match' Δ Φ τ (simpl x) f g = mgu (simpl x) τ 
 
-    match' Δ Φ τ (a ⇒ b) (acc f) (acc g) with match' Δ Φ τ b (acc f) (g _ (b-m<-a⇒b a b))
-    match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | nothing = nothing
-    match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u
-      with (step Φ (from-meta (a M./ u))) <? Φ
+    match' Δ Φ τ (a ⇒ b) f (acc g) with match' Δ Φ τ b f (g _ (b-m<-a⇒b a b))
+    match' Δ Φ τ (a ⇒ b) f (acc g) | nothing = nothing
+    match' Δ Φ τ (a ⇒ b) f (acc g) | just u
+      with (step Φ Δ (from-meta (a M./ u)) (from-meta (b M./ u)) τ) <? Φ
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ<
-      with resolve' Δ (step Φ (from-meta (a M./ u))) (from-meta (a M./ u)) (f _ Φ<)
+      with resolve' Δ (step Φ Δ (from-meta (a M./ u)) (from-meta (b M./ u)) τ)
+                    (from-meta (a M./ u)) (f _ Φ<)
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ< | true = just u
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ< | false = nothing
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | no φ> = nothing
@@ -88,9 +89,7 @@ module ResolutionAlgorithm (cond : TerminationCondition) where
     match1st Δ Φ List.[] τ Φ↓ = false
     match1st Δ Φ (x List.∷ xs) τ Φ↓ with match Δ Φ τ x Φ↓
     match1st Δ Φ (x List.∷ xs) τ Φ↓ | true = true
-    match1st Δ Φ (x List.∷ xs) τ Φ↓ | false with match1st Δ Φ xs τ Φ↓
-    match1st Δ Φ (x List.∷ xs) τ Φ↓ | false | true = true
-    match1st Δ Φ (x List.∷ xs) τ Φ↓ | false | false = false
+    match1st Δ Φ (x List.∷ xs) τ Φ↓ | false = match1st Δ Φ xs τ Φ↓
 
     resolve' : ∀ {ν} (Δ : ICtx ν) (Φ : TCtx) r → T-Acc Φ → Bool
     resolve' Δ Φ (simpl x) Φ↓ = match1st Δ Φ Δ x Φ↓

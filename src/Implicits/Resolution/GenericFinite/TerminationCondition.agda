@@ -11,7 +11,7 @@ record TerminationCondition : Set₁ where
     TCtx : Set
     _<_  : TCtx → TCtx → Set
     _<?_  : (x y : TCtx) → Dec (x < y)
-    step : ∀ {ν} → TCtx → Type ν → TCtx
+    step : ∀ {ν} → TCtx → ICtx ν → Type ν → Type ν → SimpleType ν → TCtx
     wf-< : Well-founded _<_
 
   T-Acc : TCtx → Set
