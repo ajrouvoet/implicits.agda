@@ -5,6 +5,7 @@ module Implicits.Syntax.Type where
 open import Data.Fin.Substitution
 open import Data.Nat.Properties as NatProps
 open import Data.Star using (Star; ε; _◅_)
+open import Data.List
 open import Extensions.Nat
 import Data.Vec
   
@@ -164,3 +165,66 @@ _◁ : ∀ {ν} → Type ν → ∃ λ μ → Type μ
 simpl x ◁ = , simpl x
 (a ⇒ b) ◁ = b ◁
 ∀' a ◁ = a ◁
+
+mutual
+  data occ' {ν} : Fin ν → Type ν → Set where
+    ⇒-left : ∀ {n a b} → (occ' n a) → occ' n (a ⇒ b)
+    ⇒-right : ∀ {n a b} → (occ' n b) → occ' n (a ⇒ b)
+    ∀' : ∀ {a n} → (occ' (suc n) a) → occ' n (∀' a)
+    
+  data occS {ν} : Fin ν → SimpleType ν → Set where
+    tvar    : (n : Fin ν) → occS n (tvar n)
+    →'-left : ∀ {n a b} → (occ' n a) → occS n (a →' b)
+    →'-right : ∀ {n a b} → (occ' n b) → occS n (a →' b)
+
+  data _⊢unamb_ {ν} : List (Fin ν) → Type ν → Set where
+    ua-simp : ∀ l {τ} → All (λ e → occS e τ) l → l ⊢unamb (simpl τ)
+    ua-iabs : ∀ {l a b} → l ⊢unamb b → [] ⊢unamb a → l ⊢unamb (a ⇒ b)
+    ua-tabs : ∀ {l} {a : Type (suc ν)} → (zero List.∷ (List.map suc l)) ⊢unamb a →
+              l ⊢unamb (∀' a)
+
+module unamb-test where
+
+  x : Type 1
+  x = ∀' (simpl (tvar zero))
+
+  px : [] ⊢unamb x
+  px = ua-tabs (ua-simp (zero ∷ []) (tvar zero All.∷ All.[]))
+
+  y : Type 1
+  y = ∀' (simpl (tvar (suc zero)))
+
+  ¬py : ¬ ([] ⊢unamb y)
+  ¬py (ua-tabs (ua-simp .(zero ∷ []) (() All.∷ x)))
+
+  z : Type 1
+  z = ∀' (β ⇒ α)
+    where
+      α = (simpl (tvar zero))
+      β = (simpl (tvar (suc zero)))
+
+  pz : [] ⊢unamb z
+  pz = ua-tabs
+         (ua-iabs (ua-simp (zero ∷ []) (tvar zero All.∷ All.[]))
+          (ua-simp [] All.[]))
+
+  z' : Type 1
+  z' = ∀' (α ⇒ β)
+    where
+      α = (simpl (tvar zero))
+      β = (simpl (tvar (suc zero)))
+
+  ¬pz' : ¬ ([] ⊢unamb z')
+  ¬pz' (ua-tabs (ua-iabs (ua-simp .(zero ∷ []) (() All.∷ pxs)) x₁))
+
+  read∘show : Type 1
+  read∘show = ∀' ((simpl (string →' α)) ⇒ ((simpl (α →' string)) ⇒ (simpl (string →' string))))
+    where
+      α = (simpl (tvar zero))
+      string = (simpl (tvar (suc zero)))
+
+  ¬pread∘show : ¬ [] ⊢unamb read∘show
+  ¬pread∘show (ua-tabs (ua-iabs (ua-iabs (ua-simp .(zero ∷ []) (→'-left () All.∷ _)) _) _))
+  ¬pread∘show (ua-tabs (ua-iabs (ua-iabs (ua-simp .(zero ∷ []) (→'-right () All.∷ _)) _) _))
+
+open unamb-test

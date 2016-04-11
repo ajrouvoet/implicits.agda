@@ -37,8 +37,8 @@ module Preservation
       subst-tp = subst (λ c → ⟦ K ⟧ctx→ F.⊢ ⟦ wt-tc [ b ] , m ⟧ ∈ c) 
   ⟦⟧-preserves-tp (wt-f · wt-e) m with ⟦⟧-preserves-tp wt-f m | ⟦⟧-preserves-tp wt-e m
   ⟦⟧-preserves-tp (wt-f · wt-e) m | ih | y = ih F.· y
-  ⟦⟧-preserves-tp (ρ a wt-e) m with ⟦⟧-preserves-tp wt-e (#ivar a m)
-  ⟦⟧-preserves-tp (ρ a wt-e) m | ih = F.λ' ⟦ a ⟧tp→ ih
+  ⟦⟧-preserves-tp (ρ {a = a} unamb-a wt-e) m with ⟦⟧-preserves-tp wt-e (#ivar a m)
+  ⟦⟧-preserves-tp (ρ {a = a} unamb-a wt-e) m | ih = F.λ' ⟦ a ⟧tp→ ih
   ⟦⟧-preserves-tp (wt-r ⟨ e ⟩) m with ⟦⟧-preserves-tp wt-r m
   ⟦⟧-preserves-tp (wt-r ⟨ e ⟩) m | f-wt-r = f-wt-r F.· (proj₂ ⟦ e , m ⟧r)
   ⟦⟧-preserves-tp (wt-r with' wt-e ) m with ⟦⟧-preserves-tp wt-r m | ⟦⟧-preserves-tp wt-e m

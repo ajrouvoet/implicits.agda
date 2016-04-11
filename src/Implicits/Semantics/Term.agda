@@ -24,6 +24,6 @@ module TermSemantics
   ⟦_,_⟧ (λ' a x) m = F.λ' ⟦ a ⟧tp→ ⟦ x , #var a m ⟧
   ⟦_,_⟧ (f [ b ]) m = F._[_] ⟦ f , m ⟧ ⟦ b ⟧tp→
   ⟦_,_⟧ (f · e) m = ⟦ f , m ⟧ F.· ⟦ e , m ⟧
-  ⟦_,_⟧ (ρ a x) m = F.λ' ⟦ a ⟧tp→ ⟦ x , #ivar a m ⟧
+  ⟦_,_⟧ (ρ {a = a} _ x) m = F.λ' ⟦ a ⟧tp→ ⟦ x , #ivar a m ⟧
   ⟦_,_⟧ (f ⟨ e∈Δ ⟩) m = ⟦ f , m ⟧ F.· (proj₁ ⟦ e∈Δ , m ⟧r)
   ⟦_,_⟧ (_with'_ r e) m = ⟦ r , m ⟧ F.· ⟦ e , m ⟧
