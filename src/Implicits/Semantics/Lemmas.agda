@@ -72,8 +72,8 @@ private
   (map ⟦_⟧tp→ xs) F.↑ ∎
 
 -- lookup in and interpreted context Γ is equivalent to interpreting a type, looked up in K
-lookup-⟦⟧ctx→ : ∀ {ν n} (K : Ktx ν n) x → ⟦ lookup x $ proj₁ K ⟧tp→ ≡ lookup x ⟦ K ⟧ctx→
-lookup-⟦⟧ctx→ K x = lookup⋆map (proj₁ K) ⟦_⟧tp→ x
+lookup-⟦⟧ctx→ : ∀ {ν n} (Γ : Ctx ν n) x → ⟦ lookup x Γ ⟧tp→ ≡ lookup x ⟦ Γ ⟧ctx→
+lookup-⟦⟧ctx→ Γ x = lookup⋆map Γ ⟦_⟧tp→ x
 
 -- type substitution commutes with interpreting types
 ⟦a/s⟧tp→ : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp TS./ σ ⟧tp→ ≡ ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ σ)
@@ -122,15 +122,15 @@ lookup-⟦⟧ctx→ K x = lookup⋆map (proj₁ K) ⟦_⟧tp→ x
   F.tp-weaken ⟦ tp ⟧tp→ ∎
 
 -- context weakening commutes with interpreting contexts
-⟦weaken⟧ctx→ : ∀ {ν n} (K : Ktx ν n) → ⟦ ktx-weaken K ⟧ctx→ ≡ F.ctx-weaken ⟦ K ⟧ctx→
-⟦weaken⟧ctx→ ([] , Δ) = refl
-⟦weaken⟧ctx→ (x ∷ Γ , Δ) with ⟦weaken⟧ctx→ (Γ , Δ)
-⟦weaken⟧ctx→ (x ∷ Γ , Δ) | ih = begin
-  ⟦ ktx-weaken (x ∷ Γ , Δ) ⟧ctx→ ≡⟨ refl ⟩ 
+⟦weaken⟧ctx→ : ∀ {ν n} (Γ : Ctx ν n) → ⟦ ctx-weaken Γ ⟧ctx→ ≡ F.ctx-weaken ⟦ Γ ⟧ctx→
+⟦weaken⟧ctx→ [] = refl
+⟦weaken⟧ctx→ (x ∷ Γ) with ⟦weaken⟧ctx→ Γ
+⟦weaken⟧ctx→ (x ∷ Γ) | ih = begin
+  ⟦ (ctx-weaken (x ∷ Γ)) ⟧ctx→ ≡⟨ refl ⟩ 
   ⟦ x TS./ TS.wk ⟧tp→ ∷ xs ≡⟨ cong (flip _∷_ xs) (⟦a/wk⟧tp→ x) ⟩
-  (⟦ x ⟧tp→ F./ F.wk) ∷ ⟦ ktx-weaken (Γ , Δ) ⟧ctx→ ≡⟨ cong (_∷_ (⟦ x ⟧tp→ F./ F.wk)) ih ⟩
-  (⟦ x ⟧tp→ F./ F.wk) ∷ F.ctx-weaken ⟦ Γ , Δ ⟧ctx→ ≡⟨ refl ⟩
-  F.ctx-weaken ⟦ x ∷ Γ , Δ ⟧ctx→ ∎
+  (⟦ x ⟧tp→ F./ F.wk) ∷ ⟦ (ctx-weaken Γ) ⟧ctx→ ≡⟨ cong (_∷_ (⟦ x ⟧tp→ F./ F.wk)) ih ⟩
+  (⟦ x ⟧tp→ F./ F.wk) ∷ (F.ctx-weaken ⟦ Γ ⟧ctx→) ≡⟨ refl ⟩
+  F.ctx-weaken ⟦ x ∷ Γ ⟧ctx→ ∎
   where
     xs = map ⟦_⟧tp→ $ map (λ s → s TS./ TS.wk ) Γ
   

@@ -12,11 +12,11 @@ tc-int tc≟ tc-bool = no (λ ())
 tc-bool tc≟ tc-int = no (λ ())
 tc-bool tc≟ tc-bool = yes refl
 
-open import Implicits.Syntax TC _tc≟_
-open import Implicits.WellTyped TC _tc≟_
-open import Implicits.Substitutions TC _tc≟_
-open import Implicits.Syntax.Type.Unification TC _tc≟_
-open import Implicits.Resolution.Infinite.Algorithm TC _tc≟_
+open import Implicits.Syntax
+open import Implicits.WellTyped
+open import Implicits.Substitutions
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Resolution.Infinite.Algorithm
 open import Data.Maybe
 open import Data.List
 open import Category.Monad.Partiality
@@ -149,7 +149,7 @@ module Ex₉ where
   -- Because mgu requires that all meta variables are instantiated by unification
   -- and in this example (mvar zero) does not occur and thus can't be unified.
 
-  open import Implicits.Resolution.Infinite.Resolution TC _tc≟_
+  open import Implicits.Resolution.Infinite.Resolution
   open import Coinduction
 
   p' : Δ ⊢ᵣ (Bool ⇒ Int)

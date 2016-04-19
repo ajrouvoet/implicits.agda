@@ -15,7 +15,7 @@ open import SystemF as F using ()
 module Semantics
   (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set)
   (⟦_,_⟧r : ∀ {ν n} {K : Ktx ν n} {a} → (proj₂ K) ⊢ᵣ a → K# K →
-            ∃ λ t → ⟦ K ⟧ctx→ F.⊢ t ∈ ⟦ a ⟧tp→) where
+            ∃ λ t → ⟦ proj₁ K ⟧ctx→ F.⊢ t ∈ ⟦ a ⟧tp→) where
 
   open TypingRules _⊢ᵣ_
   open TermSemantics _⊢ᵣ_ ⟦_,_⟧r public

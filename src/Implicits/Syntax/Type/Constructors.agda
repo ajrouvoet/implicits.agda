@@ -11,11 +11,11 @@ tid = ∀' (simpl ((TVar zero) →' (TVar zero)))
 
 -- type of bools encoding
 tbool : Type 0
-tbool = ∀' $ simpl ((TVar zero) →' (simpl ((TVar zero) →' (TVar zero))))
+tbool = ∀' (simpl ((TVar zero) →' (simpl ((TVar zero) →' (TVar zero)))))
 
 -- church numerals
 tnat : Type 0
-tnat = ∀' $ simpl ((simpl ((TVar zero) →' (TVar zero))) →' (simpl ((TVar zero) →' (TVar zero))))
+tnat = ∀' (simpl ((simpl ((TVar zero) →' (TVar zero))) →' (simpl ((TVar zero) →' (TVar zero)))))
 
 -- existential quantification
 ∃' : ∀ {n} → (Type (suc n)) → Type n

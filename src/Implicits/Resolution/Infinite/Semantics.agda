@@ -15,23 +15,22 @@ open import SystemF as F using ()
 
 module DerivationSemantics where
 
-  -- Infinite resolution proofs map to welltyped System F terms
-  ⟦_,_⟧r : ∀ {ν n} {K : Ktx ν n} {a} → (proj₂ K) ⊢ᵣ a → K# K →
-           ∃ λ t → ⟦ K ⟧ctx→ F.⊢ t ∈ ⟦ a ⟧tp→
-  ⟦_,_⟧r {K = K} (r-simp {r = r} r∈Δ r↓τ) m with ∈⟶index (All.lookup m r∈Δ)
-  ⟦_,_⟧r {K = K} (r-simp {r = r} r∈Δ r↓τ) m | i , lookup-i≡r =
+  ⟦_,_⟧r : ∀ {ν n} {Δ : ICtx ν} {Γ : Ctx ν n} {a} → Δ ⊢ᵣ a → Γ # Δ →
+           ∃ λ t → ⟦ Γ ⟧ctx→ F.⊢ t ∈ ⟦ a ⟧tp→
+  ⟦_,_⟧r {Γ = Γ} (r-simp {r = r} r∈Δ r↓τ) m with ∈⟶index (All.lookup m r∈Δ)
+  ⟦_,_⟧r {Γ = Γ} (r-simp {r = r} r∈Δ r↓τ) m | i , lookup-i≡r =
     ⟦ subst (λ u → _ F.⊢ F.var i ∈ u) eq (F.var i) , r↓τ , m ⟧r↓
     where
       eq = begin 
-        lookup i ⟦ K ⟧ctx→
-          ≡⟨ sym $ lookup-⟦⟧ctx→ K i ⟩
-        ⟦ lookup i (proj₁ K) ⟧tp→
+        lookup i ⟦ Γ ⟧ctx→
+          ≡⟨ sym $ lookup-⟦⟧ctx→ Γ i ⟩
+        ⟦ lookup i Γ ⟧tp→
             ≡⟨ cong ⟦_⟧tp→ lookup-i≡r ⟩
         ⟦ r ⟧tp→ ∎ 
 
-      ⟦_,_,_⟧r↓ : ∀ {ν n} {K : Ktx ν n} {a ta τ} → 
-                ⟦ K ⟧ctx→ F.⊢ ta ∈ ⟦ a ⟧tp→ → (proj₂ K) ⊢ a ↓ τ → K# K → 
-                ∃ λ tτ → ⟦ K ⟧ctx→ F.⊢ tτ ∈ ⟦ simpl τ ⟧tp→
+      ⟦_,_,_⟧r↓ : ∀ {ν n} {Δ : ICtx ν} {Γ : Ctx ν n} {a ta τ} → 
+                ⟦ Γ ⟧ctx→ F.⊢ ta ∈ ⟦ a ⟧tp→ → Δ ⊢ a ↓ τ → Γ # Δ → 
+                ∃ λ tτ → ⟦ Γ ⟧ctx→ F.⊢ tτ ∈ ⟦ simpl τ ⟧tp→
       ⟦ ⊢ta , i-simp τ , m ⟧r↓ = , ⊢ta
       ⟦ ⊢ta , i-iabs {ρ₁ = a} ⊢ᵣa b↓τ , m ⟧r↓ =
         , (proj₂ ⟦ ⊢ta F.· (proj₂ ⟦ ⊢ᵣa , m ⟧r) , b↓τ , m ⟧r↓)
@@ -40,8 +39,8 @@ module DerivationSemantics where
 
   ⟦ r-iabs {ρ₁ = a} {ρ₂ = b} ⊢b , m ⟧r = , F.λ' ⟦ a ⟧tp→ (proj₂ ⟦ ⊢b , #ivar a m ⟧r)
 
-  ⟦_,_⟧r {K = K} (r-tabs {ρ = r} p) m with ⟦ p , #tvar m ⟧r
-  ⟦_,_⟧r {K = K} (r-tabs {ρ = r} p) m | _ , x =
-    , F.Λ (subst (λ u → u F.⊢ _ ∈ ⟦ r ⟧tp→) (⟦weaken⟧ctx→ K) x) 
+  ⟦_,_⟧r {Γ = Γ} (r-tabs {ρ = r} p) m with ⟦ p , #tvar m ⟧r
+  ⟦_,_⟧r {Δ = Δ} {Γ = Γ} (r-tabs {ρ = r} p) m | _ , x = 
+    , F.Λ (subst (λ u → u F.⊢ _ ∈ ⟦ r ⟧tp→) (⟦weaken⟧ctx→ Γ) x) 
 
 open Semantics _⊢ᵣ_ DerivationSemantics.⟦_,_⟧r public

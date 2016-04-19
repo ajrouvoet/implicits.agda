@@ -18,6 +18,6 @@ MaxDepthCondition = record
   {  TCtx = ℕ
   ; _<_  = _<′_
   ; _<?_  = _<′?_
-  ; step = λ n _ → n N- 1
+  ; step = λ n _ _ _ _ → n N- 1
   ; wf-< = <-well-founded
   }

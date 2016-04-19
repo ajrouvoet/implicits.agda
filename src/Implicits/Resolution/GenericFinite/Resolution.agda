@@ -30,35 +30,3 @@ module ResolutionRules (cond : TerminationCondition) where
       r-simp : ∀ {Φ r τ} → r List.∈ Δ → Δ , Φ ⊢ r ↓ τ → Δ , Φ ⊢ᵣ simpl τ
       r-iabs : ∀ {Φ} ρ₁ {ρ₂} → ((ρ₁ List.∷ Δ) , Φ ⊢ᵣ ρ₂) → Δ , Φ ⊢ᵣ (ρ₁ ⇒ ρ₂)
       r-tabs : ∀ {Φ ρ} → ictx-weaken Δ , Φ ⊢ᵣ ρ → Δ , Φ ⊢ᵣ ∀' ρ
-
-  {-
-  postulate ↓-◁-unifiable : ∀ {ν} {Δ : ICtx ν} {Φ} {r τ} → Δ , Φ ⊢ r ↓ τ →
-                            ◁-Unifiable (to-meta {zero} r) τ
-  ↓-◁-unifiable (i-simp τ) = mgu-id τ
-  ↓-◁-unifiable (i-iabs _ _ p) = ↓-◁-unifiable p
-  ↓-◁-unifiable (i-tabs {ρ = a} b p) = {!!} -- lem a b (↓-◁-unifiable p)
-    where
-  
-      lema :  ∀ {ν m} (a : MetaType m (suc ν)) b {τ} →
-              ◁-Unifiable ((open-meta a) M./ M.sub b) τ → ◁-Unifiable (open-meta a) τ
-      lema x = {!!}
-
-      -- (a tp[/tp b]) ◁m ≡ (open-meta a M./ M.sub b) ◁m
-      -- implies: ((open-meta a M./ M.sub b) ◁m) / u ≡ τ
-      -- ((x / sub b) ◁m) / u ≡ (x ◁m) / sub b / u ≡ (x ◁m) / (b ∷ u)
-      -- subst: ((open-meta a) ◁m) / (b ∷ u) ≡ τ
-      -- ((open-meta a) ◁m) ≡ ((∀' a) ◁m)
-      -- subst: ((∀' a) ◁m) / (b ∷ u) ≡ τ
-      -- implies: ◁-Unifiable (∀' m) τ
-      lem : ∀ {ν} (a : Type (suc ν)) b {τ} →
-                      ◁-Unifiable (to-meta {zero} (a tp[/tp b ])) τ →
-                      ◁-Unifiable (to-meta {zero} (∀' a)) τ
-      lem a b {τ} (u , a/u≡b) = {!, proj₂ r!}
-        where
-          q : ◁-Unifiable ((open-meta $ to-meta {zero} a) M./ M.sub (to-meta b)) τ
-          q = subst (λ z → ◁-Unifiable z τ) (MetaTypeMetaLemmas.lem₁ a b) (, a/u≡b)
-          r : Unifiable ((open-meta $ to-meta {zero} a) M.◁m) τ
-          r = lema (to-meta {zero} a) (to-meta {zero} b) q
-          z : ∀ {ν} {u : Type (suc ν)} → ((to-meta {zero} (∀' u)) M.◁m) ≡ ((open-meta (to-meta {zero} u)) M.◁m)
-          z = refl
-      -}

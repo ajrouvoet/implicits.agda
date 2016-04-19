@@ -45,6 +45,7 @@ private
   open Lemmas
 
 mutual
+  {-# NO_TERMINATION_CHECK #-}
   delayed-resolve-complete : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r → AllP (_≡_ true) (delayed-resolve Δ r)
   delayed-resolve-complete Δ r p = later (♯ (complete' Δ r p))
 

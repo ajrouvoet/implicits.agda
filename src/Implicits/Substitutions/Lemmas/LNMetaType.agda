@@ -162,7 +162,7 @@ lem₁ : ∀ {ν} k (a : Type (k N+ suc ν)) (b : Type ν) →
                   (open-meta k (to-meta a) / sub (to-meta b))
 lem₁ k (simpl (tc x)) b = refl
 lem₁ k (simpl (tvar n)) b with Nat.compare (toℕ n) k
-lem₁ k (simpl (tvar n)) b | z = {!z!}
+lem₁ k (simpl (tvar n)) b | z = {!!}
 lem₁ k (simpl (a →' b)) c = cong₂ (λ u v → simpl (u →' v)) (lem₁ k a c) (lem₁ k b c)
 lem₁ k (a ⇒ b) c = cong₂ _⇒_ (lem₁ k a c) (lem₁ k b c)
 lem₁ k (∀' a) b = cong ∀' (lem₁ (suc k) a b)

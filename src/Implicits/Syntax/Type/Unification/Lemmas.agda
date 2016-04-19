@@ -32,6 +32,17 @@ to-meta-zero-vanishes {a = simpl (a →' b)} =
 to-meta-zero-vanishes {a = a ⇒ b} = cong₂ _⇒_ to-meta-zero-vanishes to-meta-zero-vanishes
 to-meta-zero-vanishes {a = ∀' a} = cong ∀' to-meta-zero-vanishes
 
+mutual
+  from-to-smeta : ∀ {ν} (a : SimpleType ν) → from-smeta (to-smeta a) ≡ a
+  from-to-smeta (tc x) = refl
+  from-to-smeta (tvar n) = refl
+  from-to-smeta (a →' b) = cong₂ _→'_ (from-to-meta a) (from-to-meta b)
+
+  from-to-meta : ∀ {ν} (a : Type ν) → from-meta (to-meta a) ≡ a
+  from-to-meta (simpl x) = cong simpl (from-to-smeta x)
+  from-to-meta (a ⇒ b) = cong₂ _⇒_ (from-to-meta a) (from-to-meta b)
+  from-to-meta (∀' a) = cong ∀' (from-to-meta a)
+
 from-to-meta-/-vanishes : ∀ {ν} {a : Type ν} {s} →
                           from-meta (to-meta {zero} a MetaTypeMetaSubst./ s) ≡ a
 from-to-meta-/-vanishes {a = a} {s = []} = begin 
@@ -47,19 +58,15 @@ mgu-id a = [] , (begin
     ≡⟨ from-to-meta-/-vanishes ⟩
   simpl a ∎)
 
-postulate mvar-unifiable : ∀ {ν m} (n : Fin m) (τ : SimpleType ν) → Unifiable (simpl (mvar n)) τ
--- mvar-unifiable = {!!}
+mvar-unifiable : ∀ {ν m} (n : Fin m) (τ : SimpleType ν) → Unifiable (simpl (mvar n)) τ
+mvar-unifiable n τ = u , p
+  where
+    u = replicate (simpl (tc zero)) [ n ]≔ simpl (to-smeta τ)
 
-unifiable-subst : ∀ {m m' ν} {a : MetaType m ν} {a' : MetaType m' ν} {τ} → (m-eq : m ≡ m') →
-                  a H.≅ a' → Unifiable a τ → Unifiable a' τ
-unifiable-subst refl H.refl p = p
-
-open-meta-◁-unifiable : ∀ {m ν} (a : MetaType m (suc ν)) τ →
-                        ◁-Unifiable (∀' a) τ → ◁-Unifiable (open-meta a) τ
-open-meta-◁-unifiable {m} a τ p =
-    unifiable-subst (begin suc (a ◁m₁ N+ m)
-      ≡⟨ sym $ +-suc (a ◁m₁) m ⟩
-    (a ◁m₁) N+ suc m
-      ≡⟨ cong (flip _N+_ (suc m)) (sym $ open-meta-◁m₁ zero a) ⟩
-    (open-meta a ◁m₁) N+ suc m ∎
-  ) (H.sym (open-meta-◁m a)) p
+    p : from-meta (lookup n u) ≡ simpl τ
+    p = begin
+      from-meta (lookup n u)
+        ≡⟨ cong from-meta (lookup-≔ (replicate (simpl (tc zero))) n _) ⟩
+      simpl (from-smeta (to-smeta τ))
+        ≡⟨ cong simpl (from-to-smeta τ) ⟩
+      simpl τ ∎

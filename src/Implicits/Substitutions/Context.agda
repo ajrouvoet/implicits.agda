@@ -21,5 +21,8 @@ _/Var_ : ∀ {ν m n} → Sub Fin n m → Ktx ν m → Ktx ν n
 ictx-weaken : ∀ {ν} → ICtx ν → ICtx (suc ν)
 ictx-weaken Δ = List.map (flip TS._/_ TS.wk) Δ
 
+ctx-weaken : ∀ {ν n} → Ctx ν n → Ctx (suc ν) n
+ctx-weaken Γ = map (flip TS._/_ TS.wk) Γ
+
 weaken : ∀ {ν n} → Ktx ν n → Ktx (suc ν) n
 weaken K = K / TS.wk

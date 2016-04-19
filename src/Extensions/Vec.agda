@@ -57,3 +57,7 @@ length-map-toList {n = n} {f} v = begin
   List.length (toList v)
     ≡⟨ length-toList v ⟩
   n ∎
+
+lookup-≔ : ∀ {n k} {A : Set k} (v : Vec A n) i (a : A) → lookup i (v [ i ]≔ a) ≡ a
+lookup-≔ (x ∷ v) zero a = refl
+lookup-≔ (x ∷ v) (suc i) a = lookup-≔ v i a

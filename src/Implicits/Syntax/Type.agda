@@ -26,6 +26,9 @@ mutual
 TVar : ∀ {ν} → Fin ν → Type ν
 TVar = simpl ∘ tvar
 
+TC : ∀ {ν} → ℕ → Type ν
+TC = simpl ∘ tc
+
 is-∀' : ∀ {ν} → Type ν → Set
 is-∀' (simpl x) = ⊥
 is-∀' (_ ⇒ _) = ⊥

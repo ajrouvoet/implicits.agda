@@ -6,6 +6,6 @@ open import Implicits.Syntax
 open import Implicits.Semantics.Type
 open import SystemF as F using ()
 
-⟦_⟧ctx→ : ∀ {ν n} → Ktx ν n → F.Ctx ν n
-⟦ Γ , Δ ⟧ctx→ = map ⟦_⟧tp→ Γ
+⟦_⟧ctx→ : ∀ {ν n} → Ctx ν n → F.Ctx ν n
+⟦ Γ ⟧ctx→ = map ⟦_⟧tp→ Γ
 
