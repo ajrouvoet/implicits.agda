@@ -53,7 +53,7 @@ mutual
     , ntabs (⇑-subst-n (length-weaken-Δ Δ) (H.sym $ ⟦weaken⟧ctx→ Δ) (proj₂ (to-⇑ p)))
 
 -- System F η-long-β-normal forms are isomorphic to infinite resolution derivations
-iso : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ r ⟧tp→)
-iso Δ r = equivalence
+equivalent : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ r ⟧tp→)
+equivalent Δ r = equivalence
   (λ x → to-⇑ x)
   (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from-⇑ (proj₂ x)))

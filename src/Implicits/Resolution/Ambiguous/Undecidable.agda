@@ -22,19 +22,19 @@ open import SystemF as F using ()
 
 private
   -- type of inhabitation problem decider
-  ?:-dec : Set
-  ?:-dec = ∀ {n ν} (Γ : F.Ctx ν n) (a : F.Type ν) → Dec (∃ λ t → Γ F.⊢ t ∈ a)
+  ?:-Dec : Set
+  ?:-Dec = ∀ {n ν} (Γ : F.Ctx ν n) (a : F.Type ν) → Dec (∃ λ t → Γ F.⊢ t ∈ a)
 
-module Undecidable (?:-undec : ¬ ?:-dec) where
+module Undecidable (?:-undec : ¬ ?:-Dec) where
 
   -- type of decider for ambiguous resolution
-  ⊢ᵣ-dec : Set
-  ⊢ᵣ-dec = ∀ {ν} (Δ : ICtx ν) (a : Type ν) → Dec (Δ ⊢ᵣ a)
+  ⊢ᵣ-Dec : Set
+  ⊢ᵣ-Dec = ∀ {ν} (Δ : ICtx ν) (a : Type ν) → Dec (Δ ⊢ᵣ a)
 
   -- proof that such a decider would imply a decider for type inhabitation problem
-  reduction : ⊢ᵣ-dec → ?:-dec
+  reduction : ⊢ᵣ-Dec → ?:-Dec
   reduction f Γ x = Dec.map (iso' Γ x) (f ⟦ Γ ⟧ctx← ⟦ x ⟧tp←)
 
   -- completing the proof
-  undecidable : ¬ ⊢ᵣ-dec
+  undecidable : ¬ ⊢ᵣ-Dec
   undecidable f = ?:-undec (reduction f) 

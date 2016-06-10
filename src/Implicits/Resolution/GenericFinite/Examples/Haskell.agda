@@ -46,23 +46,26 @@ module Deterministic⊆HaskellFinite where
 
   -- Oliveira's termination condition is part of the well-formdness of types
   -- So we assume here that ⊢term x holds for all types x
-  complete' : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → (g : ∃ Type) →
-             (∀ {ν} (a : Type ν) → ⊢term a) → Δ D.⊢ᵣ a → (, a) hρ≤ g →
-             Δ F., g ⊢ᵣ a
-  complete' g all-⊢term (r-simp x p) q = r-simp (proj₁ $ first⟶∈ x) (lem q p)
-    where
-      lem : ∀ {ν} {Δ : ICtx ν} {a r} → (, simpl a) hρ≤ g → Δ D.⊢ r ↓ a → Δ F., g ⊢ r ↓ a
-      lem q (i-simp a) = i-simp a
-      lem {a = a} q (i-iabs {ρ₁ = ρ₁} {ρ₂ = ρ₂} ⊢ρ₁ ρ₂↓a) with all-⊢term (ρ₁ ⇒ ρ₂)
-      lem {a = a} q (i-iabs {ρ₁ = ρ₁} {ρ₂ = ρ₂} ⊢ρ₁ ρ₂↓a) | term-iabs _ _ a-hρ<-b _ =
-        i-iabs ρ₁<g {!!} (lem q ρ₂↓a)
-        where
-          ρ₁<g : (, ρ₁) hρ< g
-          ρ₁<g = ≤-trans (lem₅ ρ₁ ρ₂↓a a-hρ<-b) q
-      lem q (i-tabs b p) = i-tabs b (lem q p)
-  complete' g all-⊢term (r-iabs ρ₁ p) q = r-iabs ρ₁ (complete' g all-⊢term p q)
-  complete' g all-⊢term (r-tabs p) q = r-tabs (complete' g all-⊢term p q)
+  mutual
+    lem : ∀ {ν} {Δ : ICtx ν} {a r g} →
+          (∀ {ν} (a : Type ν) → ⊢term a) →
+          (, simpl a) hρ≤ g → Δ D.⊢ r ↓ a → Δ F., g ⊢ r ↓ a
+    lem all-⊢term q (i-simp a) = i-simp a
+    lem {a = a} {g = g}all-⊢term q (i-iabs {ρ₁ = ρ₁} {ρ₂ = ρ₂} ⊢ρ₁ ρ₂↓a) with all-⊢term (ρ₁ ⇒ ρ₂)
+    lem {a = a} {g = g} all-⊢term q (i-iabs {ρ₁ = ρ₁} {ρ₂ = ρ₂} ⊢ρ₁ ρ₂↓a) | term-iabs _ _ a-hρ<-b _ =
+      i-iabs ρ₁<g (complete' (, ρ₁) all-⊢term ⊢ρ₁ ≤-refl) (lem all-⊢term q ρ₂↓a)
+      where
+        ρ₁<g : (, ρ₁) hρ< g
+        ρ₁<g = ≤-trans (lem₅ ρ₁ ρ₂↓a a-hρ<-b) q
+    lem all-⊢term q (i-tabs b p) = i-tabs b (lem all-⊢term q p)
+
+    complete' : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → (g : ∃ Type) →
+              (∀ {ν} (a : Type ν) → ⊢term a) → Δ D.⊢ᵣ a → (, a) hρ≤ g →
+              Δ F., g ⊢ᵣ a
+    complete' g all-⊢term (r-simp x p) q = r-simp (proj₁ $ first⟶∈ x) (lem all-⊢term q p)
+    complete' g all-⊢term (r-iabs ρ₁ p) q = r-iabs ρ₁ (complete' g all-⊢term p q)
+    complete' g all-⊢term (r-tabs p) q = r-tabs (complete' g all-⊢term p q)
 
   complete : ∀ {ν} {a : Type ν} {Δ : ICtx ν} →
-             (∀ {ν} (a : Type ν) → ⊢term a) → Δ D.⊢ᵣ a → Δ F., (, a) ⊢ᵣ a
+            (∀ {ν} (a : Type ν) → ⊢term a) → Δ D.⊢ᵣ a → Δ F., (, a) ⊢ᵣ a
   complete all-⊢term p = complete' _ all-⊢term p ≤-refl

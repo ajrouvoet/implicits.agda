@@ -39,12 +39,12 @@ module Deterministic⊂Infinite where
       p : Δ I.⊢ Bool ↓ tc 0
       p = i-simp (tc 0)
 
-module Infinite↔Ambiguous
+module Infinite⇔Ambiguous
   (nf : ∀ {ν n} {Γ : F.Ctx ν n} {t a} → Γ F.⊢ t ∈ a → ∃ λ (t₂ : F.Term ν n) → Γ F.⊢ t₂ ⇑ a)
   where
 
   open import Implicits.Resolution.Ambiguous.SystemFIso hiding (iso)
-  open import Implicits.Resolution.Infinite.NormalFormIso hiding (iso)
+  open import Implicits.Resolution.Infinite.NormalFormIso hiding (equivalent)
   open import Implicits.Resolution.Embedding.Lemmas
   open import Function.Equivalence
 
@@ -61,5 +61,5 @@ module Infinite↔Ambiguous
   complete : ∀ {ν} {a : Type ν} {Δ : ICtx ν} → Δ A.⊢ᵣ a → Δ I.⊢ᵣ a
   complete {a = a} p = subst₂ (λ Δ r → Δ I.⊢ᵣ r) (ctx→← _) (tp→← a) (from-⇑ (proj₂ (nf (to-⊢ p))))
 
-  iso : ∀ {ν} (Δ : ICtx ν) r → Δ I.⊢ᵣ r ⇔ Δ A.⊢ᵣ r
-  iso Δ r = equivalence sound complete
+  equivalent : ∀ {ν} (Δ : ICtx ν) r → Δ I.⊢ᵣ r ⇔ Δ A.⊢ᵣ r
+  equivalent Δ r = equivalence sound complete

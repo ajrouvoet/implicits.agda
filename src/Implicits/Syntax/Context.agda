@@ -3,12 +3,17 @@ open import Prelude
 module Implicits.Syntax.Context where
 
 open import Implicits.Syntax.Type
+open import Data.List.All
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (Type ν) n
 
 ICtx : ℕ → Set
 ICtx ν = List.List (Type ν)
+
+-- wellformed implicit contexts
+_⊢OK : ∀ {ν} → ICtx ν → Set
+Δ ⊢OK = All (λ a → List.[] ⊢unamb a) Δ
 
 Ktx : ℕ → ℕ → Set
 Ktx ν n = Ctx ν n × ICtx ν

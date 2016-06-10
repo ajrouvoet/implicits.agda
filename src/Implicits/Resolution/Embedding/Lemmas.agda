@@ -315,3 +315,8 @@ lookup-∈ (suc x) (v ∷ vs) = there (lookup-∈ x vs)
 ⟦simpl⟧tp→ (tc x) = F.tc x
 ⟦simpl⟧tp→ (tvar n) = F.tvar n
 ⟦simpl⟧tp→ (x →' x₁) = ⟦ x ⟧tp→ F.⟶ ⟦ x₁ ⟧tp→
+
+open import Function.Inverse
+
+tp-iso : ∀ {ν} → (→-to-⟶ (⟦_⟧tp→ {ν = ν})) InverseOf (→-to-⟶ (⟦_⟧tp← {ν = ν}))
+tp-iso = record { left-inverse-of = tp←→ ; right-inverse-of = tp→← }
