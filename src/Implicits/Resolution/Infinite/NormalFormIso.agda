@@ -57,3 +57,44 @@ equivalent : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ 
 equivalent Δ r = equivalence
   (λ x → to-⇑ x)
   (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from-⇑ (proj₂ x)))
+
+
+{-}
+open import Function.Inverse
+open import Function.Equality
+
+-- from-⇑ : ∀ {ν n t a} {Γ : F.Ctx ν n} → Γ ⊢ t ⇑ a → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ a ⟧tp←
+from-⇑' : ∀ {ν a} {Δ : ICtx ν} → (∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ a ⟧tp→) → Δ ⊢ᵣ a
+from-⇑' (_ , p) = subst₂ (λ Δ a → Δ ⊢ᵣ a) (ctx→← _) (tp→← _) (from-⇑ p)
+
+-- from-⇓' : ∀ {ν a} {Δ : ICtx ν} {τ} → (∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇓ ⟦ a ⟧tp→) → Δ ⊢ Δ ⊢ a ↓ τ
+-- from-⇓' {τ = τ} (_ , p) = subst₂ (λ Δ a → Δ ⊢ a ↓ τ) (ctx→← _) (tp→← _) (from-⇓ p)
+
+-- from-to-⇓ : ∀ {ν a} {Δ : ICtx ν} {τ} → (p : Δ ⊢ a ↓ τ) → from-⇓' (to-⇓ p) ≡ p
+-- from-to-⇓ p = ?
+
+from-to-⇑ : ∀ {ν a} {Δ : ICtx ν} → (p : Δ ⊢ᵣ a) → from-⇑' (to-⇑ p) ≡ p
+from-to-⇑ (r-simp x x₁) = {!!}
+from-to-⇑ (r-iabs p) = begin
+  from-⇑' (, (nabs (proj₂ (to-⇑ p))))
+    ≡⟨ refl ⟩
+  subst₂ (λ Δ a → Δ ⊢ᵣ a) (ctx→← _) (tp→← _) (from-⇑ (nabs (proj₂ (to-⇑ p))))
+    ≡⟨ refl ⟩
+  subst₂ (λ Δ a → Δ ⊢ᵣ a) (ctx→← _) (tp→← _) (r-iabs (from-⇑ (proj₂ (to-⇑ p))))
+    ≡⟨ {!!} ⟩
+  r-iabs (subst₂ (λ Δ a → Δ ⊢ᵣ a) (ctx→← _) (tp→← _) (from-⇑ (proj₂ (to-⇑ p))))
+    ≡⟨ refl ⟩
+  r-iabs (from-⇑' (to-⇑ p))
+    ≡⟨ Prelude.cong r-iabs (from-to-⇑ p) ⟩
+  r-iabs p ∎
+from-to-⇑ (r-tabs p) with from-to-⇑ p 
+from-to-⇑ (r-tabs p) | x = {!x!}
+  where
+    lem : ∀ {ν a} {Δ : ICtx ν} → 
+
+to-from-⇑ : ∀ {ν a} {Δ : ICtx ν} → (p : ∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ a ⟧tp→) → to-⇑ (from-⇑' p) ≡ p
+to-from-⇑ p = {!!}
+
+iso' : ∀ {ν a} {Δ : ICtx ν} → (→-to-⟶ (to-⇑ {Δ = Δ} {a = a})) InverseOf (→-to-⟶ from-⇑')
+iso' = record { left-inverse-of = to-from-⇑; right-inverse-of = from-to-⇑ }
+-}
