@@ -30,6 +30,3 @@ clean:
 # clean src and lib
 clean-all:
 	find . -iname "*.agdai" -exec rm {} \;
-
-push-doc:
-	scp -r doc/html/ legolas:/srv/http/arjen.inkworks.nl/thesis/

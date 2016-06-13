@@ -1,9 +1,9 @@
-# AGDA checked proof of "Calculus of Implicits" soundness
+# AGDA checked proof of "Calculus of Implicits" related theorems
 
-Based on "The implicit calculus: a new foundation for generic programming."
+Developed for my thesis "Programs for Free: Towards a formalization of Implicit Resolution in Scala".
+Which proposes an improvement on earlier work:
+"The implicit calculus: a new foundation for generic programming."
 ([Oliveira, Bruno CdS, et al.](http://ropas.snu.ac.kr/~wtchoi/paper/pldi12.pdf)).
-The proof consists of the composition of a denotational semantics of the calculus into SystemF and
-the small step semantics of SystemF.
 
 # Usage
 
