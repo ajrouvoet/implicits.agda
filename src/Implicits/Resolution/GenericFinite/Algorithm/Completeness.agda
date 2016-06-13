@@ -54,7 +54,7 @@ module ResolutionComplete (cond : TerminationCondition) where
     match'-complete Δ Φ τ (a ⇒ b) f (acc g) (u , i-iabs x₁ y b↓τ) | just u' | just px
       with (step Φ Δ (from-meta (a M./ u)) (from-meta (b M./ u)) τ) <? Φ
     match'-complete Δ Φ τ (a ⇒ b) f (acc g) (u , i-iabs x₁ y b↓τ) | just u' | just px | yes p = {!!}
-    match'-complete Δ Φ τ (a ⇒ b) f (acc g) (u , i-iabs x₁ y b↓τ) | just u' | just px | no ¬p = {!x₁!}
+    match'-complete Δ Φ τ (a ⇒ b) f (acc g) (u , i-iabs x₁ y b↓τ) | just u' | just px | no ¬p = {!¬p!}
     -- match'-complete Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | yes Φ<
       -- with resolve' Δ (step Φ Δ (from-meta (a M./ u)) (from-meta (b M./ u)) τ)
                     -- (from-meta (a M./ u)) (f _ Φ<)

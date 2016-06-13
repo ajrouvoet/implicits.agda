@@ -1,4 +1,4 @@
-module Implicits.Resolution.Ambiguous.SystemFIso where
+module Implicits.Resolution.Ambiguous.SystemFEquiv where
 
 open import Prelude
 
@@ -50,8 +50,8 @@ to-⊢ {Δ = Δ} {r = r} (r-ivar x) =
 to-⊢ (r-iabs {a = a} p) = F.λ' ⟦ a ⟧tp→ (to-⊢ p)
 to-⊢ (r-iapp p p₁) = (to-⊢ p) F.· (to-⊢ p₁)
 
-iso : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ F.⊢ t ∈ ⟦ r ⟧tp→)
-iso Δ r = equivalence
+equivalent : ∀ {ν} (Δ : ICtx ν) r → Δ ⊢ᵣ r ⇔ (∃ λ t → ⟦ Δ ⟧ctx→ F.⊢ t ∈ ⟦ r ⟧tp→)
+equivalent Δ r = equivalence
   (λ x → , (to-⊢ x))
   (λ x → subst₂ (λ Δ' r' → Δ' ⊢ᵣ r') (ctx→← _) (tp→← r) (from-⊢ (proj₂ x)))
 
@@ -61,8 +61,8 @@ iso Δ r = equivalence
           ∃ λ t → Γ' F.⊢ t ∈ a'
 ⊢subst refl refl H.refl p = p
 
-iso' : ∀ {ν n} (Γ : F.Ctx ν n) r → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ r ⟧tp← ⇔ (∃ λ t → Γ F.⊢ t ∈ r)
-iso' Γ r = equivalence
+equivalent' : ∀ {ν n} (Γ : F.Ctx ν n) r → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ r ⟧tp← ⇔ (∃ λ t → Γ F.⊢ t ∈ r)
+equivalent' Γ r = equivalence
   (λ x → ⊢subst
     (length-map-toList (map ⟦_⟧tp← Γ)) (tp←→ r) (ctx←→ Γ) (, to-⊢ x))
   (λ x → (from-⊢ (proj₂ x)))

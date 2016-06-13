@@ -43,8 +43,8 @@ module Infinite⇔Ambiguous
   (nf : ∀ {ν n} {Γ : F.Ctx ν n} {t a} → Γ F.⊢ t ∈ a → ∃ λ (t₂ : F.Term ν n) → Γ F.⊢ t₂ ⇑ a)
   where
 
-  open import Implicits.Resolution.Ambiguous.SystemFIso hiding (iso)
-  open import Implicits.Resolution.Infinite.NormalFormIso hiding (equivalent)
+  open import Implicits.Resolution.Ambiguous.SystemFEquiv hiding (equivalent)
+  open import Implicits.Resolution.Infinite.NormalFormEquiv hiding (equivalent)
   open import Implicits.Resolution.Embedding.Lemmas
   open import Function.Equivalence
 

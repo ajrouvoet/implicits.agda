@@ -9,7 +9,7 @@ open import Relation.Binary.HeterogeneousEquality as H using ()
 open import Implicits.Syntax
 open import Implicits.Resolution.Ambiguous.Resolution
 open import Implicits.Resolution.Ambiguous.Semantics
-open import Implicits.Resolution.Ambiguous.SystemFIso
+open import Implicits.Resolution.Ambiguous.SystemFEquiv
 open import Implicits.Resolution.Embedding
 open import Implicits.Resolution.Embedding.Lemmas
 
@@ -33,7 +33,7 @@ module Undecidable (?:-undec : ¬ ?:-Dec) where
 
   -- proof that such a decider would imply a decider for type inhabitation problem
   reduction : ⊢ᵣ-Dec → ?:-Dec
-  reduction f Γ x = Dec.map (iso' Γ x) (f ⟦ Γ ⟧ctx← ⟦ x ⟧tp←)
+  reduction f Γ x = Dec.map (equivalent' Γ x) (f ⟦ Γ ⟧ctx← ⟦ x ⟧tp←)
 
   -- completing the proof
   undecidable : ¬ ⊢ᵣ-Dec

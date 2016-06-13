@@ -1,18 +1,16 @@
 open import Prelude
 
-module Implicits.Improved.Finite.Decidable where
+module Implicits.Resolution.Finite.Decidable where
 
 open import Coinduction
 open import Data.Fin.Substitution
 open import Data.List.Any
 open Membership-≡
-open import Implicits.Oliveira.Types
-open import Implicits.Oliveira.Terms
-open import Implicits.Oliveira.Contexts
-open import Implicits.Oliveira.Substitutions
-open import Implicits.Oliveira.Substitutions.Lemmas
-open import Implicits.Improved.Finite.Resolution
-open import Implicits.Oliveira.Types.Unification
+open import Implicits.Syntax
+open import Implicits.Syntax.Type.Unification
+open import Implicits.Substitutions
+open import Implicits.Substitutions.Lemmas
+open import Implicits.Resolution.Finite.Resolution
 open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Equality hiding (cong)
 open import Data.List.Any.Properties using (Any↔)

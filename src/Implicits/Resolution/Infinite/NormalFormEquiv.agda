@@ -1,4 +1,4 @@
-module Implicits.Resolution.Infinite.NormalFormIso where
+module Implicits.Resolution.Infinite.NormalFormEquiv where
 
 open import Prelude
 
