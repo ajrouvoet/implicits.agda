@@ -1,9 +1,7 @@
 # AGDA checked proof of "Calculus of Implicits" related theorems
 
-Developed for my thesis "Programs for Free: Towards a formalization of Implicit Resolution in Scala".
-Which proposes an improvement on earlier work:
-"The implicit calculus: a new foundation for generic programming."
-([Oliveira, Bruno CdS, et al.](http://ropas.snu.ac.kr/~wtchoi/paper/pldi12.pdf)).
+Developed for my thesis ("Programs for Free: Towards a formalization of Implicit Resolution in Scala")[http://repository.tudelft.nl/islandora/object/uuid:aef3c8fc-677a-4ecd-8850-d9d76937ba6f?collection=education].
+Building on top of earlier work by ([Oliveira, Bruno CdS, et al.](http://ropas.snu.ac.kr/~wtchoi/paper/pldi12.pdf)).
 
 # Usage
 
