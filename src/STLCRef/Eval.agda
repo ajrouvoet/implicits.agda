@@ -40,12 +40,14 @@ data _≻_ : ∀ {n} → Config n → Config n → Set where
   RefVal : ∀ {n e} {μ : Store n} →
            (v : Val e) →
            --------------------------------------------
-           (ref e , μ) ≻ (loc 0 , μ ∷ʳ (, v))
+           (ref e , μ) ≻ (loc (length μ) , μ ∷ʳ (, v))
+
   -- load
   DerefLoc : ∀ {n i} {μ : Store n} →
              (p : i < length μ) →
              ---------------------------------------------------
              (! (loc i) , μ) ≻ (proj₁ (μ !! p) , μ)
+
   -- store
   Assign : ∀ {i n e} {μ : Store n} →
            (p : i < length μ) →
