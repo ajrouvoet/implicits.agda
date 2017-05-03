@@ -21,7 +21,6 @@ data Exp : (n : ℕ) → Set where
   !_   : ∀ {n} → (e : Exp n) → Exp n
   _≔_  : ∀ {n} → (x y : Exp n) → Exp n
 
-
 data Val : ∀ {n} → Exp n → Set where
   unit : ∀ {n} → Val {n} unit
   ƛ    : ∀ {n} A → (e : Exp (suc n)) → Val (ƛ A e)

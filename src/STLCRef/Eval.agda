@@ -95,5 +95,6 @@ data _≻_ : ∀ {n} → Config n → Config n → Set where
 
 open import Data.Star
 
+infixl 1 _≻*_
 _≻*_ : ∀ {n} → Config n → Config n → Set
 c ≻* c' = Star _≻_ c c'

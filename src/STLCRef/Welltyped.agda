@@ -5,6 +5,7 @@ open import Data.Nat
 open import Data.Vec
 open import Data.List
 open import Data.Fin hiding (_<_)
+open import Extensions.List as L using ()
 
 open import STLCRef.Syntax
 
@@ -12,9 +13,8 @@ open import STLCRef.Syntax
 World : Set
 World = List Type
 
-data _⊢loc_∶_ : World → ℕ → Type → Set where
-  here : ∀ {A As} → (A ∷ As) ⊢loc 0 ∶ A
-  there : ∀ {A B As n} → As ⊢loc n ∶ A → (B ∷ As) ⊢loc (suc n) ∶ A
+_⊢loc_∶_ : World → ℕ → Type → Set
+Σ ⊢loc i ∶ A = Σ L.[ i ]= A
 
 Ctx : (n : ℕ) → Set
 Ctx n = Vec Type n
