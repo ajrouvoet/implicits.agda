@@ -1,35 +1,18 @@
 module Prelude where
 
-open import Data.Maybe public using (Maybe; nothing; just)
-open import Data.Bool public using (Bool; true; false)
 open import Data.Nat public
-  using (ℕ; zero; suc; _⊔_)
-  renaming ( _+_ to _N+_; _∸_ to _N-_
-           ; _≤_ to _N≤_; _≥_ to _N≥_; _<_ to _N<_; _≤?_ to _N≤?_; _>_ to _N>_
-           ; _≟_ to _N≟_)
-open import Data.Fin public hiding (_<_)
-open import Data.Fin.Properties public using () renaming (_≟_ to _fin≟_)
-open import Data.Sum public hiding (map)
-open import Data.Product public hiding (zip) renaming (map to pmap)
-open import Data.Sum public hiding (map)
-open import Data.Vec public hiding ([_])
-open import Data.List as List' public using (List) hiding (module List)
-open import Data.List.Any public using (Any; any; here; there; module Membership-≡)
-open import Data.List.All as All' public using (All; all) hiding (module All)
-open import Relation.Nullary public using (yes; no; ¬_; Dec)
-open import Relation.Nullary.Decidable public using () renaming (map′ to map-dec)
-open import Relation.Binary.PropositionalEquality public renaming ([_] to reveal[_])
-open import Relation.Binary public using (Decidable)
-open ≡-Reasoning public
-open import Function public
-open import Data.Empty public using (⊥; ⊥-elim)
-open import Data.Unit public using (⊤)
+open import Data.Nat.Properties.Simple public
+open import Data.Fin as Fin using (Fin; suc; zero; #_) public
 
-open import Extensions.Vec public
+open import Data.Unit using (tt; ⊤) public
+open import Data.Empty public
+open import Data.Bool using (true; false; Bool) public
 
-module List where
-  open List' public
-  open Membership-≡ public
+open import Data.Product public using (∃; _×_; _,_; proj₁; proj₂) public
 
-module All where
-  open All' public
+open import Relation.Binary.PropositionalEquality hiding ([_]) public
+
+open import Relation.Nullary public
+open import Relation.Nullary.Decidable using (True) public
+
+open import Function using (_$_; id; const) public
