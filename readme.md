@@ -5,14 +5,15 @@ Building on top of earlier work by ([Oliveira, Bruno CdS, et al.](http://ropas.s
 
 # Usage
 
-The code has been compiled against *agda 2.4.2.3* and beyond.
-with the associated version of the standard library.
-The standard library is included as a submodule;
-
-    git submodule init
-    git submodule update
+The code has been compiled against *agda 2.4.2.3* and beyond and should be compatible with the latest version
+of the agda [stdlib](https://github.com/agda/agda-stdlib).
 
 ### Typechecking
+
+Install the standard library somewhere by cloning it and add the following snippet to your agda libraries file
+`~/.agda/libraries`:
+
+    <AGDA_STDLIB_PATH>/standard-library.agda-lib
 
 Typechecking the proofs is as simple as:
 

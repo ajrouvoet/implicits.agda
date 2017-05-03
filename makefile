@@ -5,14 +5,14 @@ AGDA_OPTS = -i ./src/ -i ./lib/agda-stdlib/src/
 AGDA = agda $(AGDA_OPTS)
 AGDA_DOC = agda $(AGDA_OPTS) --html --html-dir=./doc/html/
 
-EVERYTHING = $(SRC)/Everything.agdai
+EVERYTHING = $(SRC)/Everything.agda
 
-all: $(EVERYTHING)
+all: $(EVERYTHING)i
 
 # generate browsable documentation for our main proofs
 .PHONY: doc
 doc:
-	$(AGDA_DOC) $(SRC)/Implicits/Everything.agda
+	$(AGDA_DOC) $(EVERYTHING)
 
 # rules for typechecking agda sourcecode
 .SUFFIXES: .agdai .agda
