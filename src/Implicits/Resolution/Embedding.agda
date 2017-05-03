@@ -1,6 +1,10 @@
 module Implicits.Resolution.Embedding where
 
 open import Prelude
+
+open import Data.Vec
+open import Data.List as List hiding (map)
+
 open import Implicits.Syntax
 open import SystemF as F using ()
 

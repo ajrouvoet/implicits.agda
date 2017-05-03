@@ -1,18 +1,20 @@
-open import Prelude hiding (lift; Fin′; subst; id)
+open import Prelude
 
 module Implicits.Substitutions.Type where
 
 open import Implicits.Syntax.Type
+
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
+open import Data.Vec
 
 module TypeApp {T} (l : Lift T Type) where
   open Lift l hiding (var)
 
   infixl 8 _/_
 
-  mutual 
+  mutual
     _simple/_ : ∀ {m n} → SimpleType m → Sub T m n → Type n
     tc c simple/ σ = simpl (tc c)
     tvar x simple/ σ = lift (lookup x σ)
@@ -38,7 +40,7 @@ module TypeApp {T} (l : Lift T Type) where
   tc-/✶-↑✶ : ∀ k {c m n} (ρs : Subs T m n) →
              (simpl (tc c)) /✶ ρs ↑✶ k ≡ simpl (tc c)
   tc-/✶-↑✶ k ε        = refl
-  tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl 
+  tc-/✶-↑✶ k (r ◅ ρs) = cong₂ _/_ (tc-/✶-↑✶ k ρs) refl
 
   ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
              (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (suc k))

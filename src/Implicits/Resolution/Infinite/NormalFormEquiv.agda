@@ -10,10 +10,12 @@ open import Implicits.Resolution.Embedding.Lemmas
 open import SystemF as F using ()
 open import SystemF.NormalForm
 
+open import Data.Vec hiding ([_])
 open import Relation.Binary.HeterogeneousEquality as H using ()
 open import Data.List.Any
 open import Data.List.Properties
 open import Data.Vec.Properties as VP using ()
+open import Extensions.Vec
 open import Function.Equivalence using (_⇔_; equivalence)
 
 mutual
@@ -21,12 +23,12 @@ mutual
   from-⇓ : ∀ {ν n t a τ} {Γ : F.Ctx ν n} → Γ ⊢ t ⇓ a → ⟦ Γ ⟧ctx← ⊢ ⟦ a ⟧tp← ↓ τ →
            ∃ λ i → ⟦ Γ ⟧ctx← ⊢ ⟦ lookup i Γ ⟧tp← ↓ τ
   from-⇓ {Γ = Γ} (nvar i) ↓τ = i , ↓τ
-  from-⇓ (napp p x) ↓τ = from-⇓ p (i-iabs (from-⇑ x) ↓τ) 
+  from-⇓ (napp p x) ↓τ = from-⇓ p (i-iabs (from-⇑ x) ↓τ)
   from-⇓ {Γ = Γ} (ntapp {a = a} b p) ↓τ = from-⇓ p
     (i-tabs ⟦ b ⟧tp← (subst (λ z → ⟦ Γ ⟧ctx← ⊢ z ↓ _) (⟦a/sub⟧tp← a b) ↓τ))
 
   from-⇑ : ∀ {ν n t a} {Γ : F.Ctx ν n} → Γ ⊢ t ⇑ a → ⟦ Γ ⟧ctx← ⊢ᵣ ⟦ a ⟧tp←
-  from-⇑ (nbase b x) with ⟦base⟧tp← b 
+  from-⇑ (nbase b x) with ⟦base⟧tp← b
   from-⇑ (nbase b x) | τ , eq with from-⇓ x (subst (λ z → _ ⊢ z ↓ τ) (sym $ eq) (i-simp τ))
   from-⇑ (nbase b x) | τ , eq | i , lookup-i↓tc =
     subst (λ z → _ ⊢ᵣ z) (sym $ eq) (r-simp (lookup-∈ i _) lookup-i↓tc)
@@ -87,10 +89,10 @@ from-to-⇑ (r-iabs p) = begin
   r-iabs (from-⇑' (to-⇑ p))
     ≡⟨ Prelude.cong r-iabs (from-to-⇑ p) ⟩
   r-iabs p ∎
-from-to-⇑ (r-tabs p) with from-to-⇑ p 
+from-to-⇑ (r-tabs p) with from-to-⇑ p
 from-to-⇑ (r-tabs p) | x = {!x!}
   where
-    lem : ∀ {ν a} {Δ : ICtx ν} → 
+    lem : ∀ {ν a} {Δ : ICtx ν} →
 
 to-from-⇑ : ∀ {ν a} {Δ : ICtx ν} → (p : ∃ λ t → ⟦ Δ ⟧ctx→ ⊢ t ⇑ ⟦ a ⟧tp→) → to-⇑ (from-⇑' p) ≡ p
 to-from-⇑ p = {!!}

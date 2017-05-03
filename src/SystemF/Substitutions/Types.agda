@@ -1,9 +1,10 @@
 module SystemF.Substitutions.Types where
 
-open import Prelude hiding (lift; Fin′; subst)
+open import Prelude
 open import SystemF.Syntax.Type
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
+open import Data.Vec
 
 module TypeSubst where
   module TypeApp {T} (l : Lift T Type) where
@@ -32,7 +33,7 @@ module TypeSubst where
     ⟶-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (⟶-/✶-↑✶ k ρs) refl
 
     ∀'-/✶-↑✶ : ∀ k {m n a} (ρs : Subs T m n) →
-               (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (1 N+ k))
+               (∀' a) /✶ ρs ↑✶ k ≡ ∀' (a /✶ ρs ↑✶ (1 + k))
     ∀'-/✶-↑✶ k ε        = refl
     ∀'-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (∀'-/✶-↑✶ k ρs) refl
 

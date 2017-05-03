@@ -1,5 +1,5 @@
 module SystemF.Syntax.Term where
-  
+
 open import Prelude
 open import SystemF.Syntax.Type
 

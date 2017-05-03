@@ -3,6 +3,9 @@ open import Prelude
 module Implicits.Resolution.Deterministic.Resolution where
 
 open import Data.Fin.Substitution
+open import Data.List
+open import Data.List.All
+
 open import Implicits.Syntax
 open import Implicits.Syntax.Type.Unification
 open import Implicits.Substitutions
@@ -27,7 +30,7 @@ mutual
 
   data _⊢ᵣ_ {ν} (K : ICtx ν) : Type ν → Set where
     r-simp : ∀ {τ ρ} → K ⟨ τ ⟩= ρ → K ⊢ ρ ↓ τ → K ⊢ᵣ simpl τ
-    r-iabs : ∀ ρ₁ {ρ₂} → ρ₁ List.∷ K ⊢ᵣ ρ₂ → K ⊢ᵣ ρ₁ ⇒ ρ₂
+    r-iabs : ∀ ρ₁ {ρ₂} → ρ₁ ∷ K ⊢ᵣ ρ₂ → K ⊢ᵣ ρ₁ ⇒ ρ₂
     r-tabs : ∀ {ρ} → ictx-weaken K ⊢ᵣ ρ → K ⊢ᵣ ∀' ρ
 
 _⊢ᵣ[_] : ∀ {ν} → (K : ICtx ν) → List (Type ν) → Set

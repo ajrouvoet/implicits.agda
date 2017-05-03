@@ -1,4 +1,4 @@
-open import Prelude hiding (All; module All; _>>=_; ⊥; _≅⟨_⟩_; _∎)
+open import Prelude hiding (⊥)
 
 module Implicits.Resolution.Infinite.Algorithm where
 
@@ -7,7 +7,11 @@ open import Data.Unit.Base
 open import Data.Maybe using (is-just; functor)
 open import Coinduction
 open import Data.Fin.Substitution
+open import Data.Vec hiding (_>>=_)
+open import Data.List hiding (monad)
 open import Data.List.Any hiding (tail)
+open import Data.Maybe hiding (monad; module Eq)
+
 open import Implicits.Syntax
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas
@@ -31,7 +35,7 @@ module _ where
 
   mutual
 
-    
+
     map-bool' : ∀ {A : Set} → A → Bool → Maybe A ⊥P
     map-bool' u true = now (just u)
     map-bool' u false = now nothing
@@ -94,7 +98,7 @@ module _ where
     open module Eq = P.Equality  {A = A} _≡_ public
     open module R  = P.Reasoning (PEq.isEquivalence {A = A}) public
 
-  map-bool : ∀ {A : Set} → A → Bool → Maybe A ⊥
+  map-bool : ∀ {A : Set} → A → Bool → (Maybe A) ⊥
   map-bool x b = ⟦ map-bool' x b ⟧P
 
   delayed-resolve : ∀ {ν} (Δ : ICtx ν) a → Bool ⊥
@@ -138,7 +142,7 @@ module _ where
                       (match-u Δ τ (a ⇒ b) (acc f))
                         Eq.≅
                       ((match-u Δ τ b (f _ (b-m<-a⇒b a b))) >>= (resolve-context Δ a))
-  match-u-iabs-comp Δ τ a b f = 
+  match-u-iabs-comp Δ τ a b f =
     (match-u Δ τ (a ⇒ b) (acc f))
       Eq.≅⟨ >>=-hom (match-u' Δ τ b (f _ (b-m<-a⇒b a b))) _ ⟩
     ((match-u Δ τ b (f _ (b-m<-a⇒b a b))) >>= (resolve-context Δ a)) Eq.∎
@@ -168,4 +172,3 @@ module _ where
     match1st Δ (x List.∷ ρs) τ
       Eq.≅⟨ >>=-hom (match' Δ τ x) _ ⟩
     ((match Δ τ x) >>= (match1st-recover Δ ρs τ)) Eq.∎
-

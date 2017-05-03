@@ -4,12 +4,14 @@ module Implicits.Syntax.Context where
 
 open import Implicits.Syntax.Type
 open import Data.List.All
+open import Data.Vec
+open import Data.List
 
 Ctx : ℕ → ℕ → Set
 Ctx ν n = Vec (Type ν) n
 
 ICtx : ℕ → Set
-ICtx ν = List.List (Type ν)
+ICtx ν = List (Type ν)
 
 -- wellformed implicit contexts
 _⊢OK : ∀ {ν} → ICtx ν → Set

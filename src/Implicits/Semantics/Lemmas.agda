@@ -5,7 +5,9 @@ module Implicits.Semantics.Lemmas where
 open import SystemF as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
+open import Data.Vec hiding ([_])
 open import Data.Vec.Properties
+open import Extensions.Vec
 
 open import Implicits.Syntax
 open import Implicits.WellTyped
@@ -36,38 +38,38 @@ private
   map (⟦_⟧tp→ ∘ TS.weaken) xs
     ≡⟨ (map-cong ⟦weaken⟧) xs ⟩
   map (F.weaken ∘ ⟦_⟧tp→) xs
-    ≡⟨ (map-∘ F.weaken ⟦_⟧tp→) xs ⟩ 
+    ≡⟨ (map-∘ F.weaken ⟦_⟧tp→) xs ⟩
   map F.weaken (map ⟦_⟧tp→ xs) ∎
 
--- the semantics of identity type-substitution is exactly 
+-- the semantics of identity type-substitution is exactly
 -- system-f's identity type substitution
 ⟦id⟧tp→ : ∀ {n} → map ⟦_⟧tp→ (TS.id {n}) ≡ F.id
 ⟦id⟧tp→ {zero} = refl
 ⟦id⟧tp→ {suc n} = begin
-  map ⟦_⟧tp→ (simpl (tvar zero) ∷ map TS.weaken (TS.id {n})) 
+  map ⟦_⟧tp→ (simpl (tvar zero) ∷ map TS.weaken (TS.id {n}))
     ≡⟨ refl ⟩
-  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken (TS.id {n}))) 
+  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken (TS.id {n})))
     ≡⟨ cong (_∷_ (F.tvar zero)) (⟦weaken⟧tps→ (TS.id {n})) ⟩
-  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ (TS.id {n}))) 
+  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ (TS.id {n})))
     ≡⟨ cong (λ e → F.tvar zero ∷ (map F.weaken e)) ⟦id⟧tp→ ⟩
-  F.tvar zero ∷ (map F.weaken (F.id {n})) 
+  F.tvar zero ∷ (map F.weaken (F.id {n}))
     ≡⟨ refl ⟩
   F.id ∎
 
 -- the semantics of type weakening is exactly system-f's type weakening
 ⟦wk⟧tp→ : ∀ {n} → map ⟦_⟧tp→ (TS.wk {n}) ≡ F.wk {n}
 ⟦wk⟧tp→ = begin
-  map ⟦_⟧tp→ TS.wk 
+  map ⟦_⟧tp→ TS.wk
     ≡⟨ ⟦weaken⟧tps→ TS.id ⟩
-  map F.weaken (map ⟦_⟧tp→ TS.id) 
+  map F.weaken (map ⟦_⟧tp→ TS.id)
     ≡⟨ cong (map F.weaken) ⟦id⟧tp→ ⟩
   F.wk ∎
 
 ⟦↑⟧tps→ :  ∀ {ν n} (v : Vec (Type ν) n) → ⟦ v TS.↑ ⟧tps→ ≡ ⟦ v ⟧tps→ F.↑
 ⟦↑⟧tps→ xs = begin
-  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken xs)) 
+  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken xs))
     ≡⟨ cong (_∷_ (F.tvar zero)) (⟦weaken⟧tps→ xs) ⟩
-  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ xs)) 
+  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ xs))
     ≡⟨ refl ⟩
   (map ⟦_⟧tp→ xs) F.↑ ∎
 
@@ -79,7 +81,7 @@ lookup-⟦⟧ctx→ Γ x = lookup⋆map Γ ⟦_⟧tp→ x
 ⟦a/s⟧tp→ : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp TS./ σ ⟧tp→ ≡ ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ σ)
 ⟦a/s⟧tp→ (simpl (tc c)) σ = refl
 ⟦a/s⟧tp→  (simpl (tvar n)) σ = begin
-  ⟦ lookup n σ ⟧tp→ 
+  ⟦ lookup n σ ⟧tp→
     ≡⟨ lookup⋆map σ ⟦_⟧tp→ n ⟩
   ⟦ simpl (tvar n) ⟧tp→ F./ (map ⟦_⟧tp→ σ) ∎
 ⟦a/s⟧tp→ (l ⇒ r) σ = cong₂ F._→'_ (⟦a/s⟧tp→ l σ) (⟦a/s⟧tp→ r σ)
@@ -106,7 +108,7 @@ lookup-⟦⟧ctx→ Γ x = lookup⋆map Γ ⟦_⟧tp→ x
 ⟦a/wk⟧tp→ tp = begin
   ⟦ tp TS./ TS.wk ⟧tp→
     ≡⟨ ⟦a/s⟧tp→ tp TS.wk ⟩
-  ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ TS.wk) 
+  ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ TS.wk)
     ≡⟨ cong (λ e → ⟦ tp ⟧tp→ F./ e) ⟦wk⟧tp→ ⟩
   ⟦ tp ⟧tp→ F./ F.wk ∎
 
@@ -126,11 +128,10 @@ lookup-⟦⟧ctx→ Γ x = lookup⋆map Γ ⟦_⟧tp→ x
 ⟦weaken⟧ctx→ [] = refl
 ⟦weaken⟧ctx→ (x ∷ Γ) with ⟦weaken⟧ctx→ Γ
 ⟦weaken⟧ctx→ (x ∷ Γ) | ih = begin
-  ⟦ (ctx-weaken (x ∷ Γ)) ⟧ctx→ ≡⟨ refl ⟩ 
+  ⟦ (ctx-weaken (x ∷ Γ)) ⟧ctx→ ≡⟨ refl ⟩
   ⟦ x TS./ TS.wk ⟧tp→ ∷ xs ≡⟨ cong (flip _∷_ xs) (⟦a/wk⟧tp→ x) ⟩
   (⟦ x ⟧tp→ F./ F.wk) ∷ ⟦ (ctx-weaken Γ) ⟧ctx→ ≡⟨ cong (_∷_ (⟦ x ⟧tp→ F./ F.wk)) ih ⟩
   (⟦ x ⟧tp→ F./ F.wk) ∷ (F.ctx-weaken ⟦ Γ ⟧ctx→) ≡⟨ refl ⟩
   F.ctx-weaken ⟦ x ∷ Γ ⟧ctx→ ∎
   where
     xs = map ⟦_⟧tp→ $ map (λ s → s TS./ TS.wk ) Γ
-  

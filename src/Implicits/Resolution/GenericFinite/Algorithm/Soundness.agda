@@ -4,6 +4,9 @@ module Implicits.Resolution.GenericFinite.Algorithm.Soundness where
 
 open import Induction.WellFounded
 open import Induction.Nat
+open import Data.List
+open import Data.List.Any
+open Membership-≡
 open import Data.Fin.Substitution
 open import Data.Nat.Base using (_<′_)
 open import Data.Maybe as Maybe
@@ -22,7 +25,8 @@ open import Implicits.Resolution.GenericFinite.Algorithm
 open import Implicits.Resolution.GenericFinite.TerminationCondition
 open import Implicits.Resolution.Termination
 
-open import Extensions.Bool as Bool
+open import Data.Vec hiding (_∈_)
+open import Extensions.Bool as Bl
 
 private
   module M = MetaTypeMetaSubst
@@ -82,7 +86,7 @@ module ResolutionSound (cond : TerminationCondition) where
     match'-sound Δ Φ τ (simpl x) Φ↓ m↓ | nothing | nothing = nothing
 
     match-sound : ∀ {ν} (Δ : ICtx ν) (Φ : TCtx) τ r → (Φ↓ : T-Acc Φ) → 
-                  Bool.All (Δ , Φ ⊢ r ↓ τ) (match Δ Φ τ r Φ↓)
+                  Bl.All (Δ , Φ ⊢ r ↓ τ) (match Δ Φ τ r Φ↓)
     match-sound Δ Φ τ r Φ↓ with
       match' Δ Φ τ (to-meta {zero} r) Φ↓ (m<-well-founded _) |
       match'-sound Δ Φ τ (to-meta {zero} r) Φ↓ (m<-well-founded _)
@@ -98,18 +102,18 @@ module ResolutionSound (cond : TerminationCondition) where
     match-sound Δ Φ τ r Φ↓ | nothing | q = false
 
     match1st-sound : ∀ {ν} (Δ : ICtx ν) (Φ : TCtx) (ρs : ICtx ν) → (τ : SimpleType ν) → (Φ↓ : T-Acc Φ) →
-                    Bool.All (∃ λ r → (r List.∈ ρs) × (Δ , Φ ⊢ r ↓ τ)) (match1st Δ Φ ρs τ Φ↓)
-    match1st-sound Δ Φ List.[] τ Φ↓ = false
-    match1st-sound Δ Φ (x List.∷ ρs) τ Φ↓ with match Δ Φ τ x Φ↓ | match-sound Δ Φ τ x Φ↓
-    match1st-sound Δ Φ (x List.∷ ρs) τ Φ↓ | true | true px = true (x , (here refl , px)) 
-    match1st-sound Δ Φ (x List.∷ ρs) τ Φ↓ | false | false =
+                    Bl.All (∃ λ r → (r ∈ ρs) × (Δ , Φ ⊢ r ↓ τ)) (match1st Δ Φ ρs τ Φ↓)
+    match1st-sound Δ Φ [] τ Φ↓ = false
+    match1st-sound Δ Φ (x ∷ ρs) τ Φ↓ with match Δ Φ τ x Φ↓ | match-sound Δ Φ τ x Φ↓
+    match1st-sound Δ Φ (x ∷ ρs) τ Φ↓ | true | true px = true (x , (here refl , px)) 
+    match1st-sound Δ Φ (x ∷ ρs) τ Φ↓ | false | false =
       all-map (match1st-sound Δ Φ ρs τ Φ↓) (λ{ (r , r∈ρs , r↓τ) → r , ((there r∈ρs) , r↓τ) })
 
-    sound' : ∀ {ν} (Δ : ICtx ν) Φ r → (Φ↓ : T-Acc Φ) → Bool.All (Δ , Φ ⊢ᵣ r) (resolve' Δ Φ r Φ↓)
+    sound' : ∀ {ν} (Δ : ICtx ν) Φ r → (Φ↓ : T-Acc Φ) → Bl.All (Δ , Φ ⊢ᵣ r) (resolve' Δ Φ r Φ↓)
     sound' Δ Φ (simpl x) Φ↓ =
       all-map (match1st-sound Δ Φ Δ x Φ↓) (λ{ (r , r∈Δ , r↓τ) → r-simp r∈Δ r↓τ })
-    sound' Δ Φ (a ⇒ b) Φ↓ = all-map (sound' (a List.∷ Δ) Φ b Φ↓) (λ x → r-iabs a x)
+    sound' Δ Φ (a ⇒ b) Φ↓ = all-map (sound' (a ∷ Δ) Φ b Φ↓) (λ x → r-iabs a x)
     sound' Δ Φ (∀' r) Φ↓ = all-map (sound' (ictx-weaken Δ) Φ r Φ↓) r-tabs
 
-    sound : ∀ {ν} (Δ : ICtx ν) r {Φ} → (Φ↓ : T-Acc Φ) → Bool.All (Δ , Φ ⊢ᵣ r) (resolve Δ Φ r)
+    sound : ∀ {ν} (Δ : ICtx ν) r {Φ} → (Φ↓ : T-Acc Φ) → Bl.All (Δ , Φ ⊢ᵣ r) (resolve Δ Φ r)
     sound Δ r Φ↓ = sound' Δ _ r (wf-< _)

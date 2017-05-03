@@ -1,9 +1,12 @@
 module SystemF.NormalForm where
 
 open import Prelude
+
 open import SystemF.Syntax
 open import SystemF.WellTyped
 open import SystemF.Substitutions
+
+open import Data.Vec hiding ([_])
 open import Data.List hiding ([_])
 
 mutual

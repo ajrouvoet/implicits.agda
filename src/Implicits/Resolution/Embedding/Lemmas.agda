@@ -2,7 +2,12 @@ module Implicits.Resolution.Embedding.Lemmas where
 
 open import Prelude
 open import Data.Fin.Substitution
+open import Data.Vec hiding ([_]; _∈_)
+open import Data.List as List hiding ([_]; map)
 open import Data.List.Properties
+open import Data.List.Any hiding (map)
+open Membership-≡
+open import Extensions.Vec
 open import Data.Vec.Properties as VP using ()
 open import Relation.Binary.HeterogeneousEquality as H using ()
 module HR = H.≅-Reasoning
@@ -19,7 +24,7 @@ private
 
 length-weaken-Δ : ∀ {ν} (Δ : ICtx ν) →
   (List.length (List.map ⟦_⟧tp→ (ictx-weaken Δ))) ≡ (List.length (List.map ⟦_⟧tp→ Δ))
-length-weaken-Δ Δ = begin 
+length-weaken-Δ Δ = begin
   (List.length (List.map ⟦_⟧tp→ (List.map (λ s → s / wk) Δ)))
     ≡⟨ cong List.length (sym $ map-compose Δ) ⟩
   (List.length (List.map (⟦_⟧tp→ ∘ (λ s → s / wk)) Δ))
@@ -43,9 +48,9 @@ tp←→ (a F.⟶ b) = cong₂ F._⟶_ (tp←→ a) (tp←→ b)
 tp←→ (F.∀' a) = cong F.∀' (tp←→ a)
 
 ctx→← : ∀ {ν} (Δ : ICtx ν) → ⟦ ⟦ Δ ⟧ctx→ ⟧ctx← ≡ Δ
-ctx→← List.[] = refl
-ctx→← (x List.∷ xs) = begin
-  ⟦ ⟦ x List.∷ xs ⟧ctx→ ⟧ctx←
+ctx→← [] = refl
+ctx→← (x ∷ xs) = begin
+  ⟦ ⟦ x ∷ xs ⟧ctx→ ⟧ctx←
     ≡⟨ refl ⟩
   toList (map ⟦_⟧tp← (fromList (List.map ⟦_⟧tp→ (x List.∷ xs))))
     ≡⟨ refl ⟩
@@ -54,8 +59,7 @@ ctx→← (x List.∷ xs) = begin
   (x List.∷ xs) ∎
 
 Γ-cong₂ : ∀ {ν n n'} {x x' : F.Type ν} {xs : F.Ctx ν n} {xs' : F.Ctx ν n'} →
-          n ≡ n' → x ≡ x' → xs H.≅ xs' →
-          (x ∷ xs) H.≅ (x' ∷ xs')
+          n ≡ n' → x ≡ x' → xs H.≅ xs' → (x Vec.∷ xs) H.≅ (x' Vec.∷ xs')
 Γ-cong₂ refl refl H.refl = H.refl
 
 ctx←→ : ∀ {ν n} (Γ : F.Ctx ν n) → ⟦ ⟦ Γ ⟧ctx← ⟧ctx→ H.≅ Γ
@@ -96,7 +100,7 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
   map (⟦_⟧tp← ∘ F.weaken) xs
   ≡⟨ (VP.map-cong ⟦weaken⟧tp←) xs ⟩
   map (TS.weaken ∘ ⟦_⟧tp←) xs
-    ≡⟨ (VP.map-∘ TS.weaken ⟦_⟧tp←) xs ⟩ 
+    ≡⟨ (VP.map-∘ TS.weaken ⟦_⟧tp←) xs ⟩
   map TS.weaken (map ⟦_⟧tp← xs) ∎
 
 -- helper lemma on mapping type-semantics over weakend substitutions
@@ -108,70 +112,70 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
   map (⟦_⟧tp→ ∘ TS.weaken) xs
   ≡⟨ (VP.map-cong ⟦weaken⟧tp→) xs ⟩
   map (F.weaken ∘ ⟦_⟧tp→) xs
-    ≡⟨ (VP.map-∘ F.weaken ⟦_⟧tp→) xs ⟩ 
+    ≡⟨ (VP.map-∘ F.weaken ⟦_⟧tp→) xs ⟩
   map F.weaken (map ⟦_⟧tp→ xs) ∎
 
--- the semantics of identity type-substitution is exactly 
+-- the semantics of identity type-substitution is exactly
 -- system-f's identity type substitution
 ⟦id⟧tp← : ∀ {n} → map ⟦_⟧tp← (F.id {n}) ≡ TS.id
 ⟦id⟧tp← {zero} = refl
 ⟦id⟧tp← {suc n} = begin
-  map ⟦_⟧tp← (F.tvar zero ∷ map F.weaken (F.id {n})) 
+  map ⟦_⟧tp← (F.tvar zero ∷ map F.weaken (F.id {n}))
     ≡⟨ refl ⟩
-  (simpl (tvar zero)) ∷ (map ⟦_⟧tp← (map F.weaken (F.id {n}))) 
+  (simpl (tvar zero)) ∷ (map ⟦_⟧tp← (map F.weaken (F.id {n})))
     ≡⟨ cong (_∷_ (simpl (tvar zero))) (⟦⟧tps←⋆weaken (F.id {n})) ⟩
-  (simpl (tvar zero)) ∷ (map TS.weaken (map ⟦_⟧tp← (F.id {n}))) 
+  (simpl (tvar zero)) ∷ (map TS.weaken (map ⟦_⟧tp← (F.id {n})))
     ≡⟨ cong (λ e → simpl (tvar zero) ∷ (map TS.weaken e)) ⟦id⟧tp← ⟩
-  (simpl (tvar zero)) ∷ (map TS.weaken (TS.id {n})) 
+  (simpl (tvar zero)) ∷ (map TS.weaken (TS.id {n}))
     ≡⟨ refl ⟩
   TS.id ∎
 
--- the semantics of identity type-substitution is exactly 
+-- the semantics of identity type-substitution is exactly
 -- system-f's identity type substitution
 ⟦id⟧tp→ : ∀ {n} → map ⟦_⟧tp→ (TS.id {n}) ≡ F.id
 ⟦id⟧tp→ {zero} = refl
 ⟦id⟧tp→ {suc n} = begin
-  map ⟦_⟧tp→ (simpl (tvar zero) ∷ map TS.weaken (TS.id {n})) 
+  map ⟦_⟧tp→ (simpl (tvar zero) ∷ map TS.weaken (TS.id {n}))
     ≡⟨ refl ⟩
-  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken (TS.id {n}))) 
+  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken (TS.id {n})))
     ≡⟨ cong (_∷_ (F.tvar zero)) (⟦⟧tps→⋆weaken (TS.id {n})) ⟩
-  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ (TS.id {n}))) 
+  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ (TS.id {n})))
     ≡⟨ cong (λ e → F.tvar zero ∷ (map F.weaken e)) ⟦id⟧tp→ ⟩
-  F.tvar zero ∷ (map F.weaken (F.id {n})) 
+  F.tvar zero ∷ (map F.weaken (F.id {n}))
     ≡⟨ refl ⟩
   F.id ∎
 
 -- the semantics of type weakening is exactly system-f's type weakening
 ⟦wk⟧tp← : ∀ {n} → map ⟦_⟧tp← (F.wk {n}) ≡ TS.wk {n}
 ⟦wk⟧tp← = begin
-  map ⟦_⟧tp← F.wk 
+  map ⟦_⟧tp← F.wk
     ≡⟨ ⟦⟧tps←⋆weaken F.id ⟩
-  map TS.weaken (map ⟦_⟧tp← F.id) 
+  map TS.weaken (map ⟦_⟧tp← F.id)
     ≡⟨ cong (map TS.weaken) ⟦id⟧tp← ⟩
   TS.wk ∎
 
 -- the semantics of type weakening is exactly system-f's type weakening
 ⟦wk⟧tp→ : ∀ {n} → map ⟦_⟧tp→ (TS.wk {n}) ≡ F.wk {n}
 ⟦wk⟧tp→ = begin
-  map ⟦_⟧tp→ TS.wk 
+  map ⟦_⟧tp→ TS.wk
     ≡⟨ ⟦⟧tps→⋆weaken TS.id ⟩
-  map F.weaken (map ⟦_⟧tp→ TS.id) 
+  map F.weaken (map ⟦_⟧tp→ TS.id)
     ≡⟨ cong (map F.weaken) ⟦id⟧tp→ ⟩
   F.wk ∎
 
 ⟦⟧tps←⋆↑ :  ∀ {ν n} (v : Vec (F.Type ν) n) → ⟦ v F.↑ ⟧tps← ≡ ⟦ v ⟧tps← TS.↑
 ⟦⟧tps←⋆↑ xs = begin
-  (simpl (tvar zero)) ∷ (map ⟦_⟧tp← (map F.weaken xs)) 
+  (simpl (tvar zero)) ∷ (map ⟦_⟧tp← (map F.weaken xs))
     ≡⟨ cong (_∷_ (simpl (tvar zero))) (⟦⟧tps←⋆weaken xs) ⟩
-  (simpl (tvar zero)) ∷ (map TS.weaken (map ⟦_⟧tp← xs)) 
+  (simpl (tvar zero)) ∷ (map TS.weaken (map ⟦_⟧tp← xs))
     ≡⟨ refl ⟩
   (map ⟦_⟧tp← xs) TS.↑ ∎
 
 ⟦⟧tps→⋆↑ :  ∀ {ν n} (v : Vec (Type ν) n) → ⟦ v TS.↑ ⟧tps→ ≡ ⟦ v ⟧tps→ F.↑
 ⟦⟧tps→⋆↑ xs = begin
-  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken xs)) 
+  F.tvar zero ∷ (map ⟦_⟧tp→ (map TS.weaken xs))
     ≡⟨ cong (_∷_ (F.tvar zero)) (⟦⟧tps→⋆weaken xs) ⟩
-  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ xs)) 
+  F.tvar zero ∷ (map F.weaken (map ⟦_⟧tp→ xs))
     ≡⟨ refl ⟩
   (map ⟦_⟧tp→ xs) F.↑ ∎
 
@@ -179,7 +183,7 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
 /⋆⟦⟧tp← : ∀ {ν μ} (tp : F.Type ν) (σ : Sub F.Type ν μ) → ⟦ tp F./ σ ⟧tp← ≡ ⟦ tp ⟧tp← TS./ (map ⟦_⟧tp← σ)
 /⋆⟦⟧tp← (F.tc c) σ = refl
 /⋆⟦⟧tp← (F.tvar n) σ = begin
-  ⟦ lookup n σ ⟧tp← 
+  ⟦ lookup n σ ⟧tp←
     ≡⟨ lookup⋆map σ ⟦_⟧tp← n ⟩
   ⟦ F.tvar n ⟧tp← TS./ (map ⟦_⟧tp← σ) ∎
 /⋆⟦⟧tp← (l F.→' r) σ = cong₂ _⇒_ (/⋆⟦⟧tp← l σ) (/⋆⟦⟧tp← r σ)
@@ -195,7 +199,7 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
 /⋆⟦⟧tp→ : ∀ {ν μ} (tp : Type ν) (σ : Sub Type ν μ) → ⟦ tp TS./ σ ⟧tp→ ≡ ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ σ)
 /⋆⟦⟧tp→ (simpl (tc c)) σ = refl
 /⋆⟦⟧tp→ (simpl (tvar n)) σ = begin
-  ⟦ lookup n σ ⟧tp→ 
+  ⟦ lookup n σ ⟧tp→
     ≡⟨ lookup⋆map σ ⟦_⟧tp→ n ⟩
   ⟦ simpl (tvar n) ⟧tp→ F./ (map ⟦_⟧tp→ σ) ∎
 /⋆⟦⟧tp→ (l ⇒ r) σ = cong₂ F._→'_ (/⋆⟦⟧tp→ l σ) (/⋆⟦⟧tp→ r σ)
@@ -221,7 +225,7 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
 ⟦a/wk⟧tp← tp = begin
   ⟦ tp F./ F.wk ⟧tp←
     ≡⟨ /⋆⟦⟧tp← tp F.wk ⟩
-  ⟦ tp ⟧tp← / (map ⟦_⟧tp← F.wk) 
+  ⟦ tp ⟧tp← / (map ⟦_⟧tp← F.wk)
     ≡⟨ cong (λ e → ⟦ tp ⟧tp← / e) ⟦wk⟧tp← ⟩
   ⟦ tp ⟧tp← / wk ∎
 
@@ -229,7 +233,7 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
 ⟦a/wk⟧tp→ tp = begin
   ⟦ tp TS./ TS.wk ⟧tp→
     ≡⟨ /⋆⟦⟧tp→ tp TS.wk ⟩
-  ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ TS.wk) 
+  ⟦ tp ⟧tp→ F./ (map ⟦_⟧tp→ TS.wk)
     ≡⟨ cong (λ e → ⟦ tp ⟧tp→ F./ e) ⟦wk⟧tp→ ⟩
   ⟦ tp ⟧tp→ F./ F.wk ∎
 
@@ -253,12 +257,12 @@ ctx←→ {ν = ν} (x ∷ xs) = HR.begin
 ⟦weaken⟧ctx→ (x List.∷ xs) = HR.begin
   F.ctx-weaken ⟦ x List.∷ xs ⟧ctx→
     HR.≅⟨ H.refl ⟩
-  (⟦ x ⟧tp→ F./ F.wk) ∷ F.ctx-weaken ⟦ xs ⟧ctx→
+  (⟦ x ⟧tp→ F./ F.wk) Vec.∷ F.ctx-weaken ⟦ xs ⟧ctx→
     HR.≅⟨ ∷-cong (sym (length-weaken-Δ xs)) (⟦weaken⟧ctx→ xs) ⟩
-  (⟦ x ⟧tp→ F./ F.wk) ∷ ⟦ ictx-weaken xs ⟧ctx→
-    HR.≅⟨ H.cong (flip _∷_ ⟦ ictx-weaken xs ⟧ctx→) (H.≡-to-≅ $ sym $ ⟦a/wk⟧tp→ x) ⟩
+  (⟦ x ⟧tp→ F./ F.wk) Vec.∷ ⟦ ictx-weaken xs ⟧ctx→
+    HR.≅⟨ H.cong (flip Vec._∷_ ⟦ ictx-weaken xs ⟧ctx→) (H.≡-to-≅ $ sym $ ⟦a/wk⟧tp→ x) ⟩
   ⟦ x / wk ⟧tp→ ∷ ⟦ ictx-weaken xs ⟧ctx→
-    HR.≅⟨ H.cong (λ u → ⟦ x / wk ⟧tp→ ∷ fromList u) (H.≡-to-≅ (sym (map-compose xs))) ⟩
+    HR.≅⟨ H.cong (λ u → ⟦ x / wk ⟧tp→ Vec.∷ fromList u) (H.≡-to-≅ (sym (map-compose xs))) ⟩
   (fromList (List.map (⟦_⟧tp→ ∘ (λ s → s / wk)) (x List.∷ xs)))
     HR.≅⟨ H.cong fromList (H.≡-to-≅ (map-compose (x List.∷ xs))) ⟩
   ⟦ ictx-weaken (x List.∷ xs) ⟧ctx→ HR.∎
@@ -297,9 +301,9 @@ lookup⟦⟧ Δ {r = r} i eq = begin
     ≡⟨ cong ⟦_⟧tp→ eq ⟩
   ⟦ r ⟧tp→ ∎
 
-lookup-∈ : ∀ {ν n} → (x : Fin n) → (v : F.Ctx ν n) → ⟦ lookup x v ⟧tp← List.∈ ⟦ v ⟧ctx←
+lookup-∈ : ∀ {ν n} → (x : Fin n) → (v : F.Ctx ν n) → ⟦ lookup x v ⟧tp← ∈ ⟦ v ⟧ctx←
 lookup-∈ zero (x ∷ xs) = here refl
-lookup-∈ (suc x) (v ∷ vs) = there (lookup-∈ x vs) 
+lookup-∈ (suc x) (v ∷ vs) = there (lookup-∈ x vs)
 
 ⇑-subst-n : ∀ {ν n n'} {Γ : F.Ctx ν n} {Γ' : F.Ctx ν n'} {t a} → (n-eq : n ≡ n') →
             Γ H.≅ Γ' → Γ F.⊢ t ⇑ a →

@@ -1,13 +1,16 @@
-open import Prelude hiding (lift; Fin′; subst; id)
+open import Prelude
 
 module Implicits.Substitutions.Context where
 
 open import Implicits.Syntax.Type
 open import Implicits.Syntax.Context
-open import Implicits.Substitutions.Type as TS using () 
+open import Implicits.Substitutions.Type as TS using ()
+
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
+open import Data.Vec
+open import Data.List as List using ()
 
 ktx-map : ∀ {ν μ n} → (Type ν → Type μ) →  Ktx ν n → Ktx μ n
 ktx-map f (Γ , Δ) = map f Γ , List.map f Δ

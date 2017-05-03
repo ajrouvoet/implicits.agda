@@ -1,8 +1,11 @@
-open import Prelude
+open import Prelude hiding (_<_)
 
 module Implicits.Resolution.GenericFinite.Resolution where
 
 open import Coinduction
+open import Data.List
+open import Data.List.Any
+open Membership-≡
 open import Data.Fin.Substitution
 open import Relation.Binary using (Rel)
 
@@ -27,6 +30,6 @@ module ResolutionRules (cond : TerminationCondition) where
       i-tabs : ∀ {Φ ρ a} b → Δ , Φ ⊢ ρ tp[/tp b ] ↓ a → Δ , Φ ⊢ ∀' ρ ↓ a
 
     data _,_⊢ᵣ_ {ν} (Δ : ICtx ν) : TCtx → Type ν → Set where
-      r-simp : ∀ {Φ r τ} → r List.∈ Δ → Δ , Φ ⊢ r ↓ τ → Δ , Φ ⊢ᵣ simpl τ
-      r-iabs : ∀ {Φ} ρ₁ {ρ₂} → ((ρ₁ List.∷ Δ) , Φ ⊢ᵣ ρ₂) → Δ , Φ ⊢ᵣ (ρ₁ ⇒ ρ₂)
+      r-simp : ∀ {Φ r τ} → r ∈ Δ → Δ , Φ ⊢ r ↓ τ → Δ , Φ ⊢ᵣ simpl τ
+      r-iabs : ∀ {Φ} ρ₁ {ρ₂} → ((ρ₁ ∷ Δ) , Φ ⊢ᵣ ρ₂) → Δ , Φ ⊢ᵣ (ρ₁ ⇒ ρ₂)
       r-tabs : ∀ {Φ ρ} → ictx-weaken Δ , Φ ⊢ᵣ ρ → Δ , Φ ⊢ᵣ ∀' ρ

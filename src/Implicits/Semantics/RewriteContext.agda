@@ -6,6 +6,10 @@ open import Implicits.Syntax
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas
 
+open import Data.Vec
+open import Data.List.All as All
+open import Extensions.Vec
+
 -- rewrite context (relation between implicit and explicit context)
 _#_ : ∀ {ν n} (Γ : Ctx ν n) (Δ : ICtx ν) → Set
 Γ # Δ = All (λ i → i ∈ Γ) Δ

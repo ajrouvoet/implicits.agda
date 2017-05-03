@@ -1,6 +1,11 @@
 module SystemF.SmallStep where
 
 open import Prelude
+
+open import Data.Sum
+open import Data.Product
+open import Data.Vec hiding ([_])
+
 open import SystemF.WellTyped
 open import SystemF.Substitutions
 open import SystemF.Substitutions.Lemmas
@@ -29,13 +34,13 @@ data _≻_ {ν n} : Term ν n → Term ν n → Set where
 data _≻⋆_ {ν n} : Term ν n → Term ν n → Set where
   ≻-step : ∀ {t u} → t ≻ u → t ≻⋆ u
   ≻-trans : ∀ {t u v} → t ≻⋆ u → u ≻⋆ v → t ≻⋆ v
- 
+
 ∀'-value-lemma : ∀ {ν n} {Γ : Ctx ν n} {t a} → Γ ⊢ t ∈ ∀' a → Value t → ∃ λ e → t ≡ Λ e
 ∀'-value-lemma () (λ' τ t)
 ∀'-value-lemma (Λ t∈∀a) (Λ t) = t , refl
 
-→'-value-lemma : ∀ {ν n} {Γ : Ctx ν n} {t a b} → Γ ⊢ t ∈ a →' b → Value t → 
-                 ∃ λ e → (t ≡ λ' a e) × a ∷ Γ ⊢ e ∈ b
+→'-value-lemma : ∀ {ν n} {Γ : Ctx ν n} {t a b} → Γ ⊢ t ∈ (a →' b) → Value t →
+                 ∃ λ e → (t ≡ λ' a e) × ((a ∷ Γ) ⊢ e ∈ b)
 →'-value-lemma () (Λ t)
 →'-value-lemma (λ' a ⊢t∈a→b) (λ' .a t) = t , refl , ⊢t∈a→b
 
@@ -46,10 +51,10 @@ progress (Λ {t = t} ⊢t) = inj₁ (Λ t)
 progress (λ' {t = t} a ⊢t) = inj₁ (λ' a t)
 progress (_[_] ⊢t a) with progress ⊢t
 
--- we can rule out the possibility that t is both well typed and a value, 
+-- we can rule out the possibility that t is both well typed and a value,
 -- but not a lambda
 -- leaving only cases that can make progress
-progress (_[_] ⊢t a ) | inj₁ (λ' τ t') with ∀'-value-lemma ⊢t (λ' τ t') 
+progress (_[_] ⊢t a ) | inj₁ (λ' τ t') with ∀'-value-lemma ⊢t (λ' τ t')
 progress (() [ a ]) | inj₁ (λ' τ t') | t≡Λe
 progress (⊢t [ a ]) | inj₁ (Λ t) = inj₂ (, reduce-[] t a)
 progress (⊢t [ a ]) | inj₂ (_ , y≻y') = inj₂ (, step-[] y≻y')
@@ -62,7 +67,7 @@ progress (() · ⊢t) | inj₁ (Λ t) | inj₁ y-isval | f≡a→'b
 progress (_·_ {f = f} wf-f ⊢t) | _ | inj₂ (_ , y≻y') = inj₂ (, step-·₂ y≻y')
 progress (_·_ {t = t} ⊢f ⊢t) | inj₂ (_ , f≻f') | _ = inj₂ (, step-·₁ f≻f')
 
--- preservation: reduction preserves well-typedness 
+-- preservation: reduction preserves well-typedness
 ≻-preserves : ∀ {ν n} {Γ : Ctx ν n} {t t' τ} → Γ ⊢ t ∈ τ → t ≻ t' → Γ ⊢ t' ∈ τ
 ≻-preserves (var x) ()
 ≻-preserves (Λ ⊢t) (step-Λ-body t≻t') = Λ (≻-preserves ⊢t t≻t')

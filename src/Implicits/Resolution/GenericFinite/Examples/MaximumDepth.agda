@@ -1,4 +1,5 @@
 open import Prelude
+
 open import Data.Nat
 open import Data.Nat.Properties
 open import Induction.Nat
@@ -18,6 +19,6 @@ MaxDepthCondition = record
   {  TCtx = ℕ
   ; _<_  = _<′_
   ; _<?_  = _<′?_
-  ; step = λ n _ _ _ _ → n N- 1
+  ; step = λ n _ _ _ _ → n ∸ 1
   ; wf-< = <-well-founded
   }

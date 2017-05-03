@@ -4,6 +4,9 @@ module Implicits.Resolution.Finite.Resolution where
 
 open import Coinduction
 open import Data.Fin.Substitution
+open import Data.List
+open import Data.List.Any
+open Membership-≡
 open import Implicits.Syntax
 open import Implicits.Substitutions
 open import Implicits.Resolution.Termination
@@ -19,6 +22,6 @@ mutual
     i-tabs : ∀ {ρ a} b → Δ ⊢ ρ tp[/tp b ] ↓ a → Δ ⊢ ∀' ρ ↓ a
 
   data _⊢ᵣ_ {ν} (Δ : ICtx ν) : Type ν → Set where
-    r-simp : ∀ {r τ} → r List.∈ Δ → Δ ⊢ r ↓ τ → Δ  ⊢ᵣ simpl τ
-    r-iabs : ∀ {ρ₁ ρ₂} → ((ρ₁ List.∷ Δ) ⊢ᵣ ρ₂) → Δ ⊢ᵣ (ρ₁ ⇒ ρ₂)
+    r-simp : ∀ {r τ} → r ∈ Δ → Δ ⊢ r ↓ τ → Δ  ⊢ᵣ simpl τ
+    r-iabs : ∀ {ρ₁ ρ₂} → ((ρ₁ ∷ Δ) ⊢ᵣ ρ₂) → Δ ⊢ᵣ (ρ₁ ⇒ ρ₂)
     r-tabs : ∀ {ρ} → ictx-weaken Δ ⊢ᵣ ρ → Δ ⊢ᵣ ∀' ρ

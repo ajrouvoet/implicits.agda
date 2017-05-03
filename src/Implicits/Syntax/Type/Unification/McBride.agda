@@ -1,15 +1,19 @@
-open import Prelude hiding (id; _>>=_)
+open import Prelude renaming (_≟_ to _N≟_)
 
 module Implicits.Syntax.Type.Unification.McBride where
 
 open import Implicits.Syntax
 open import Implicits.Syntax.MetaType
+
+open import Data.Vec hiding (_>>=_)
 open import Data.Vec.Properties
 open import Data.Nat as N using ()
 open import Data.Nat.Properties.Simple
+open import Data.Product
 
 open import Category.Monad
 
+open import Data.Maybe hiding (module Maybe; map)
 open import Data.Maybe as Maybe using (monad; functor)
 open import Level using () renaming (zero to level₀)
 open RawMonad {level₀} monad using (_>>=_; return)
@@ -17,6 +21,7 @@ open import Category.Functor
 open RawFunctor {level₀} functor
 open import Data.Star hiding (_>>=_)
 
+open import Data.Fin.Properties as FinProp using ()
 open import Data.Fin.Substitution
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas
@@ -125,7 +130,7 @@ mgu {ν} s t = amgu s t (ν , ε)
         strengthen' (m , t' // x ◅ acc) | nothing = nothing
 
     -- var-var
-    amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) with x fin≟ y
+    amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) with x FinProp.≟ y
     amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) | yes _ = just (, ε)
     amgu ((simpl (tvar x))) ((simpl (tvar y))) (m , ε) | no _ = nothing 
 

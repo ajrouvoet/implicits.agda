@@ -1,4 +1,4 @@
-open import Prelude hiding (lift; Fin′; subst; id)
+open import Prelude
 
 module Implicits.Substitutions where
 

@@ -1,12 +1,14 @@
-open import Prelude hiding (lift; Fin′; subst; id)
+open import Prelude hiding (subst)
 
 module Implicits.Substitutions.Term where
 
 open import Implicits.Syntax.Type
 open import Implicits.Syntax.Term
+
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
+open import Data.Vec hiding ([_])
 
 open import Implicits.Substitutions.Type as TypeSubst using () 
 

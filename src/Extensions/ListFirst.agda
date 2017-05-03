@@ -1,7 +1,11 @@
 module Extensions.ListFirst where
 
 open import Prelude hiding (_⊔_)
+
+open import Data.Product
 open import Data.List
+open import Data.List.Any
+open Membership-≡ hiding (find)
 open import Level
 
 -- proof that an element is the first in a vector to satisfy the predicate B
@@ -15,17 +19,17 @@ first⟶witness : ∀ {A : Set} {B : A → Set} {x l} → First B x l → B x
 first⟶witness (here p v) = p
 first⟶witness (there x ¬px f) = first⟶witness f
 
-first⟶∈ : ∀ {A : Set} {B : A → Set} {x l} → First B x l → (x List.∈ l × B x)
+first⟶∈ : ∀ {A : Set} {B : A → Set} {x l} → First B x l → (x ∈ l × B x)
 first⟶∈ (here {x = x} p v) = here refl , p
 first⟶∈ (there x' ¬px f) with (first⟶∈ f)
 first⟶∈ (there x' ¬px f) | x∈l , p = there x∈l , p
 
 -- more likable syntax for the above structure
-first_∈_⇔_ : {A : Set} → A → List A → (B : A → Set) → Set 
+first_∈_⇔_ : {A : Set} → A → List A → (B : A → Set) → Set
 first_∈_⇔_ x v p = First p x v
 
 -- a decision procedure to find the first element in a vector that satisfies a predicate
-find : ∀ {A : Set} (P : A → Set) → ((a : A) → Dec (P a)) → (v : List A) → 
+find : ∀ {A : Set} (P : A → Set) → ((a : A) → Dec (P a)) → (v : List A) →
        Dec (∃ λ e → first e ∈ v ⇔ P)
 find P dec [] = no (λ{ (e , ()) })
 find P dec (x ∷ v) with dec x

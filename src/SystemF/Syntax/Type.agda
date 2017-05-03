@@ -1,10 +1,11 @@
 module SystemF.Syntax.Type where
 
-open import Prelude hiding (lift)
+open import Prelude
+open import Data.Fin hiding (lift)
 open import Data.Fin.Substitution
 open import Extensions.Substitution
 open import Data.Star using (Star; ε; _◅_)
-  
+
 infixl 10 _→'_
 data Type (ν : ℕ) : Set where
   tc   : ℕ → Type ν

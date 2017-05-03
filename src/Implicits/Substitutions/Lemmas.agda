@@ -1,4 +1,4 @@
-open import Prelude renaming (lift to finlift) hiding (id; subst)
+open import Prelude
 
 module Implicits.Substitutions.Lemmas where
 

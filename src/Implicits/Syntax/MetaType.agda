@@ -1,4 +1,4 @@
-open import Prelude hiding (lift; id)
+open import Prelude
 
 module Implicits.Syntax.MetaType where
 

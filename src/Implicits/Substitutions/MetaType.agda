@@ -1,13 +1,15 @@
-open import Prelude hiding (lift; Fin′; subst; id)
+open import Prelude hiding (subst)
 
 module Implicits.Substitutions.MetaType where
 
 open import Implicits.Syntax.Type
 open import Implicits.Syntax.MetaType
+
 open import Data.Fin.Substitution
 open import Data.Star as Star hiding (map)
 open import Data.Star.Properties
 open import Data.Nat.Properties.Simple
+open import Data.Vec hiding ([_])
 
 module MetaTypeTypeSubst where
 
@@ -144,7 +146,7 @@ module MetaTypeMetaSubst where
       comm-weaken-tpweaken : ∀ {m ν} (a : T m ν) → weaken (tpweaken a) ≡ tpweaken (weaken a)
       tpweaken-var : ∀ {ν m} (n : Fin m) → (tpweaken {ν = ν} (evar n)) ≡ evar n
 
-    _↑tp⋆_ : ∀ {m m' ν} → MetaSub T ν m m' → (k : ℕ) → MetaSub T (k N+ ν) m m'
+    _↑tp⋆_ : ∀ {m m' ν} → MetaSub T ν m m' → (k : ℕ) → MetaSub T (k + ν) m m'
     s ↑tp⋆ zero = s
     s ↑tp⋆ suc k = (s ↑tp⋆ k) ↑tp
 
@@ -206,7 +208,7 @@ module MetaTypeMetaSubst where
     open ExpandSimple exp-simple
     module MTTS = MetaTypeTypeSubst
 
-    _↑⋆tp_ : ∀ {m m' ν} → MetaSub MetaType ν m m' → ∀ k → MetaSub MetaType (k N+ ν) m m'
+    _↑⋆tp_ : ∀ {m m' ν} → MetaSub MetaType ν m m' → ∀ k → MetaSub MetaType (k + ν) m m'
     x ↑⋆tp zero = x
     x ↑⋆tp (suc k) = map MTTS.weaken (x ↑⋆tp k)
 
@@ -259,7 +261,7 @@ module MetaTypeMetaSubst where
 
   open ExpandSubst public hiding (var; simple)
 
-  open-meta-k : ∀ {m ν} k → (a : MetaType m (k N+ suc ν)) → MetaType (suc m) (k N+ ν)
+  open-meta-k : ∀ {m ν} k → (a : MetaType m (k + suc ν)) → MetaType (suc m) (k + ν)
   open-meta-k {m} {ν} k a = (weaken a) MetaTypeTypeSubst./ 
       (MetaTypeTypeSubst.sub (simpl (mvar zero)) MetaTypeTypeSubst.↑⋆ k)
 
@@ -268,11 +270,11 @@ module MetaTypeMetaSubst where
 
   _◁m₁ : ∀ {ν m} (r : MetaType m ν) → ℕ
   _◁m₁ (a ⇒ b) = b ◁m₁ 
-  _◁m₁ (∀' r) = 1 N+ r ◁m₁ 
+  _◁m₁ (∀' r) = 1 + r ◁m₁ 
   _◁m₁ (simpl x) = zero
 
   -- heads of metatypes
-  _◁m : ∀ {ν m} (r : MetaType m ν) → (MetaType ((r ◁m₁) N+ m) ν)
+  _◁m : ∀ {ν m} (r : MetaType m ν) → (MetaType ((r ◁m₁) + m) ν)
   (a ⇒ b) ◁m = b ◁m
   ∀' r ◁m = open-meta (r ◁m)
   simpl x ◁m = simpl x

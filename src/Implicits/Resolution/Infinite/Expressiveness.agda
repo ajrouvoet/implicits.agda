@@ -3,6 +3,9 @@ module Implicits.Resolution.Infinite.Expressiveness where
 open import Prelude hiding (Bool)
 
 open import Data.Fin.Substitution
+open import Data.List
+open import Data.List.Any
+open Membership-≡
 
 open import Extensions.ListFirst
 open import SystemF as F using ()

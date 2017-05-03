@@ -3,6 +3,8 @@ module Implicits.Syntax.Type.Unification.Lemmas where
 open import Prelude
 open import Data.Nat.Properties.Simple
 open import Data.Maybe as Maybe
+open import Data.Vec
+open import Extensions.Vec
 
 open import Implicits.Syntax
 open import Implicits.Syntax.Type.Unification hiding (open-meta)

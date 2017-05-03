@@ -1,9 +1,10 @@
 module SystemF.Substitutions where
 
-open import Prelude hiding (lift; Fin′; subst)
+open import Prelude hiding (subst)
 open import SystemF.Syntax
 open import Data.Fin.Substitution
 open import Data.Star hiding (map)
+open import Data.Vec hiding ([_])
 
 open import SystemF.Substitutions.Types public
 

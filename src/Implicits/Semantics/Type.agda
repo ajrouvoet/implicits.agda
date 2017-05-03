@@ -2,6 +2,7 @@ open import Prelude
 
 module Implicits.Semantics.Type where
 
+open import Data.Vec
 open import Implicits.Syntax
 open import SystemF as F using ()
 

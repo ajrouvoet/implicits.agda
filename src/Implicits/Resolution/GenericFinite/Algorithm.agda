@@ -1,9 +1,11 @@
-open import Prelude
+open import Prelude renaming (_<_ to _N<_)
 
 module Implicits.Resolution.GenericFinite.Algorithm where
 
 open import Induction.WellFounded
 open import Induction.Nat
+open import Data.Vec
+open import Data.List
 open import Data.Fin.Substitution
 open import Data.Nat.Base using (_<′_)
 open import Data.Maybe
@@ -76,7 +78,7 @@ module ResolutionAlgorithm (cond : TerminationCondition) where
     match' Δ Φ τ (a ⇒ b) (acc f) (acc g) | just u | no φ> = nothing
 
     match' Δ Φ τ (∀' a) f (acc g) with match' Δ Φ τ (open-meta a) f (g _ (open-meta-a-m<-∀'a a))
-    match' Δ Φ τ (∀' a) f (acc g) | just p = just (Prelude.tail p)
+    match' Δ Φ τ (∀' a) f (acc g) | just p = just (tail p)
     match' Δ Φ τ (∀' r) f (acc g) | nothing = nothing
 
     -- match defers to match', which concerns itself with MetaTypes.
@@ -86,14 +88,14 @@ module ResolutionAlgorithm (cond : TerminationCondition) where
     match Δ Φ τ a f = is-just (match' Δ Φ τ (to-meta {zero} a) f (m<-well-founded _))
 
     match1st : ∀ {ν} (Δ : ICtx ν) (Φ : TCtx) (ρs : ICtx ν) → (τ : SimpleType ν) → T-Acc Φ → Bool
-    match1st Δ Φ List.[] τ Φ↓ = false
-    match1st Δ Φ (x List.∷ xs) τ Φ↓ with match Δ Φ τ x Φ↓
-    match1st Δ Φ (x List.∷ xs) τ Φ↓ | true = true
-    match1st Δ Φ (x List.∷ xs) τ Φ↓ | false = match1st Δ Φ xs τ Φ↓
+    match1st Δ Φ [] τ Φ↓ = false
+    match1st Δ Φ (x ∷ xs) τ Φ↓ with match Δ Φ τ x Φ↓
+    match1st Δ Φ (x ∷ xs) τ Φ↓ | true = true
+    match1st Δ Φ (x ∷ xs) τ Φ↓ | false = match1st Δ Φ xs τ Φ↓
 
     resolve' : ∀ {ν} (Δ : ICtx ν) (Φ : TCtx) r → T-Acc Φ → Bool
     resolve' Δ Φ (simpl x) Φ↓ = match1st Δ Φ Δ x Φ↓
-    resolve' Δ Φ (a ⇒ b) Φ↓ = resolve' (a List.∷ Δ) Φ b Φ↓ 
+    resolve' Δ Φ (a ⇒ b) Φ↓ = resolve' (a ∷ Δ) Φ b Φ↓ 
     resolve' Δ Φ (∀' r) Φ↓ = resolve' (ictx-weaken Δ) Φ r Φ↓
 
     resolve : ∀ {ν} (Δ : ICtx ν) (Φ : TCtx) r → Bool

@@ -1,4 +1,4 @@
-open import Prelude hiding (lift; id)
+open import Prelude hiding (module Fin) renaming (_≟_ to _N≟_)
 
 module Implicits.Syntax.Type where
 
@@ -6,12 +6,19 @@ open import Data.Fin.Substitution
 open import Data.Nat.Properties as NatProps
 open import Data.Star using (Star; ε; _◅_)
 open import Data.List
+open import Data.List.All hiding (map)
+open import Data.Maybe hiding (map; All)
+open import Data.Product hiding (map)
+open import Data.Fin as Fin hiding (_+_)
+open import Data.Fin.Properties as FinProp using ()
+
 open import Extensions.Nat
+
 import Data.Vec
-  
+
 infixr 10 _→'_
 infixr 10 _⇒_
- 
+
 mutual
   data SimpleType (ν : ℕ) : Set where
     tc   : ℕ → SimpleType ν
@@ -37,17 +44,17 @@ is-∀' (∀' x) = ⊤
 fvars : ∀ {ν} → Type ν → List (Fin ν)
 fvars (simpl (tc x)) = List.[]
 fvars (simpl (tvar n)) = n List.∷ List.[]
-fvars (simpl (x →' y)) = fvars x List.++ fvars y
-fvars (a ⇒ b) = fvars a List.++ fvars b
-fvars (∀' a) = List.gfilter (λ{ (Fin.zero) → nothing; (suc n) → just n}) (fvars a)
+fvars (simpl (x →' y)) = fvars x ++ fvars y
+fvars (a ⇒ b) = fvars a ++ fvars b
+fvars (∀' a) = gfilter (λ{ (Fin.zero) → nothing; (suc n) → just n}) (fvars a)
 
 occ : ∀ {ν} → ℕ → Type ν → ℕ
 occ α (simpl (tc x)) = 0
 occ α (simpl (tvar n)) with α N≟ (toℕ n)
 occ α (simpl (tvar n)) | yes p = 1
 occ α (simpl (tvar n)) | no ¬p = 0
-occ α (simpl (a →' b)) = occ α a N+ occ α b
-occ α (a ⇒ b) = occ α a N+ occ α b
+occ α (simpl (a →' b)) = occ α a + occ α b
+occ α (a ⇒ b) = occ α a + occ α b
 occ α (∀' b) = occ α b
 
 module Functions where
@@ -117,7 +124,7 @@ simpl (tc x) ≟ simpl (tc y) | no ¬p = no (λ x=y → ¬p $ helper x=y )
 simpl (tc x) ≟ simpl (tvar n) = no (λ ())
 simpl (tc x) ≟ simpl (x₁ →' x₂) = no (λ ())
 simpl (tvar n) ≟ simpl (tc x) = no (λ ())
-simpl (tvar n) ≟ simpl (tvar m) with n fin≟ m
+simpl (tvar n) ≟ simpl (tvar m) with n FinProp.≟ m
 simpl (tvar n) ≟ simpl (tvar m) | yes n≡m = yes (cong (simpl ∘ tvar) n≡m)
 simpl (tvar n) ≟ simpl (tvar m) | no n≢m = no (λ x=y → n≢m $ helper x=y)
   where
@@ -174,7 +181,7 @@ mutual
     ⇒-left : ∀ {n a b} → (occ' n a) → occ' n (a ⇒ b)
     ⇒-right : ∀ {n a b} → (occ' n b) → occ' n (a ⇒ b)
     ∀' : ∀ {a n} → (occ' (suc n) a) → occ' n (∀' a)
-    
+
   data occS {ν} : Fin ν → SimpleType ν → Set where
     tvar    : (n : Fin ν) → occS n (tvar n)
     →'-left : ∀ {n a b} → (occ' n a) → occS n (a →' b)
@@ -183,7 +190,7 @@ mutual
   data _⊢unamb_ {ν} : List (Fin ν) → Type ν → Set where
     ua-simp : ∀ l {τ} → All (λ e → occS e τ) l → l ⊢unamb (simpl τ)
     ua-iabs : ∀ {l a b} → l ⊢unamb b → [] ⊢unamb a → l ⊢unamb (a ⇒ b)
-    ua-tabs : ∀ {l} {a : Type (suc ν)} → (zero List.∷ (List.map suc l)) ⊢unamb a →
+    ua-tabs : ∀ {l} {a : Type (suc ν)} → (zero List.∷ (map suc l)) ⊢unamb a →
               l ⊢unamb (∀' a)
 
 module unamb-test where

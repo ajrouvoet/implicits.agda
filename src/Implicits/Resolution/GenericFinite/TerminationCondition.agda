@@ -1,6 +1,6 @@
-open import Prelude
+open import Prelude hiding (_<_)
 
-module Implicits.Resolution.GenericFinite.TerminationCondition 
+module Implicits.Resolution.GenericFinite.TerminationCondition
   where
 
 open import Induction.WellFounded

@@ -1,14 +1,16 @@
-open import Prelude renaming (lift to finlift) hiding (id; subst)
+open import Prelude
 
 module Implicits.Substitutions.Lemmas.Type where
 
 open import Implicits.Syntax.Type
 open import Implicits.Substitutions
+
 open import Data.Fin.Substitution
-open import Data.Fin.Substitution.Lemmas 
+open import Data.Fin.Substitution.Lemmas
 open import Data.Vec.Properties
 open import Extensions.Substitution
 open import Data.Star using (Star; ε; _◅_)
+open import Data.Product hiding (map)
 
 typeLemmas : TermLemmas Type
 typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑✶ = Lemma./✶-↑✶ }
@@ -19,8 +21,8 @@ typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑
       open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
       open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
 
-      /✶-↑✶ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) → 
-                          (∀ k x → (simpl (tvar x)) /✶₁ σs₁ ↑✶₁ k ≡ (simpl (tvar x)) /✶₂ σs₂ ↑✶₂ k) → 
+      /✶-↑✶ : ∀ {m n} (σs₁ : Subs T₁ m n) (σs₂ : Subs T₂ m n) →
+                          (∀ k x → (simpl (tvar x)) /✶₁ σs₁ ↑✶₁ k ≡ (simpl (tvar x)) /✶₂ σs₂ ↑✶₂ k) →
                           ∀ k t → t /✶₁ σs₁ ↑✶₁ k ≡ t /✶₂ σs₂ ↑✶₂ k
       /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (tvar x)) = hyp k x
       /✶-↑✶ ρs₁ ρs₂ hyp k (simpl (tc c)) = begin
@@ -40,7 +42,7 @@ typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑
           ∎
       /✶-↑✶ ρs₁ ρs₂ hyp k (a ⇒ b) = begin
           (a ⇒ b) /✶₁ ρs₁ ↑✶₁ k
-          ≡⟨ TypeApp.⇒-/✶-↑✶ _ k ρs₁ ⟩ -- 
+          ≡⟨ TypeApp.⇒-/✶-↑✶ _ k ρs₁ ⟩ --
           (a /✶₁ ρs₁ ↑✶₁ k) ⇒ (b /✶₁ ρs₁ ↑✶₁ k)
           ≡⟨ cong₂ _⇒_ (/✶-↑✶ ρs₁ ρs₂ hyp k a) (/✶-↑✶ ρs₁ ρs₂ hyp k b) ⟩
           (a /✶₂ ρs₂ ↑✶₂ k) ⇒ (b /✶₂ ρs₂ ↑✶₂ k)
@@ -59,7 +61,7 @@ typeLemmas = record { termSubst = TypeSubst.typeSubst; app-var = refl ; /✶-↑
 
 open TermLemmas typeLemmas public hiding (var; id)
 open AdditionalLemmas typeLemmas public
-open TypeSubst using (module Lifted) 
+open TypeSubst using (module Lifted)
 
 -- The above lemma /✶-↑✶ specialized to single substitutions
 /-↑⋆ : ∀ {T₁ T₂} {lift₁ : Lift T₁ Type} {lift₂ : Lift T₂ Type} →
@@ -72,7 +74,7 @@ open TypeSubst using (module Lifted)
 /-↑⋆ ρ₁ ρ₂ hyp i a = /✶-↑✶ (ρ₁ ◅ ε) (ρ₂ ◅ ε) hyp i a
 
 -- weakening a simple type gives a simple type
-simpl-wk : ∀ {ν} k (τ : SimpleType (k N+ ν)) → ∃ λ τ' → (simpl τ) / wk ↑⋆ k ≡ simpl τ'
+simpl-wk : ∀ {ν} k (τ : SimpleType (k + ν)) → ∃ λ τ' → (simpl τ) / wk ↑⋆ k ≡ simpl τ'
 simpl-wk k (tc x) = , refl
 simpl-wk k (tvar n) = , var-/-wk-↑⋆ k n
 simpl-wk k (x →' x₁) = , refl

@@ -1,4 +1,4 @@
-open import Prelude hiding (id; _>>=_)
+open import Prelude
 
 module Implicits.Syntax.Type.Unification where
 

@@ -6,7 +6,10 @@ open import Function.Equivalence using (_⇔_; equivalence)
 open import Data.List.Properties
 open import Relation.Binary.HeterogeneousEquality as H using ()
 open import Data.Vec.Properties as VP using ()
+open import Data.Vec hiding ([_])
 open import Extensions.Vec
+open import Data.List as List using ()
+open import Data.Product hiding (map)
 
 open import Implicits.Syntax
 open import Implicits.Resolution.Ambiguous.Resolution
@@ -44,7 +47,7 @@ to-⊢ {Δ = Δ} (r-tapp {r = a} b p) | x =
     (sym $ ⟦a/sub⟧tp→ a b)
     (x F.[ ⟦ b ⟧tp→ ])
 to-⊢ {Δ = Δ} {r = r} (r-ivar x) =
-  let i , eq = ∈⟶index (VP.List-∈⇒∈ x) in 
+  let i , eq = ∈⟶index (VP.List-∈⇒∈ x) in
       let i' = (subst Fin (sym $ length-map _ Δ) i) in
         subst (λ u → ⟦ Δ ⟧ctx→ F.⊢ (F.var i') ∈ u) (lookup⟦⟧ Δ i eq) (F.var i')
 to-⊢ (r-iabs {a = a} p) = F.λ' ⟦ a ⟧tp→ (to-⊢ p)

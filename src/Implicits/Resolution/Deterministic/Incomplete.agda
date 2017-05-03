@@ -5,6 +5,11 @@ module Implicits.Resolution.Deterministic.Incomplete where
 open import Implicits.Syntax
 open import Implicits.WellTyped
 open import Implicits.Substitutions
+
+open import Data.Product
+open import Data.List hiding ([_])
+open import Data.List.Any
+open Membership-≡
 open import Extensions.ListFirst
 
 Bool : Type 0
@@ -20,7 +25,7 @@ Int = simpl $ tc 1
 -- result that deterministic resolution is incomplete (or ambiguous resolution is strictly stronger)
 
 Δ : ICtx 0
-Δ = (Int ⇒ Bool) List.∷ Bool List.∷ List.[]
+Δ = (Int ⇒ Bool) ∷ Bool List.∷ List.[]
 
 open import Implicits.Resolution.Deterministic.Resolution as D
 open import Implicits.Resolution.Ambiguous.Resolution as A
@@ -40,7 +45,7 @@ private
 
   -- proof that Bool is derivable under the "Ambiguous" resolution rules
   ambiguous-can : Δ A.⊢ᵣ Bool
-  ambiguous-can = r-ivar (there (here refl)) 
+  ambiguous-can = r-ivar (there (here refl))
 
 incomplete : ∃ λ ν → ∃₂ λ (Δ : ICtx ν) r → (Δ A.⊢ᵣ r) × (¬ Δ D.⊢ᵣ r)
 incomplete = , (Δ , (Bool , (ambiguous-can , deterministic-cant)))

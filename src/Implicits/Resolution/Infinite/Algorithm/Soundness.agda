@@ -1,7 +1,11 @@
-open import Prelude hiding (All; module All; _>>=_; ⊥)
+open import Prelude
 
 module Implicits.Resolution.Infinite.Algorithm.Soundness where
 
+open import Data.Vec hiding (_∈_)
+open import Data.List hiding (map)
+open import Data.List.Any hiding (tail)
+open Membership-≡
 open import Data.Bool
 open import Data.Unit.Base
 open import Data.Maybe as Maybe hiding (All)
@@ -88,7 +92,7 @@ mutual
     now (just (subst (λ z → Δ ⊢ z ↓ τ) (sym x/us≡τ) (i-simp τ)))
   match-u-sound Δ τ (simpl x) (acc rs) | nothing | nothing = now nothing
 
-  match-sound : ∀ {ν} (Δ : ICtx ν) τ r → 
+  match-sound : ∀ {ν} (Δ : ICtx ν) τ r →
                 AllP (B.All (Δ ⊢ r ↓ τ)) (match Δ τ r)
   match-sound Δ τ r = _
     ≅⟨ match-comp Δ τ r ⟩P
@@ -108,24 +112,24 @@ mutual
       lem nothing = now false
 
   match1st-recover-sound : ∀ {ν b} x (Δ ρs : ICtx ν) τ → B.All (Δ ⊢ x ↓ τ) b →
-                          AllP (B.All (∃₂ λ r (r∈Δ : r List.∈ (x List.∷ ρs)) → Δ ⊢ r ↓ τ))
+                          AllP (B.All (∃₂ λ r (r∈Δ : r ∈ (x ∷ ρs)) → Δ ⊢ r ↓ τ))
                                 (match1st-recover Δ ρs τ b)
   match1st-recover-sound x Δ ρs τ (true p) = now (true (x , (here refl) , p))
   match1st-recover-sound x Δ ρs τ false = _
     ≅⟨ PR.sym (right-identity refl (match1st Δ ρs τ)) ⟩P
     match1st'-sound Δ ρs τ >>=-congP lem
     where
-      lem : ∀ {v} → B.All (∃₂ λ r (r∈Δ : r List.∈ ρs)→ Δ ⊢ r ↓ τ) v →
-            AllP (B.All (∃₂ λ r (r∈Δ : r List.∈ x List.∷ ρs) → Δ ⊢ r ↓ τ)) (now v)
+      lem : ∀ {v} → B.All (∃₂ λ r (r∈Δ : r ∈ ρs)→ Δ ⊢ r ↓ τ) v →
+            AllP (B.All (∃₂ λ r (r∈Δ : r ∈ x ∷ ρs) → Δ ⊢ r ↓ τ)) (now v)
       lem (true (r , r∈ρs , p)) = now (true (r , (there r∈ρs) , p))
       lem false = now false
 
     -- {!match1st'-sound Δ ρs τ!}
 
   match1st'-sound : ∀ {ν} (Δ ρs : ICtx ν) τ →
-                    AllP (B.All (∃₂ λ r (r∈Δ : r List.∈ ρs) → Δ ⊢ r ↓ τ)) (match1st Δ ρs τ)
-  match1st'-sound Δ List.[] τ = now false
-  match1st'-sound Δ (x List.∷ ρs) τ = _
+                    AllP (B.All (∃₂ λ r (r∈Δ : r ∈ ρs) → Δ ⊢ r ↓ τ)) (match1st Δ ρs τ)
+  match1st'-sound Δ [] τ = now false
+  match1st'-sound Δ (x ∷ ρs) τ = _
     ≅⟨ match1st-comp Δ x ρs τ ⟩P
     match-sound Δ τ x >>=-congP match1st-recover-sound x Δ ρs τ
 
@@ -134,8 +138,8 @@ mutual
     ≅⟨ PR.sym (right-identity refl (match1st Δ Δ x)) ⟩P
     match1st'-sound Δ Δ x >>=-congP (λ x → now (B.all-map x (λ{ (r , r∈Δ , p) → r-simp r∈Δ p })))
   resolve'-sound Δ (a ⇒ b) = _
-    ≅⟨ PR.sym (right-identity refl (resolve (a List.∷ Δ) b)) ⟩P
-    resolve'-sound (a List.∷ Δ) b >>=-congP (λ x → now (B.all-map x r-iabs))
+    ≅⟨ PR.sym (right-identity refl (resolve (a ∷ Δ) b)) ⟩P
+    resolve'-sound (a ∷ Δ) b >>=-congP (λ x → now (B.all-map x r-iabs))
   resolve'-sound Δ (∀' r) = _
     ≅⟨ PR.sym (right-identity refl (resolve (ictx-weaken Δ) r)) ⟩P
     resolve'-sound (ictx-weaken Δ) r >>=-congP (λ x → now (B.all-map x r-tabs))
