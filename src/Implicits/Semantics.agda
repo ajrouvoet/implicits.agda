@@ -10,7 +10,7 @@ open import Implicits.Semantics.RewriteContext public
 open import Implicits.Semantics.Term public
 open import Implicits.Semantics.Preservation public
 
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 module Semantics
   (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set)

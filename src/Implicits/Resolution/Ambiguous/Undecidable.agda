@@ -14,7 +14,7 @@ open import Implicits.Resolution.Ambiguous.SystemFEquiv
 open import Implicits.Resolution.Embedding
 open import Implicits.Resolution.Embedding.Lemmas
 
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 {-
   Assuming undecidability of the type inhabitation problem for System F

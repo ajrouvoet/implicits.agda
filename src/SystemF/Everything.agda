@@ -1,4 +1,4 @@
-module SystemF where
+module SystemF.Everything where
 
 open import SystemF.Syntax public
 open import SystemF.WellTyped public

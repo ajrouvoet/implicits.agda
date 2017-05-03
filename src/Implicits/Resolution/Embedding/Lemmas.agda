@@ -13,7 +13,7 @@ open import Relation.Binary.HeterogeneousEquality as H using ()
 module HR = H.≅-Reasoning
 
 open import Implicits.Syntax
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 open import Implicits.Substitutions
 open import Implicits.Substitutions.Lemmas
 open import Implicits.Resolution.Embedding

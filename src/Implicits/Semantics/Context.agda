@@ -4,7 +4,7 @@ module Implicits.Semantics.Context where
 
 open import Implicits.Syntax
 open import Implicits.Semantics.Type
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 open import Data.Vec
 

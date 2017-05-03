@@ -4,7 +4,7 @@ module Implicits.Semantics.Type where
 
 open import Data.Vec
 open import Implicits.Syntax
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 ⟦_⟧tp→ : ∀ {ν} → Type ν → F.Type ν
 ⟦ simpl (tc n) ⟧tp→ = F.tc n

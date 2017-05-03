@@ -2,7 +2,7 @@ open import Prelude
 
 module Implicits.Semantics.Lemmas where
 
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 open import Extensions.ListFirst
 open import Data.Fin.Substitution
 open import Data.Vec hiding ([_])

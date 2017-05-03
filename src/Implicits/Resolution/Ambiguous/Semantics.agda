@@ -16,7 +16,7 @@ open import Implicits.Semantics
 open import Implicits.Semantics.Lemmas
 
 
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 module DerivationSemantics where
 

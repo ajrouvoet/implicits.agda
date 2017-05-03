@@ -16,7 +16,8 @@ open import Implicits.Resolution.Ambiguous.Resolution
 open import Implicits.Resolution.Embedding
 open import Implicits.Resolution.Embedding.Lemmas
 
-open import SystemF as F using ()
+open import SystemF.Everything
+     as F using ()
 
 ⟦_⟧term→ : ∀ {ν} {Δ : ICtx ν} {r} → Δ ⊢ᵣ r → F.Term ν (List.length (List.map ⟦_⟧tp→ Δ))
 ⟦_⟧term→ {ν} {Δ} (r-tabs x) = F.Λ (subst (F.Term (suc ν)) (length-weaken-Δ Δ) ⟦ x ⟧term→)

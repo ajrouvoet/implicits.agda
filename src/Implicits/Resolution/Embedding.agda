@@ -6,7 +6,7 @@ open import Data.Vec
 open import Data.List as List hiding (map)
 
 open import Implicits.Syntax
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 ⟦_⟧tp← : ∀ {ν} → F.Type ν → Type ν
 ⟦ F.tc x ⟧tp← = simpl (tc x)

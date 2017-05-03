@@ -8,7 +8,7 @@ open import Implicits.Semantics.Type
 open import Implicits.Semantics.Context
 open import Implicits.Semantics.Lemmas
 open import Implicits.Semantics.RewriteContext
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 module TermSemantics
   (_⊢ᵣ_ : ∀ {ν} → ICtx ν → Type ν → Set)

@@ -1,13 +1,14 @@
 module Implicits.Resolution.Infinite.Undecidable where
 
-open import Prelude hiding (Bool)
+open import Prelude hiding (Bool; Dec)
 
 open import Data.Fin.Substitution
 open import Function.Equivalence using (_⇔_; equivalence)
-open import Relation.Nullary.Decidable as Dec using ()
+open import Relation.Nullary.Decidable as DecM using ()
+open import Relation.Nullary
 
 open import Extensions.ListFirst
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 
 open import Implicits.Resolution.Ambiguous.Resolution as A
 open import Implicits.Resolution.Deterministic.Resolution as D
@@ -39,8 +40,8 @@ module Undecidable
 
   -- proof that such a decider would imply a decider for ambiguous resolution
   reduction : ⊢ᵣ-Dec → ⊢ᵣᵃ-Dec
-  reduction f Δ x = Dec.map (equivalent Δ x) (f Δ x)
+  reduction f Δ x = DecM.map (equivalent Δ x) (f Δ x)
 
   -- completing the proof
   undecidable : ¬ ⊢ᵣ-Dec
-  undecidable f =  ⊢ᵣᵃ-undec (reduction f) 
+  undecidable f =  ⊢ᵣᵃ-undec (reduction f)

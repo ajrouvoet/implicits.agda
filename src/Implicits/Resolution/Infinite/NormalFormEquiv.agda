@@ -7,7 +7,7 @@ open import Implicits.Resolution.Infinite.Resolution
 open import Implicits.Resolution.Embedding
 open import Implicits.Resolution.Embedding.Lemmas
 
-open import SystemF as F using ()
+open import SystemF.Everything as F using ()
 open import SystemF.NormalForm
 
 open import Data.Vec hiding ([_])
