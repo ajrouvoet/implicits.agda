@@ -26,16 +26,16 @@ infix 1 _≻_
 data _≻_ {n} : (t t' : Config n) → Set where
 
   -- reductions
-  ƛ-β : ∀ {t A e μ} → (ƛ A e) · t , μ ≻ (e exp/ (sub t)) , μ
+  -- ƛ-β : ∀ {t A e μ} → (ƛ A e) · t , μ ≻ (e exp/ (sub t)) , μ
 
   lett-β  : ∀ {t e μ} → (lett (tm t) e) , μ ≻ (e exp/ (sub t)) , μ
 
   ref-val : ∀ {t μ} → ref (tm t) , μ ≻ (tm (loc (length μ))) , (μ ∷ʳ t)
 
-  assign-locval : ∀ {i x t μ} →
-                  (p : i < length μ) →
-                  --------------------------------------------
-                  tm x ≔ (tm t) , μ ≻ (tm unit) , !store μ p t
+  ≔-val : ∀ {i x t μ} →
+           (p : i < length μ) →
+           --------------------------------------------
+           tm x ≔ (tm t) , μ ≻ (tm unit) , !store μ p t
 
   !-val : ∀ {i x μ} →
           (p : i < length μ) →

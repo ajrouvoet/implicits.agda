@@ -23,24 +23,25 @@ progress : ∀ {𝕊 Σ A} {e : Exp 0} {μ} →
            --------------------------------------
            Val e ⊎ ∃₂ λ e' μ' → (e , μ ≻ e' , μ')
 
-progress p (tm unit) = inj₁ unit
+progress p (tm (con k ts)) = inj₁ tm
+progress p (tm unit) = inj₁ tm
 progress p (tm (var ()))
-progress p (tm (loc x)) = inj₁ (loc _)
+progress p (tm (loc x)) = inj₁ tm
 
 progress p (lett x e) with progress p x
-progress p (lett {_} {tm x} wtx e) | inj₁ _ = inj₂ (, (, lett-β))
-progress p (lett {_} {ƛ _ _} wtx e) | inj₁ ()
-progress p (lett {_} {_ · _} wtx e) | inj₁ ()
-progress p (lett {_} {lett x x₁} wtx e) | inj₁ ()
-progress p (lett {_} {ref x} wtx e) | inj₁ ()
-progress p (lett {_} { ! x } wtx e) | inj₁ ()
-progress p (lett {_} {x ≔ x₁} wtx e) | inj₁ ()
+progress p (lett (tm x) e) | inj₁ tm = inj₂ (, (, lett-β))
+-- progress p (lett (ƛ x₁ wtx) e) | inj₁ ()
+-- progress p (lett (wtx · x) e) | inj₁ ()
+progress p (lett (lett wtx wtx₁) e) | inj₁ ()
+progress p (lett (ref wtx) e) | inj₁ ()
+progress p (lett (! wtx) e) | inj₁ ()
+progress p (lett (wtx ≔ wtx₁) e) | inj₁ ()
 progress p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos₁ step))
 
 progress p (ref e) with progress p e
 progress p (ref {_} {tm x} e) | inj₁ v = inj₂ (, (, ref-val))
-progress p (ref {_} {ƛ _ _} e) | inj₁ ()
-progress p (ref {_} {_ · _} e) | inj₁ ()
+-- progress p (ref {_} {ƛ _ _} e) | inj₁ ()
+-- progress p (ref {_} {_ · _} e) | inj₁ ()
 progress p (ref {_} {lett x x₁} e) | inj₁ ()
 progress p (ref {_} {ref x} e) | inj₁ ()
 progress p (ref {_} { ! x } e) | inj₁ ()
@@ -48,17 +49,34 @@ progress p (ref {_} {x ≔ x₁} e) | inj₁ ()
 progress p (ref e) | inj₂ (e' , μ' , step) = inj₂ (, (, ref-clos step))
 
 progress p (!_ {x = x} e) with progress p e
-progress p (!_ {_} {tm .(loc _)} (tm (loc x))) | inj₁ (loc i) =
+progress p (!_ {_} {tm .(loc _)} (tm (loc x))) | inj₁ tm =
   inj₂ (, (, !-val (P.subst (_<_ _) (pointwise-length p) ([-]=-length x))))
-progress p (!_ {_} {tm (var _)} e) | inj₁ ()
-progress p (!_ {_} {ƛ _ _} e) | inj₁ ()
-progress p (!_ {_} {_ · _} e) | inj₁ ()
+progress p (!_ {_} {tm (var ())} e) | _
+-- progress p (!_ {_} {ƛ _ _} e) | inj₁ ()
+-- progress p (!_ {_} {_ · _} e) | inj₁ ()
 progress p (!_ {_} {lett x x₁} e) | inj₁ ()
 progress p (!_ {_} {ref x} e) | inj₁ ()
 progress p (!_ {_} { ! x } e) | inj₁ ()
 progress p (!_ {_} {x ≔ x₁} e) | inj₁ ()
-progress p (! e) | inj₂ y = {!!}
+progress p (! e) | inj₂ (e' , μ' , step) = inj₂ (, (, !-clos step))
 
-progress p (ƛ x₁ x₂) = {!!}
-progress p (x · x₁) = {!!}
-progress p (x₁ ≔ x₂) = {!!}
+progress p (l ≔ e) with progress p l | progress p e
+progress p (tm (loc x) ≔ tm x₁) | inj₁ tm | (inj₁ v₂) =
+  inj₂ (, (, ≔-val (P.subst (_<_ _) (pointwise-length p) ([-]=-length x))))
+progress p (tm (var ()) ≔ e) | inj₁ _ | inj₁ _
+progress p ((lett _ _) ≔ _) | inj₁ () | _
+progress p ((! _) ≔ _) | inj₁ () | _
+progress p ((ref _) ≔ _) | inj₁ () | _
+progress p (l ≔ lett e e₁) | inj₁ tm | (inj₁ ())
+progress p (l ≔ ref e) | inj₁ tm | (inj₁ ())
+progress p (l ≔ (! e)) | inj₁ tm | (inj₁ ())
+progress p (l ≔ (e ≔ e₁)) | inj₁ tm | (inj₁ ()) 
+progress p (l ≔ e) | inj₂ (_ , _ , step) | _ = inj₂ (, (, ≔-clos₁ step))
+progress p (l ≔ e) | _ | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ step))
+
+≻-preserves : ∀ {n Γ 𝕊 Σ A} {e : Exp n} {e' μ' μ} →
+              𝕊 , Σ , Γ ⊢ₑ e ∶ A →
+              𝕊 , Σ , Γ ⊢ μ → e , μ ≻ e' , μ' →
+              ---------------------------------
+              ∃ λ Σ' → 𝕊 , Σ' , Γ ⊢ₑ e' ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' , Γ ⊢ μ'
+≻-preserves p q = {!!}

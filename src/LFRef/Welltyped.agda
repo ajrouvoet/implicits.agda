@@ -3,19 +3,23 @@ module LFRef.Welltyped where
 open import Prelude
 
 open import Data.List hiding ([_])
-open import Data.Vec as Vec hiding ([_])
-open import Data.Star hiding (_▻▻_)
-open import Data.Sum
+open import Data.Vec as Vec hiding ([_]; map)
+open import Data.Star hiding (_▻▻_; map)
+open import Data.Sum hiding (map)
 open import Extensions.List as L using ()
 
-open import LFRef.Syntax
+open import LFRef.Syntax hiding (subst)
 open import Relation.Binary.List.Pointwise using (Rel)
 
-ConType : (n m : ℕ) → Set
-ConType n m = Tele n m × ℕ × List (Term m)
+record ConType (n : ℕ) : Set where
+  field
+    m : ℕ
+    args : Tele n m
+    tp   : ℕ
+    indices : List (Term m)
 
 Sig : ℕ → Set
-Sig n = List (∃ (Tele n)) × List (∃ (ConType n))
+Sig n = List (∃ (Tele n)) × List (ConType n)
 
 Ctx : (n : ℕ) → Set
 Ctx n = Vec (Type n) n
@@ -24,11 +28,15 @@ Ctx n = Vec (Type n) n
 World : ℕ → Set
 World n = List (Type n)
 
+-- assumptions for now
+-- these should all be provable/axiomatized
 postulate
   _:+:_ : ∀ {n} → Type n → Ctx n → Ctx (suc n)
   weaken-𝕊 : ∀ {n} → Sig n → Sig (suc n)
   weaken-Σ : ∀ {n} → World n → World (suc n)
   weaken-tp : ∀ {n} → Type n → Type (suc n)
+
+  -- TODO constructor wellformedness
 
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
 data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig n) → World n → Ctx n → Tele n m → Set
@@ -52,6 +60,16 @@ data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig n) (Σ : World n) (Γ : Ctx n) : ∀ {m} �
         𝕊 , Σ , Γ ⊢ ts ∶ⁿ (B tele/ (sub t)) →
         𝕊 , Σ , Γ ⊢ (t ∷ ts) ∶ⁿ (A ⟶ B)
 
+lem : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → length ts ≡ m
+lem ε = refl
+lem (x ⟶ p) with lem p
+lem (x ⟶ p) | refl = refl
+
+-- construct the type of the term returned from a proper, complete constructor application
+_con[/_] : ∀ {n 𝕊 Σ Γ ts} → (C : ConType n) → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ (ConType.args C) → Type n
+_con[/_] {ts = ts} record { m = m ; args = args ; tp = tp ; indices = indices } p =
+  tp [ map (flip _/_ (subst (Vec _) (lem p) (fromList ts))) indices ]
+
 data _,_,_⊢_::_ where
 
   Ref : ∀ {n 𝕊 Σ} {Γ : Ctx n} {A} →
@@ -62,12 +80,6 @@ data _,_,_⊢_::_ where
   Unit : ∀ {n 𝕊 Σ} {Γ : Ctx n} →
         ----------------------
         𝕊 , Σ , Γ ⊢ Unit :: ε
-
-  Π : ∀ {n 𝕊 Σ} {Γ : Ctx n} {A B} →
-      𝕊 , Σ , Γ ⊢ A :: ε →
-      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ B :: ε →
-      ---------------------------------
-      𝕊 , Σ , Γ ⊢ Π A B :: ε
 
   _[_] : ∀ {n 𝕊 Σ} {Γ : Ctx n} {k K ts} →
          (proj₁ 𝕊) L.[ k ]= K →
@@ -87,13 +99,11 @@ data _,_,_⊢_∶_ where
         ---------------------------------
         𝕊 , Σ , Γ ⊢ var i ∶ A
 
-  {-}
-  con : ∀ {n 𝕊 Σ} {Γ : Ctx n} {c k T₁ T₂ C X ts} →
+  con : ∀ {n 𝕊 Σ} {Γ : Ctx n} {c C ts} →
         (proj₂ 𝕊) L.[ c ]= C →
-        𝕊 , Σ , Γ ⊢ ts ∶ⁿ (proj₁ C) →
+        (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ (ConType.args C)) →
         ---------------------------------
-        𝕊 , Σ , Γ ⊢ con c ts ∶ (k [ ts ])
-  -}
+        𝕊 , Σ , Γ ⊢ con c ts ∶ (C con[/ p ])
 
   loc : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i S} →
         Σ L.[ i ]= S →
@@ -106,17 +116,6 @@ data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Exp n �
          𝕊 , Σ , Γ ⊢ t ∶ A →
          -----------------
          𝕊 , Σ , Γ ⊢ₑ tm t ∶ A
-
-  ƛ : ∀ {n 𝕊 Σ} {Γ : Ctx n} {x A B} →
-      𝕊 , Σ , Γ ⊢ A :: ε →
-      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ₑ x ∶ B →
-      ---------------------------------
-      𝕊 , Σ , Γ ⊢ₑ ƛ A x ∶ Π A B
-
-  _·_ : ∀ {n 𝕊 Σ} {Γ : Ctx n} {f t A B} →
-        𝕊 , Σ , Γ ⊢ₑ f ∶ Π A B →
-        𝕊 , Σ , Γ ⊢ t ∶ A →
-        𝕊 , Σ , Γ ⊢ₑ f · t ∶ (B tp/ (sub t))
 
   lett : ∀ {n x c A B 𝕊 Σ} {Γ : Ctx n} →
          𝕊 , Σ , Γ ⊢ₑ x ∶ A →
