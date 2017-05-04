@@ -68,3 +68,7 @@ data _≻_ {n} : (t t' : Config n) → Set where
 -- Church-Rosser
 -- diamond : ∀ {n} {u u' u'' : Term n} → u ≻ u' → u ≻ u'' → ∃ λ v → (u' ≻ v × u'' ≻ v)
 -- church-rosser : ∀ {n} {u u' u'' : Term n} → u ≻⋆ u' → u ≻⋆ u'' → ∃ λ v → (u' ≻⋆ v × u'' ≻⋆ v)
+
+-- reflexive-transitive closure of ≻
+_≻⋆_ : ∀ {n} (c c' : Config n) → Set
+c ≻⋆ c' = Star _≻_ c c'
