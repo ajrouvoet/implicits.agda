@@ -1,4 +1,4 @@
-module LF.Welltyped where
+module LFRef.Welltyped where
 
 open import Prelude
 
@@ -8,7 +8,7 @@ open import Data.Star hiding (_▻▻_)
 open import Data.Sum
 open import Extensions.List as L using ()
 
-open import LF.Syntax
+open import LFRef.Syntax
 
 -- store typings
 World : ℕ → Set
