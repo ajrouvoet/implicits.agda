@@ -13,6 +13,7 @@ data Term where
   -- variables
   var : ∀ {n} → Fin n → Term n
   con : ∀ {n} → ℕ → Term n
+  loc : ∀ {n} → ℕ → Term n
   unit : ∀ {n} → Term n
 
   -- abstractions
@@ -21,30 +22,21 @@ data Term where
   -- application
   _·_ : ∀ {n} → Term n → Term n → Term n
 
-data PrimE : Set where
-  initFrame : PrimE
-  setSlot : PrimE
-  getSlot : PrimE
-  setLink : PrimE
-
 data Exp (n : ℕ) : Set where
   tm : Term n → Exp n
   --  _·*_ : (fn : ℕ) → (as : List (Term n)) → Exp n
   lett : (x : Exp n) → (e : Exp (suc n)) → Exp n
-  prim : PrimE → Exp n
-
-data PrimT : Set where
-  Frame : PrimT
-  Decl : PrimT
-  Path : PrimT
-  Edge : PrimT
+  ref : Exp n → Exp n
+  !_ : Exp n → Exp n
+  _≔_ : Exp n → Exp n → Exp n
 
 infixl 20 _[_]
 data Type where
   𝕜 : ∀ {n} → ℕ → Type n
   Π : ∀ {n} → (A : Type n) → (B : Type (suc n)) → Type n
   _[_] : ∀ {n} → (T : Type n) → (x : Term n) → Type n
-  Prim : ∀ {n} → PrimT → Type n
+  Ref : ∀ {n} → (A : Type n) → Type n
+  Unit : ∀ {n} → Type n
 
 data Kind where
   ★ : ∀ {n} → Kind n
@@ -66,11 +58,13 @@ module App {T} (l : Lift T Term) where
   (f · e) / s = (f / s) · (e / s)
   unit / s = unit
   con x / s = con x
+  loc x / s = loc x
 
   𝕜 x tp/ s = 𝕜 x
   Π A B tp/ s = Π (A tp/ s) (B tp/ (s ↑))
   (A [ x ]) tp/ s = (A tp/ s) [ x / s ]
-  Prim x tp/ s = Prim x
+  (Ref A) tp/ s = Ref (A tp/ s)
+  Unit tp/ s = Unit
 
   _kind/_ : ∀ {n n'} → Kind n → Sub T n n' → Kind n'
   ★ kind/ s = ★
@@ -78,9 +72,10 @@ module App {T} (l : Lift T Term) where
 
   _exp/_ : ∀ {n n'} → Exp n → Sub T n n' → Exp n'
   tm x exp/ s = tm (x / s)
-  -- (fn ·* as) exp/ s = fn ·* (map (flip _/_ s) as)
   lett x e exp/ s = lett (x exp/ s) (e exp/ (s ↑))
-  prim x exp/ s = prim x
+  ref x exp/ s = ref (x exp/ s)
+  (! x) exp/ s = ! (x exp/ s)
+  (y ≔ x) exp/ s = (y exp/ s) ≔ (x exp/ s)
 
   open Application (record { _/_ = _/_ }) using (_/✶_)
 

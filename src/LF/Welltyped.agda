@@ -23,6 +23,7 @@ Ctx n = Vec (Type n) n
 postulate
   _:+:_ : ∀ {n} → Type n → Ctx n → Ctx (suc n)
   weaken-Σ : ∀ {n} → Sig n → Sig (suc n)
+  weaken-tp : ∀ {n} → Type n → Type (suc n)
 
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
 data _,_⊢_ok : ∀ {n} → (Σ : Sig n) → Ctx n → Kind n → Set
@@ -81,3 +82,32 @@ data _,_⊢_∶_ where
         Σ , Γ ⊢ f ∶ Π A B →
         Σ , Γ ⊢ e ∶ A →
         Σ , Γ ⊢ f · e ∶ (B tp/ (sub e))
+
+data _,_⊢ₑ_∶_ : ∀ {n} (Σ : Sig n) → Ctx n → Exp n → Type n → Set where
+
+  tm   : ∀ {n t} {Γ : Ctx n} {Σ A} →
+         Σ , Γ ⊢ t ∶ A →
+         -----------------
+         Σ , Γ ⊢ₑ tm t ∶ A
+
+  lett : ∀ {n x c A B Σ} {Γ : Ctx n} →
+         Σ , Γ ⊢ₑ x ∶ A →
+         (weaken-Σ Σ) , (A :+: Γ) ⊢ₑ c ∶ weaken-tp B →
+         ---------------------------------------------
+         Σ , Γ ⊢ₑ lett x c ∶ B
+
+  ref : ∀ {n x A Σ} {Γ : Ctx n} →
+        Σ , Γ ⊢ₑ x ∶ A →
+        ---------------------------------------
+        Σ , Γ ⊢ₑ ref x ∶ Ref A
+
+  !_  : ∀ {n x A} {Γ : Ctx n} {Σ} →
+        Σ , Γ ⊢ₑ x ∶ Ref A →
+        ---------------------------------------
+        Σ , Γ ⊢ₑ (! x) ∶ A
+
+  _≔_ : ∀ {n i x A} {Γ : Ctx n} {Σ} →
+        Σ , Γ ⊢ₑ i ∶ Ref A →
+        Σ , Γ ⊢ₑ x ∶ A →
+        ---------------------------------------
+        Σ , Γ ⊢ₑ (i ≔ x) ∶ Unit
