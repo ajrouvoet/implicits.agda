@@ -30,8 +30,6 @@ progress p (tm (loc x)) = inj₁ tm
 
 progress p (lett x e) with progress p x
 progress p (lett (tm x) e) | inj₁ tm = inj₂ (, (, lett-β))
--- progress p (lett (ƛ x₁ wtx) e) | inj₁ ()
--- progress p (lett (wtx · x) e) | inj₁ ()
 progress p (lett (lett wtx wtx₁) e) | inj₁ ()
 progress p (lett (ref wtx) e) | inj₁ ()
 progress p (lett (! wtx) e) | inj₁ ()
@@ -40,8 +38,6 @@ progress p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos₁ ste
 
 progress p (ref e) with progress p e
 progress p (ref {_} {tm x} e) | inj₁ v = inj₂ (, (, ref-val))
--- progress p (ref {_} {ƛ _ _} e) | inj₁ ()
--- progress p (ref {_} {_ · _} e) | inj₁ ()
 progress p (ref {_} {lett x x₁} e) | inj₁ ()
 progress p (ref {_} {ref x} e) | inj₁ ()
 progress p (ref {_} { ! x } e) | inj₁ ()
@@ -52,8 +48,6 @@ progress p (!_ {x = x} e) with progress p e
 progress p (!_ {_} {tm .(loc _)} (tm (loc x))) | inj₁ tm =
   inj₂ (, (, !-val (P.subst (_<_ _) (pointwise-length p) ([-]=-length x))))
 progress p (!_ {_} {tm (var ())} e) | _
--- progress p (!_ {_} {ƛ _ _} e) | inj₁ ()
--- progress p (!_ {_} {_ · _} e) | inj₁ ()
 progress p (!_ {_} {lett x x₁} e) | inj₁ ()
 progress p (!_ {_} {ref x} e) | inj₁ ()
 progress p (!_ {_} { ! x } e) | inj₁ ()
@@ -70,13 +64,23 @@ progress p ((ref _) ≔ _) | inj₁ () | _
 progress p (l ≔ lett e e₁) | inj₁ tm | (inj₁ ())
 progress p (l ≔ ref e) | inj₁ tm | (inj₁ ())
 progress p (l ≔ (! e)) | inj₁ tm | (inj₁ ())
-progress p (l ≔ (e ≔ e₁)) | inj₁ tm | (inj₁ ()) 
+progress p (l ≔ (e ≔ e₁)) | inj₁ tm | (inj₁ ())
 progress p (l ≔ e) | inj₂ (_ , _ , step) | _ = inj₂ (, (, ≔-clos₁ step))
 progress p (l ≔ e) | _ | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ step))
 
 ≻-preserves : ∀ {n Γ 𝕊 Σ A} {e : Exp n} {e' μ' μ} →
               𝕊 , Σ , Γ ⊢ₑ e ∶ A →
-              𝕊 , Σ , Γ ⊢ μ → e , μ ≻ e' , μ' →
-              ---------------------------------
+              𝕊 , Σ , Γ ⊢ μ →
+              e , μ ≻ e' , μ' →
+              -------------------------------------------------------
               ∃ λ Σ' → 𝕊 , Σ' , Γ ⊢ₑ e' ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' , Γ ⊢ μ'
-≻-preserves p q = {!!}
+≻-preserves (tm x) q ()
+≻-preserves (lett p p₁) q lett-β = {!!}
+≻-preserves (lett p p₁) q (lett-clos₁ step) = {!!}
+≻-preserves (ref p) q ref-val = {!!}
+≻-preserves (ref p) q (ref-clos step) = {!!}
+≻-preserves (! p₁) q (!-val p) = {!!}
+≻-preserves (! p) q (!-clos step) = {!!}
+≻-preserves (p₁ ≔ p₂) q (≔-val p) = {!!}
+≻-preserves (p ≔ p₁) q (≔-clos₁ step) = {!!}
+≻-preserves (p ≔ p₁) q (≔-clos₂ step) = {!!}
