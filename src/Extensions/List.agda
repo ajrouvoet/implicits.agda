@@ -38,3 +38,7 @@ xs ⊒ ys = ys ⊑ xs
 pointwise-length : ∀ {a b ℓ A B P l m} → Rel {a} {b} {ℓ} {A} {B} P l m → length l ≡ length m
 pointwise-length [] = refl
 pointwise-length (x∼y ∷ p) = cong suc (pointwise-length p)
+
+[-]=-length : ∀ {a} {A : Set a} {L : List A} {i x} → L [ i ]= x → i < length L
+[-]=-length here = s≤s z≤n
+[-]=-length (there p) = s≤s ([-]=-length p)

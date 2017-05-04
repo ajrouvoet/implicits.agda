@@ -11,8 +11,11 @@ open import Extensions.List as L using ()
 open import LFRef.Syntax
 open import Relation.Binary.List.Pointwise using (Rel)
 
+ConType : (n m : ℕ) → Set
+ConType n m = Tele n m × ℕ × List (Term m)
+
 Sig : ℕ → Set
-Sig n = List (Kind n) × List (Type n)
+Sig n = List (∃ (Tele n)) × List (∃ (ConType n))
 
 Ctx : (n : ℕ) → Set
 Ctx n = Vec (Type n) n
@@ -28,39 +31,50 @@ postulate
   weaken-tp : ∀ {n} → Type n → Type (suc n)
 
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
-data _,_,_⊢_ok : ∀ {n} → (𝕊 : Sig n) → World n → Ctx n → Kind n → Set
-data _,_,_⊢_::_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Type n → Kind n → Set
+data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig n) → World n → Ctx n → Tele n m → Set
+data _,_,_⊢_::_ : ∀ {n m} (𝕊 : Sig n) → World n → Ctx n → Type n → Tele n m → Set
 data _,_,_⊢_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Term n → Type n → Set
 
-data _,_,_⊢_ok where
+data _,_,_⊢_teleok where
+  ε : ∀ {n 𝕊 Σ} {Γ : Ctx n} → 𝕊 , Σ , Γ ⊢ ε teleok
 
-  ★ : ∀ {n 𝕊 Σ} {Γ : Ctx n} →
-      ---------------------------------
-      𝕊 , Σ , Γ ⊢ ★ ok
-  Π : ∀ {n 𝕊 Σ} {Γ : Ctx n} {A K} →
-      𝕊 , Σ , Γ ⊢ A :: ★ →
-      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ K ok →
-      ---------------------------------
-      𝕊 , Σ , Γ ⊢ Π A K ok
+  _⟶_ : ∀ {n m 𝕊 Σ Γ} {A : Type n} {K : Tele (suc n) m}→
+        𝕊 , Σ , Γ ⊢ A :: ε →
+        weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ K teleok →
+        𝕊 , Σ , Γ ⊢ (A ⟶ K) teleok
+
+data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig n) (Σ : World n) (Γ : Ctx n) : ∀ {m} → List (Term n) → Tele n m → Set where
+
+  ε : 𝕊 , Σ , Γ ⊢ [] ∶ⁿ ε
+
+  _⟶_ : ∀ {m A t ts} {B : Tele (suc n) m}→
+        𝕊 , Σ , Γ ⊢ t ∶ A →
+        𝕊 , Σ , Γ ⊢ ts ∶ⁿ (B tele/ (sub t)) →
+        𝕊 , Σ , Γ ⊢ (t ∷ ts) ∶ⁿ (A ⟶ B)
 
 data _,_,_⊢_::_ where
 
-  𝕜 : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i K} →
-      proj₁ 𝕊 L.[ i ]= K →
-      ---------------------------------
-      𝕊 , Σ , Γ ⊢ K ok → 𝕊 , Σ , Γ ⊢ 𝕜 i :: K
+  Ref : ∀ {n 𝕊 Σ} {Γ : Ctx n} {A} →
+        𝕊 , Σ , Γ ⊢ A :: ε →
+        ----------------------
+        𝕊 , Σ , Γ ⊢ Ref A :: ε
+
+  Unit : ∀ {n 𝕊 Σ} {Γ : Ctx n} →
+        ----------------------
+        𝕊 , Σ , Γ ⊢ Unit :: ε
 
   Π : ∀ {n 𝕊 Σ} {Γ : Ctx n} {A B} →
-      𝕊 , Σ , Γ ⊢ A :: ★ →
-      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ B :: ★ →
+      𝕊 , Σ , Γ ⊢ A :: ε →
+      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ B :: ε →
       ---------------------------------
-      𝕊 , Σ , Γ ⊢ Π A B :: ★
+      𝕊 , Σ , Γ ⊢ Π A B :: ε
 
-  _[_] : ∀ {n 𝕊 Σ} {Γ : Ctx n} {A x S K} →
-         𝕊 , Σ , Γ ⊢ S :: (Π A K) →
-         𝕊 , Σ , Γ ⊢ x ∶ A →
+  _[_] : ∀ {n 𝕊 Σ} {Γ : Ctx n} {k K ts} →
+         (proj₁ 𝕊) L.[ k ]= K →
+         𝕊 , Σ , Γ ⊢ (proj₂ K) teleok →
+         𝕊 , Σ , Γ ⊢ ts ∶ⁿ (proj₂ K) →
          ---------------------------------
-         𝕊 , Σ , Γ ⊢ S [ x ] :: (K kind/ (sub x))
+         𝕊 , Σ , Γ ⊢ k [ ts ] :: ε
 
 data _,_,_⊢_∶_ where
 
@@ -73,26 +87,18 @@ data _,_,_⊢_∶_ where
         ---------------------------------
         𝕊 , Σ , Γ ⊢ var i ∶ A
 
-  con : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i S} →
-        (proj₂ 𝕊) L.[ i ]= S →
+  {-}
+  con : ∀ {n 𝕊 Σ} {Γ : Ctx n} {c k T₁ T₂ C X ts} →
+        (proj₂ 𝕊) L.[ c ]= C →
+        𝕊 , Σ , Γ ⊢ ts ∶ⁿ (proj₁ C) →
         ---------------------------------
-        𝕊 , Σ , Γ ⊢ con i ∶ S
+        𝕊 , Σ , Γ ⊢ con c ts ∶ (k [ ts ])
+  -}
 
   loc : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i S} →
         Σ L.[ i ]= S →
         ---------------------------------
         𝕊 , Σ , Γ ⊢ loc i ∶ S
-
-  ƛ : ∀ {n 𝕊 Σ} {Γ : Ctx n} {x A B} →
-      𝕊 , Σ , Γ ⊢ A :: ★ →
-      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ x ∶ B →
-      ---------------------------------
-      𝕊 , Σ , Γ ⊢ ƛ A x ∶ Π A B
-
-  _·_ : ∀ {n 𝕊 Σ} {Γ : Ctx n} {f e A B} →
-        𝕊 , Σ , Γ ⊢ f ∶ Π A B →
-        𝕊 , Σ , Γ ⊢ e ∶ A →
-        𝕊 , Σ , Γ ⊢ f · e ∶ (B tp/ (sub e))
 
 data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Exp n → Type n → Set where
 
@@ -100,6 +106,17 @@ data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Exp n �
          𝕊 , Σ , Γ ⊢ t ∶ A →
          -----------------
          𝕊 , Σ , Γ ⊢ₑ tm t ∶ A
+
+  ƛ : ∀ {n 𝕊 Σ} {Γ : Ctx n} {x A B} →
+      𝕊 , Σ , Γ ⊢ A :: ε →
+      weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ₑ x ∶ B →
+      ---------------------------------
+      𝕊 , Σ , Γ ⊢ₑ ƛ A x ∶ Π A B
+
+  _·_ : ∀ {n 𝕊 Σ} {Γ : Ctx n} {f t A B} →
+        𝕊 , Σ , Γ ⊢ₑ f ∶ Π A B →
+        𝕊 , Σ , Γ ⊢ t ∶ A →
+        𝕊 , Σ , Γ ⊢ₑ f · t ∶ (B tp/ (sub t))
 
   lett : ∀ {n x c A B 𝕊 Σ} {Γ : Ctx n} →
          𝕊 , Σ , Γ ⊢ₑ x ∶ A →

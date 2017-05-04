@@ -24,10 +24,6 @@ ref-value-lemma (p · p₁) ()
 ref-value-lemma (ref p) ()
 ref-value-lemma (! p) ()
 
-⊢loc-length : ∀ {Σ i A} → Σ ⊢loc i ∶ A → i < length Σ
-⊢loc-length here = s≤s z≤n
-⊢loc-length (there p) = s≤s (⊢loc-length p)
-
 progress : ∀ {Γ Σ A} {e : Exp 0} {μ} →
            Γ , Σ ⊢ μ →
            Γ , Σ ⊢ e ∶ A →
@@ -54,7 +50,7 @@ progress p (ref wt) | inj₂ (_ , _ , wt≻wt') = inj₂ (_ , _ , Ref wt≻wt')
 progress p (! wt) with progress p wt
 progress p (! wt) | inj₁ v with ref-value-lemma wt v
 progress p (! loc q) | inj₁ (loc .i) | (i , refl) =
-  inj₂ (_ , (_ , (DerefLoc (P.subst (_<_ _) (pointwise-length p) (⊢loc-length q)))))
+  inj₂ (_ , (_ , (DerefLoc (P.subst (_<_ _) (pointwise-length p) ([-]=-length q)))))
 progress p (! wt) | inj₂ (_ , _ , wt≻wt') = inj₂ (_ , (_ , (Deref wt≻wt')))
 
 progress p (wt ≔ x) with progress p wt | progress p x
@@ -62,7 +58,7 @@ progress p (wt ≔ x) | _ | inj₂ (_ , _ , x≻x') = inj₂ (_ , (_ , (Assign�
 progress p (wt ≔ x) | inj₂ (_ , _ , wt≻wt') | _ = inj₂ (_ , _ , Assign₁ wt≻wt')
 progress p (wt ≔ x) | inj₁ v | inj₁ w with ref-value-lemma wt v
 progress p (loc q ≔ x) | inj₁ (loc .i) | inj₁ w | (i , refl) =
-  inj₂ (_ , (_ , Assign (P.subst (_<_ _) (pointwise-length p) (⊢loc-length q)) w))
+  inj₂ (_ , (_ , Assign (P.subst (_<_ _) (pointwise-length p) ([-]=-length q)) w))
 
 -- extending the store preserves location typings
 ⊒-loctype : ∀ {Σ Σ' A} {i} → Σ' ⊒ Σ → Σ ⊢loc i ∶ A → Σ' ⊢loc i ∶ A
