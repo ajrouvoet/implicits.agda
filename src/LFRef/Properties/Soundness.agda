@@ -28,8 +28,11 @@ progress p (tm unit) = inj₁ tm
 progress p (tm (var ()))
 progress p (tm (loc x)) = inj₁ tm
 
+progress p (fn ·★ ts) = inj₂ (, (, funapp-β fn (tele-fit-length ts)))
+
 progress p (lett x e) with progress p x
 progress p (lett (tm x) e) | inj₁ tm = inj₂ (, (, lett-β))
+progress p (lett (_ ·★ _) e) | inj₁ ()
 progress p (lett (lett wtx wtx₁) e) | inj₁ ()
 progress p (lett (ref wtx) e) | inj₁ ()
 progress p (lett (! wtx) e) | inj₁ ()
@@ -57,16 +60,14 @@ progress p (!_ {_} {x ≔ x₁} e) | inj₁ ()
 progress p (! e) | inj₂ (e' , μ' , step) = inj₂ (, (, !-clos step))
 
 progress p (l ≔ e) with progress p l | progress p e
-progress p (tm (loc x) ≔ tm x₁) | inj₁ tm | (inj₁ v₂) =
+progress p (tm (var ()) ≔ _) | inj₁ tm | (inj₁ _)
+progress p (tm (loc x) ≔ tm _) | inj₁ tm | (inj₁ _) =
   inj₂ (, (, ≔-val (P.subst (_<_ _) (pointwise-length p) ([-]=-length x))))
-progress p (tm (var ()) ≔ e) | inj₁ _ | inj₁ _
-progress p ((lett _ _) ≔ _) | inj₁ () | _
-progress p ((! _) ≔ _) | inj₁ () | _
-progress p ((ref _) ≔ _) | inj₁ () | _
-progress p (l ≔ lett e e₁) | inj₁ tm | (inj₁ ())
-progress p (l ≔ ref e) | inj₁ tm | (inj₁ ())
-progress p (l ≔ (! e)) | inj₁ tm | (inj₁ ())
-progress p (l ≔ (e ≔ e₁)) | inj₁ tm | (inj₁ ())
+progress p₁ (tm (loc x₁) ≔ (x ·★ p)) | inj₁ tm | (inj₁ ())
+progress p (tm (loc x₁) ≔ lett e e₁) | inj₁ tm | (inj₁ ())
+progress p (tm (loc x₁) ≔ ref e) | inj₁ tm | (inj₁ ())
+progress p (tm (loc x₁) ≔ (! e)) | inj₁ tm | (inj₁ ())
+progress p (tm (loc x₁) ≔ (e ≔ e₁)) | inj₁ tm | (inj₁ ())
 progress p (l ≔ e) | inj₂ (_ , _ , step) | _ = inj₂ (, (, ≔-clos₁ step))
 progress p (l ≔ e) | _ | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ step))
 
@@ -77,6 +78,7 @@ progress p (l ≔ e) | _ | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ st
               -------------------------------------------------------
               ∃ λ Σ' → 𝕊 , Σ' , Γ ⊢ₑ e' ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' , Γ ⊢ μ'
 ≻-preserves (tm x) q ()
+≻-preserves (fn ·★ ts) q p = {!!}
 ≻-preserves (lett p p₁) q lett-β = {!!}
 ≻-preserves (lett p p₁) q (lett-clos step) = {!!}
 ≻-preserves (ref p) q ref-val = {!!}

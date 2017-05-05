@@ -54,11 +54,12 @@ record ConType (n : ℕ) : Set where
     tp   : ℕ
     indices : List (Term m)
 
-record FunType (n : ℕ) : Set where
+record Fun (n : ℕ) : Set where
   field
     m : ℕ
     args : Tele n m
     returntype : Type m
+    body : Exp m
 
 FunDef : ℕ → Set
 FunDef n = Exp n
@@ -67,7 +68,7 @@ record Sig (n : ℕ) : Set where
   field
     types : List (∃ (Tele n))
     constructors : List (ConType n)
-    funs : List (FunType n × FunDef n)
+    funs : List (Fun n)
 
 open import Data.Fin.Substitution
 

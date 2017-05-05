@@ -4,10 +4,11 @@ open import Prelude
 open import Data.List hiding ([_])
 open import Data.List.All
 open import Data.List.Any
+open import Data.Vec using (fromList; Vec)
 open import Data.Maybe hiding (All; Any)
 open import Extensions.List as L
 
-open import LFRef.Syntax
+open import LFRef.Syntax hiding (subst)
 open import LFRef.Welltyped
 
 -- machine configuration: expression to reduce and a store
@@ -25,10 +26,8 @@ Config n = Exp n × Store n
 !store {i = zero} (x ∷ μ) (s≤s p) v = v ∷ μ
 !store {i = suc i} (x ∷ μ) (s≤s p) v = v ∷ (!store μ p v)
 
-!call : ∀ {n es} → (𝕊 : Sig n) → ℕ → All (Val {n} ∘ tm) es → Maybe (Exp n)
-!call 𝕊 n p with L.lookup n (Sig.funs 𝕊)
-!call 𝕊 n p | yes ((φ , e) , _) = just e
-!call 𝕊 n p | no _ = nothing
+!call : ∀ {n m} → Exp m → (l : List (Term n)) → length l ≡ m → Exp n
+!call e ts p = e exp/ subst (Vec _) p (fromList ts)
 
 -- small steps for expressions
 infix 1 _⊢_≻_
@@ -39,11 +38,11 @@ data _⊢_≻_ {n} (𝕊 : Sig n) : (t t' : Config n) → Set where
             ----------------------------------------------
             𝕊 ⊢ (lett (tm t) e) , μ ≻ (e exp/ (sub t)) , μ
 
-  funapp-β : ∀ {fn ts μ e'} →
-             (p : All (Val ∘ tm) ts) →
-             !call 𝕊 fn p ≡ just e' →
+  funapp-β : ∀ {fn ts μ φ} →
+             (Sig.funs 𝕊) L.[ fn ]= φ →
+             (p : length ts ≡ Fun.m φ) →
              -------------------------
-             𝕊 ⊢ fn ·★ ts , μ ≻ e' , μ
+             𝕊 ⊢ fn ·★ ts , μ ≻ (!call (Fun.body φ) ts p) , μ
 
   ref-val : ∀ {t μ} →
             ----------------------------------------------------
