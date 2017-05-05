@@ -3,12 +3,28 @@ module Extensions.List where
 open import Prelude
 
 open import Data.List
+open import Data.Maybe
+open import Relation.Nullary
+open import Relation.Nullary.Decidable using (map′)
 open import Relation.Binary.Core using (REL; Reflexive; Transitive)
 open import Relation.Binary.List.Pointwise hiding (refl)
 
 data _[_]=_ {a} {A : Set a} : List A → ℕ → A → Set where
   here : ∀ {x xs} → (x ∷ xs) [ 0 ]= x
   there : ∀ {x y xs n} → xs [ n ]= x → (y ∷ xs) [ suc n ]= x
+
+lookup : ∀ {a} {A : Set a} → (i : ℕ) → (l : List A) → Dec (∃ λ x → l [ i ]= x)
+lookup _ [] = no (λ{ (_ , ())})
+lookup zero (x ∷ l) = yes (x , here)
+lookup (suc i) (_ ∷ l) = map′
+  (λ{ (x , p) → x , there p})
+  (λ{ (x , there p) → x , p})
+  (lookup i l)
+
+_[_]≔_ : ∀ {a} {A : Set a} → (l : List A) → Fin (length l) → A → List A
+[] [ () ]≔ x
+(x ∷ xs) [ zero ]≔ x' = x' ∷ xs
+(x ∷ xs) [ suc i ]≔ y = xs [ i ]≔ y
 
 -- prefix predicate for lists
 infix 4 _⊑_

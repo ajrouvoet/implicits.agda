@@ -11,16 +11,6 @@ open import Extensions.List as L using ()
 open import LFRef.Syntax hiding (subst)
 open import Relation.Binary.List.Pointwise using (Rel)
 
-record ConType (n : ℕ) : Set where
-  field
-    m : ℕ
-    args : Tele n m
-    tp   : ℕ
-    indices : List (Term m)
-
-Sig : ℕ → Set
-Sig n = List (∃ (Tele n)) × List (ConType n)
-
 Ctx : (n : ℕ) → Set
 Ctx n = Vec (Type n) n
 
@@ -36,7 +26,7 @@ postulate
   weaken-Σ : ∀ {n} → World n → World (suc n)
   weaken-tp : ∀ {n} → Type n → Type (suc n)
 
-  -- TODO constructor wellformedness
+  -- TODO constructor wellformedness rules and assumption
 
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
 data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig n) → World n → Ctx n → Tele n m → Set
@@ -82,7 +72,7 @@ data _,_,_⊢_::_ where
         𝕊 , Σ , Γ ⊢ Unit :: ε
 
   _[_] : ∀ {n 𝕊 Σ} {Γ : Ctx n} {k K ts} →
-         (proj₁ 𝕊) L.[ k ]= K →
+         (Sig.types 𝕊) L.[ k ]= K →
          𝕊 , Σ , Γ ⊢ (proj₂ K) teleok →
          𝕊 , Σ , Γ ⊢ ts ∶ⁿ (proj₂ K) →
          ---------------------------------
@@ -100,7 +90,7 @@ data _,_,_⊢_∶_ where
         𝕊 , Σ , Γ ⊢ var i ∶ A
 
   con : ∀ {n 𝕊 Σ} {Γ : Ctx n} {c C ts} →
-        (proj₂ 𝕊) L.[ c ]= C →
+        (Sig.constructors 𝕊) L.[ c ]= C →
         (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ (ConType.args C)) →
         ---------------------------------
         𝕊 , Σ , Γ ⊢ con c ts ∶ (C con[/ p ])

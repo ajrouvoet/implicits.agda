@@ -16,14 +16,15 @@ data Term where
   -- constructor application
   con : ∀ {n} → ℕ → List (Term n) → Term n
 
--- infixl 30 _·_
+infixl 30 _·★_
 data Exp : ℕ → Set where
   -- basic lambda expressions
   tm : ∀ {n} → Term n → Exp n
-  -- ƛ : ∀ {n} → Type n → Exp (suc n) → Exp n
-  -- _·_ : ∀ {n} → Exp n → Term n → Exp n
 
-  --  _·*_ : (fn : ℕ) → (as : List (Term n)) → Exp n
+  -- function calls
+  _·★_ : ∀ {n} → (fn : ℕ) → (as : List (Exp n)) → Exp n
+
+  -- heap manipulation
   lett : ∀ {n} → (x : Exp n) → (e : Exp (suc n)) → Exp n
   ref : ∀ {n} → Exp n → Exp n
   !_ : ∀ {n} → Exp n → Exp n
@@ -32,6 +33,7 @@ data Exp : ℕ → Set where
 data Val : ∀ {n} → Exp n → Set where
   tm : ∀ {n} {t : Term n} → Val (tm t)
 
+-- telescoped contexts/arguments
 data Tele : (n m : ℕ) → Set where
   ε : ∀ {n} → Tele n 0
   _⟶_ : ∀ {m n} → Type n → Tele (suc n) m → Tele n (suc m)
@@ -44,6 +46,28 @@ data Type where
 
 Store : ℕ → Set
 Store n = List (Term n)
+
+record ConType (n : ℕ) : Set where
+  field
+    m : ℕ
+    args : Tele n m
+    tp   : ℕ
+    indices : List (Term m)
+
+record FunType (n : ℕ) : Set where
+  field
+    m : ℕ
+    args : Tele n m
+    returntype : Type m
+
+FunDef : ℕ → Set
+FunDef n = Exp n
+
+record Sig (n : ℕ) : Set where
+  field
+    types : List (∃ (Tele n))
+    constructors : List (ConType n)
+    funs : List (FunType n × FunDef n)
 
 open import Data.Fin.Substitution
 
@@ -78,8 +102,12 @@ module App {T} (l : Lift T Term) where
 
   _exp/_ : ∀ {n n'} → Exp n → Sub T n n' → Exp n'
   tm x exp/ s = tm (x / s)
-  -- ƛ A e exp/ s = ƛ (A tp/ s) (e exp/ (s ↑))
-  -- (f · t) exp/ s = (f exp/ s) · (t / s)
+  _exp/_ {n} {n'} (fn ·★ ts) s = fn ·★ map/ ts
+    where
+      -- inlined for termination checker..
+      map/ : List (Exp n) → List (Exp n')
+      map/ [] = []
+      map/ (x ∷ ts₁) = x exp/ s ∷ map/ ts₁
   lett x e exp/ s = lett (x exp/ s) (e exp/ (s ↑))
   ref x exp/ s = ref (x exp/ s)
   (! x) exp/ s = ! (x exp/ s)
