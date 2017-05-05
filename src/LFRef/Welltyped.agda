@@ -3,6 +3,7 @@ module LFRef.Welltyped where
 open import Prelude
 
 open import Data.List hiding ([_])
+open import Data.List.All hiding (map)
 open import Data.Vec as Vec hiding ([_]; map)
 open import Data.Star hiding (_▻▻_; map)
 open import Data.Sum hiding (map)
@@ -22,11 +23,17 @@ World n = List (Type n)
 -- these should all be provable/axiomatized
 postulate
   _:+:_ : ∀ {n} → Type n → Ctx n → Ctx (suc n)
-  weaken-𝕊 : ∀ {n} → Sig n → Sig (suc n)
-  weaken-Σ : ∀ {n} → World n → World (suc n)
-  weaken-tp : ∀ {n} → Type n → Type (suc n)
+  weaken₁-𝕊 : ∀ {n} → Sig n → Sig (suc n)
+  weaken+-𝕊 : ∀ {n} k → Sig n → Sig (n + k)
+  weaken₁-Σ : ∀ {n} → World n → World (suc n)
+  weaken₁-tp : ∀ {n} → Type n → Type (suc n)
 
   -- TODO constructor wellformedness rules and assumption
+
+-- telescopes as context transformers
+_⊢⟦_⟧ : ∀ {n m} → Ctx n → Tele n m → Ctx (n + m)
+Γ ⊢⟦ ε ⟧ = subst Ctx (sym $ +-right-identity _) Γ
+_⊢⟦_⟧ {n} Γ (_⟶_ {m = m} x T) = subst Ctx (sym $ +-suc n m) ((x :+: Γ) ⊢⟦ T ⟧)
 
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
 data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig n) → World n → Ctx n → Tele n m → Set
@@ -34,12 +41,27 @@ data _,_,_⊢_::_ : ∀ {n m} (𝕊 : Sig n) → World n → Ctx n → Type n �
 data _,_,_⊢_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Term n → Type n → Set
 data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Exp n → Type n → Set
 
+_,_⊢_fnOk : ∀ {n} → Sig n → Ctx n → Fun n → Set
+_,_⊢_fnOk {n} 𝕊 Γ φ =
+  -- weaken the contexts with the function arguments
+  let Γ' = Γ ⊢⟦ Fun.args φ ⟧ in
+  let 𝕊' = weaken+-𝕊 (Fun.m φ) 𝕊 in
+  -- a substitution to weaken the body and returntype for the surrounding context
+  let σ = wk⋆ n in
+    -- the body should agree with the returntype
+    𝕊' , [] , Γ' ⊢ₑ (Fun.body φ exp/ σ) ∶ (Fun.returntype φ tp/ σ)
+
+-- valid signature contexts
+record _,_⊢ok {n} (𝕊 : Sig n) (Γ : Ctx n) : Set where
+  field
+    funs-ok : All (λ x → 𝕊 , Γ ⊢ x fnOk) (Sig.funs 𝕊)
+
 data _,_,_⊢_teleok where
   ε : ∀ {n 𝕊 Σ} {Γ : Ctx n} → 𝕊 , Σ , Γ ⊢ ε teleok
 
   _⟶_ : ∀ {n m 𝕊 Σ Γ} {A : Type n} {K : Tele (suc n) m}→
         𝕊 , Σ , Γ ⊢ A :: ε →
-        weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ K teleok →
+        weaken₁-𝕊 𝕊 , weaken₁-Σ Σ , (A :+: Γ) ⊢ K teleok →
         𝕊 , Σ , Γ ⊢ (A ⟶ K) teleok
 
 data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig n) (Σ : World n) (Γ : Ctx n) :
@@ -66,7 +88,7 @@ _con[/_] {ts = ts} C p =
 
 -- specialize the return type of a function from it's welltyped arguments
 _fun[/_] : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → Type m → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → Type n
-_fun[/_] {ts = ts} a p = a tp/ subst (Vec _) (tele-fit-length p) (fromList ts)
+_fun[/_] {n} {m} {ts = ts} a p = a tp/ subst (Vec _) (tele-fit-length p) ((fromList ts))
 
 data _,_,_⊢_::_ where
 
@@ -123,7 +145,7 @@ data _,_,_⊢ₑ_∶_ where
 
   lett : ∀ {n x c A B 𝕊 Σ} {Γ : Ctx n} →
          𝕊 , Σ , Γ ⊢ₑ x ∶ A →
-         (weaken-𝕊 𝕊) , (weaken-Σ Σ) , (A :+: Γ) ⊢ₑ c ∶ weaken-tp B →
+         (weaken₁-𝕊 𝕊) , (weaken₁-Σ Σ) , (A :+: Γ) ⊢ₑ c ∶ weaken₁-tp B →
          ------------------------------------------------------------
          𝕊 , Σ , Γ ⊢ₑ lett x c ∶ B
 

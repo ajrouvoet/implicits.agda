@@ -20,7 +20,6 @@ Config n = Exp n × Store n
 !load {i = zero} (x ∷ μ) (s≤s p) = x
 !load {i = suc i} (x ∷ μ) (s≤s p) = !load μ p
 
-
 !store : ∀ {n i} → (μ : Store n) → i < length μ → Term n → Store n
 !store [] () v
 !store {i = zero} (x ∷ μ) (s≤s p) v = v ∷ μ
