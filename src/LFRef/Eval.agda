@@ -25,7 +25,7 @@ Config n = Exp n × Store n
 !store {i = zero} (x ∷ μ) (s≤s p) v = v ∷ μ
 !store {i = suc i} (x ∷ μ) (s≤s p) v = v ∷ (!store μ p v)
 
-!call : ∀ {n es} → (𝕊 : Sig n) → ℕ → All (Val {n}) es → Maybe (Exp n)
+!call : ∀ {n es} → (𝕊 : Sig n) → ℕ → All (Val {n} ∘ tm) es → Maybe (Exp n)
 !call 𝕊 n p with L.lookup n (Sig.funs 𝕊)
 !call 𝕊 n p | yes ((φ , e) , _) = just e
 !call 𝕊 n p | no _ = nothing
@@ -39,11 +39,11 @@ data _⊢_≻_ {n} (𝕊 : Sig n) : (t t' : Config n) → Set where
             ----------------------------------------------
             𝕊 ⊢ (lett (tm t) e) , μ ≻ (e exp/ (sub t)) , μ
 
-  funapp-β : ∀ {fn es μ e'} →
-             (p : All Val es) →
+  funapp-β : ∀ {fn ts μ e'} →
+             (p : All (Val ∘ tm) ts) →
              !call 𝕊 fn p ≡ just e' →
              -------------------------
-             𝕊 ⊢ fn ·★ es , μ ≻ e' , μ
+             𝕊 ⊢ fn ·★ ts , μ ≻ e' , μ
 
   ref-val : ∀ {t μ} →
             ----------------------------------------------------
@@ -64,11 +64,6 @@ data _⊢_≻_ {n} (𝕊 : Sig n) : (t t' : Config n) → Set where
               𝕊 ⊢ x , μ ≻ x' , μ' →
               -------------------------------------
               𝕊 ⊢ (lett x e) , μ ≻ (lett x' e) , μ'
-
-  fun-clos : ∀ {fn es e' μ μ'} →
-             (p : Any (λ e → 𝕊 ⊢ e , μ ≻ e' , μ') es) →
-             ------------------------------------------------------
-             𝕊 ⊢ (fn ·★ es) , μ ≻ (fn ·★ (es [ index p ]≔ e')) , μ'
 
   ref-clos : ∀ {e e' μ μ'} →
              𝕊 ⊢ e , μ ≻ e' , μ' →

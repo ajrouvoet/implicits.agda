@@ -22,7 +22,7 @@ data Exp : ℕ → Set where
   tm : ∀ {n} → Term n → Exp n
 
   -- function calls
-  _·★_ : ∀ {n} → (fn : ℕ) → (as : List (Exp n)) → Exp n
+  _·★_ : ∀ {n} → (fn : ℕ) → (as : List (Term n)) → Exp n
 
   -- heap manipulation
   lett : ∀ {n} → (x : Exp n) → (e : Exp (suc n)) → Exp n
@@ -105,9 +105,9 @@ module App {T} (l : Lift T Term) where
   _exp/_ {n} {n'} (fn ·★ ts) s = fn ·★ map/ ts
     where
       -- inlined for termination checker..
-      map/ : List (Exp n) → List (Exp n')
+      map/ : List (Term n) → List (Term n')
       map/ [] = []
-      map/ (x ∷ ts₁) = x exp/ s ∷ map/ ts₁
+      map/ (x ∷ ts₁) = x / s ∷ map/ ts₁
   lett x e exp/ s = lett (x exp/ s) (e exp/ (s ↑))
   ref x exp/ s = ref (x exp/ s)
   (! x) exp/ s = ! (x exp/ s)

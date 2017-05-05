@@ -32,6 +32,7 @@ postulate
 data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig n) → World n → Ctx n → Tele n m → Set
 data _,_,_⊢_::_ : ∀ {n m} (𝕊 : Sig n) → World n → Ctx n → Type n → Tele n m → Set
 data _,_,_⊢_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Term n → Type n → Set
+data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Exp n → Type n → Set
 
 data _,_,_⊢_teleok where
   ε : ∀ {n 𝕊 Σ} {Γ : Ctx n} → 𝕊 , Σ , Γ ⊢ ε teleok
@@ -41,7 +42,8 @@ data _,_,_⊢_teleok where
         weaken-𝕊 𝕊 , weaken-Σ Σ , (A :+: Γ) ⊢ K teleok →
         𝕊 , Σ , Γ ⊢ (A ⟶ K) teleok
 
-data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig n) (Σ : World n) (Γ : Ctx n) : ∀ {m} → List (Term n) → Tele n m → Set where
+data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig n) (Σ : World n) (Γ : Ctx n) :
+     ∀ {m} → List (Term n) → Tele n m → Set where
 
   ε : 𝕊 , Σ , Γ ⊢ [] ∶ⁿ ε
 
@@ -50,15 +52,21 @@ data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig n) (Σ : World n) (Γ : Ctx n) : ∀ {m} �
         𝕊 , Σ , Γ ⊢ ts ∶ⁿ (B tele/ (sub t)) →
         𝕊 , Σ , Γ ⊢ (t ∷ ts) ∶ⁿ (A ⟶ B)
 
-lem : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → length ts ≡ m
-lem ε = refl
-lem (x ⟶ p) with lem p
-lem (x ⟶ p) | refl = refl
+tele-fit-length : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → length ts ≡ m
+tele-fit-length ε = refl
+tele-fit-length (x ⟶ p) with tele-fit-length p
+tele-fit-length (x ⟶ p) | refl = refl
 
--- construct the type of the term returned from a proper, complete constructor application
+-- specialize the returntype from a constructor from it's welltyped arguments
 _con[/_] : ∀ {n 𝕊 Σ Γ ts} → (C : ConType n) → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ (ConType.args C) → Type n
-_con[/_] {ts = ts} record { m = m ; args = args ; tp = tp ; indices = indices } p =
-  tp [ map (flip _/_ (subst (Vec _) (lem p) (fromList ts))) indices ]
+_con[/_] {ts = ts} C p =
+  (ConType.tp C) [
+    map (flip _/_ (subst (Vec _) (tele-fit-length p) (fromList ts))) (ConType.indices C)
+  ]
+
+-- specialize the return type of a function from it's welltyped arguments
+_fun[/_] : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → Type m → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → Type n
+_fun[/_] {ts = ts} a p = a tp/ subst (Vec _) (tele-fit-length p) (fromList ts)
 
 data _,_,_⊢_::_ where
 
@@ -68,65 +76,71 @@ data _,_,_⊢_::_ where
         𝕊 , Σ , Γ ⊢ Ref A :: ε
 
   Unit : ∀ {n 𝕊 Σ} {Γ : Ctx n} →
-        ----------------------
+        ---------------------
         𝕊 , Σ , Γ ⊢ Unit :: ε
 
   _[_] : ∀ {n 𝕊 Σ} {Γ : Ctx n} {k K ts} →
          (Sig.types 𝕊) L.[ k ]= K →
          𝕊 , Σ , Γ ⊢ (proj₂ K) teleok →
          𝕊 , Σ , Γ ⊢ ts ∶ⁿ (proj₂ K) →
-         ---------------------------------
+         -------------------------
          𝕊 , Σ , Γ ⊢ k [ ts ] :: ε
 
 data _,_,_⊢_∶_ where
 
   unit : ∀ {n 𝕊 Σ} {Γ : Ctx n} →
-        ---------------------------------
+        -----------------------
         𝕊 , Σ , Γ ⊢ unit ∶ Unit
 
   var : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i A} →
         Γ [ i ]= A →
-        ---------------------------------
+        ---------------------
         𝕊 , Σ , Γ ⊢ var i ∶ A
 
   con : ∀ {n 𝕊 Σ} {Γ : Ctx n} {c C ts} →
         (Sig.constructors 𝕊) L.[ c ]= C →
         (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ (ConType.args C)) →
-        ---------------------------------
+        ------------------------------------
         𝕊 , Σ , Γ ⊢ con c ts ∶ (C con[/ p ])
 
   loc : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i S} →
         Σ L.[ i ]= S →
-        ---------------------------------
+        ---------------------
         𝕊 , Σ , Γ ⊢ loc i ∶ S
 
-data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig n) → World n → Ctx n → Exp n → Type n → Set where
+data _,_,_⊢ₑ_∶_ where
 
   tm   : ∀ {n t} {Γ : Ctx n} {𝕊 Σ A} →
          𝕊 , Σ , Γ ⊢ t ∶ A →
-         -----------------
+         ---------------------
          𝕊 , Σ , Γ ⊢ₑ tm t ∶ A
+
+  _·★_ : ∀ {n fn ts 𝕊 Σ φ fd} {Γ : Ctx n} →
+         (Sig.funs 𝕊) L.[ fn ]= (φ , fd) →
+         (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ (FunType.args φ)) →
+         ---------------------------------------------------------
+         𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ (FunType.returntype φ fun[/ p ])
 
   lett : ∀ {n x c A B 𝕊 Σ} {Γ : Ctx n} →
          𝕊 , Σ , Γ ⊢ₑ x ∶ A →
          (weaken-𝕊 𝕊) , (weaken-Σ Σ) , (A :+: Γ) ⊢ₑ c ∶ weaken-tp B →
-         ---------------------------------------------
+         ------------------------------------------------------------
          𝕊 , Σ , Γ ⊢ₑ lett x c ∶ B
 
   ref : ∀ {n x A 𝕊 Σ} {Γ : Ctx n} →
         𝕊 , Σ , Γ ⊢ₑ x ∶ A →
-        ---------------------------------------
+        --------------------------
         𝕊 , Σ , Γ ⊢ₑ ref x ∶ Ref A
 
   !_  : ∀ {n x A} {Γ : Ctx n} {𝕊 Σ} →
         𝕊 , Σ , Γ ⊢ₑ x ∶ Ref A →
-        ---------------------------------------
+        ----------------------
         𝕊 , Σ , Γ ⊢ₑ (! x) ∶ A
 
   _≔_ : ∀ {n i x A} {Γ : Ctx n} {𝕊 Σ} →
         𝕊 , Σ , Γ ⊢ₑ i ∶ Ref A →
         𝕊 , Σ , Γ ⊢ₑ x ∶ A →
-        ---------------------------------------
+        --------------------------
         𝕊 , Σ , Γ ⊢ₑ (i ≔ x) ∶ Unit
 
 -- store welltypedness relation
