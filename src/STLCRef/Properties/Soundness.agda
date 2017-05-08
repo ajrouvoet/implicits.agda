@@ -60,21 +60,11 @@ progress p (wt ≔ x) | inj₁ v | inj₁ w with ref-value-lemma wt v
 progress p (loc q ≔ x) | inj₁ (loc .i) | inj₁ w | (i , refl) =
   inj₂ (_ , (_ , Assign (P.subst (_<_ _) (pointwise-length p) ([-]=-length q)) w))
 
--- extending the store preserves location typings
-⊒-loctype : ∀ {Σ Σ' A} {i} → Σ' ⊒ Σ → Σ ⊢loc i ∶ A → Σ' ⊢loc i ∶ A
-⊒-loctype [] ()
-⊒-loctype (x ∷ ext) here = here
-⊒-loctype (x ∷ ext) (there p) = there (⊒-loctype ext p)
-
 postulate
   sub-preserves : ∀ {n Γ Σ A B x} {e : Exp (suc n)} →
     (B ∷ Γ) , Σ ⊢ e ∶ A →
     Γ , Σ ⊢ x ∶ B →
     Γ , Σ ⊢ (e / sub x) ∶ A
-
-∷ʳ⊢loc : ∀ Σ {A} → (Σ ∷ʳ A) ⊢loc (length Σ) ∶ A
-∷ʳ⊢loc [] = here
-∷ʳ⊢loc (x ∷ Σ) = there (∷ʳ⊢loc Σ)
 
 !!-loc : ∀ {n Σ Σ' A μ i} {Γ : Ctx n} →
          Rel (λ A x → Γ , Σ ⊢ proj₁ x ∶ A) Σ' μ →
@@ -87,7 +77,7 @@ postulate
 ⊒-preserves : ∀ {n Γ Σ Σ' A} {e : Exp n} → Σ' ⊒ Σ → Γ , Σ ⊢ e ∶ A → Γ , Σ' ⊢ e ∶ A
 ⊒-preserves ext unit = unit
 ⊒-preserves ext (var x) = var x
-⊒-preserves ext (loc x) = loc (⊒-loctype ext x)
+⊒-preserves ext (loc x) = loc (xs⊒ys[i] x ext)
 ⊒-preserves ext (ƛ p) = ƛ (⊒-preserves ext p)
 ⊒-preserves ext (p · q) = (⊒-preserves ext p) · ⊒-preserves ext q
 ⊒-preserves ext (ref p) = ref (⊒-preserves ext p)
@@ -108,7 +98,7 @@ postulate
 ≻-preserves {Σ = Σ} (ƛ wt · wt₁) p AppAbs = Σ , sub-preserves wt wt₁ , ⊑-refl , p
 ≻-preserves {Σ = Σ} (ref {x = x} {A} wt) p (RefVal v) =
   Σ ∷ʳ A ,
-    loc (P.subst (λ i → _ ⊢loc i ∶ _) (pointwise-length p) (∷ʳ⊢loc Σ)) ,
+    loc (P.subst (λ i → _ ⊢loc i ∶ _) (pointwise-length p) (∷ʳ[length] Σ)) ,
     ∷ʳ-⊒ A Σ ,
     {!!}
 ≻-preserves {Σ = Σ₁} (! loc x) p (DerefLoc l) = Σ₁ , !!-loc p x l , ⊑-refl , p

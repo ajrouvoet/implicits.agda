@@ -7,6 +7,7 @@ open import Data.List
 open import Data.List.Reverse
 open import Data.Nat
 open import Data.Fin hiding (_<_)
+open import Extensions.List as L
 
 open import STLCRef.Syntax
 open import STLCRef.Welltyped
@@ -15,11 +16,6 @@ _!!_ : ∀ {n i} → (μ : Store n) → i < length μ → ∃ (Val {n})
 _!!_ {i = i} [] ()
 _!!_ {i = zero} (x ∷ μ) (s≤s p) = x
 _!!_ {i = suc i} (x ∷ μ) (s≤s p) = μ !! p
-
-!store : ∀ {n i e} → (μ : Store n) → i < length μ → Val {n} e → Store n
-!store [] () v
-!store {i = zero} (x ∷ μ) (s≤s p) v = (, v) ∷ μ
-!store {i = suc i} (x ∷ μ) (s≤s p) v = x ∷ (!store μ p v)
 
 Config : (n : ℕ) → Set
 Config n = Exp n × Store n
@@ -53,7 +49,7 @@ data _≻_ : ∀ {n} → Config n → Config n → Set where
            (p : i < length μ) →
            (v : Val e) →
            ----------------------------------------------
-           loc i ≔ e , μ ≻ unit , !store μ p v
+           loc i ≔ e , μ ≻ unit , (μ L.[ fromℕ≤ p ]≔ (, v))
 
   ---------------------------------------
   -- contextual closure

@@ -30,8 +30,13 @@ data Exp : ℕ → Set where
   !_ : ∀ {n} → Exp n → Exp n
   _≔_ : ∀ {n} → Exp n → Exp n → Exp n
 
-data Val : ∀ {n} → Exp n → Set where
-  tm : ∀ {n} {t : Term n} → Val (tm t)
+data Val : ∀ {n} → Term n → Set where
+  loc : ∀ {n i} → Val (loc {n} i)
+  unit : ∀ {n} → Val (unit {n})
+  con : ∀ {n k ts} → Val (con {n} k ts)
+
+data ExpVal : ∀ {n} → Exp n → Set where
+  tm : ∀ {n t} → ExpVal (tm {n} t)
 
 -- telescoped contexts/arguments
 data Tele : (n m : ℕ) → Set where
@@ -45,30 +50,27 @@ data Type where
   Unit : ∀ {n} → Type n
 
 Store : ℕ → Set
-Store n = List (Term n)
+Store n = List (∃ (Val {n}))
 
-record ConType (n : ℕ) : Set where
+record ConType : Set where
   field
     m : ℕ
-    args : Tele n m
+    args : Tele 0 m
     tp   : ℕ
     indices : List (Term m)
 
-record Fun (n : ℕ) : Set where
+record Fun : Set where
   field
     m : ℕ
-    args : Tele n m
+    args : Tele 0 m
     returntype : Type m
     body : Exp m
 
-FunDef : ℕ → Set
-FunDef n = Exp n
-
-record Sig (n : ℕ) : Set where
+record Sig : Set where
   field
-    types : List (∃ (Tele n))
-    constructors : List (ConType n)
-    funs : List (Fun n)
+    types : List (∃ (Tele 0))
+    constructors : List ConType
+    funs : List Fun
 
 open import Data.Fin.Substitution
 

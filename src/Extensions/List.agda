@@ -3,15 +3,22 @@ module Extensions.List where
 open import Prelude
 
 open import Data.List
-open import Data.Maybe
+open import Data.Fin using (fromℕ≤)
+open import Data.List.All hiding (lookup; map)
+open import Data.Maybe hiding (All; map)
 open import Relation.Nullary
 open import Relation.Nullary.Decidable using (map′)
 open import Relation.Binary.Core using (REL; Reflexive; Transitive)
-open import Relation.Binary.List.Pointwise hiding (refl)
+open import Relation.Binary.List.Pointwise hiding (refl; map)
 
 data _[_]=_ {a} {A : Set a} : List A → ℕ → A → Set where
   here : ∀ {x xs} → (x ∷ xs) [ 0 ]= x
   there : ∀ {x y xs n} → xs [ n ]= x → (y ∷ xs) [ suc n ]= x
+
+[]=-functional : ∀ {a} {A : Set a} → (l : List A) → (i : ℕ) →
+                   ∀ {x y : A} → l [ i ]= x → l [ i ]= y → x ≡ y
+[]=-functional .(_ ∷ _) .0 here here = refl
+[]=-functional .(_ ∷ _) .(suc _) (there p) (there q) = []=-functional _ _ p q
 
 lookup : ∀ {a} {A : Set a} → (i : ℕ) → (l : List A) → Dec (∃ λ x → l [ i ]= x)
 lookup _ [] = no (λ{ (_ , ())})
@@ -21,10 +28,22 @@ lookup (suc i) (_ ∷ l) = map′
   (λ{ (x , there p) → x , p})
   (lookup i l)
 
+all-lookup : ∀ {a} {A : Set a} {l : List A} {i x p P} → l [ i ]= x → All {p = p} P l → P x
+all-lookup here (px ∷ l) = px
+all-lookup (there i) (px ∷ l) = all-lookup i l
+
+infixl 10 _[_]≔_
 _[_]≔_ : ∀ {a} {A : Set a} → (l : List A) → Fin (length l) → A → List A
 [] [ () ]≔ x
 (x ∷ xs) [ zero ]≔ x' = x' ∷ xs
 (x ∷ xs) [ suc i ]≔ y = xs [ i ]≔ y
+
+-- proof matters; update a particular witness of a property
+_All[_]≔_ : ∀ {a p} {A : Set a} {P : A → Set p} {xs : List A} {i x} →
+            All P xs → xs [ i ]= x → P x → All P xs
+[] All[ () ]≔ px
+(px ∷ xs) All[ here ]≔ px' = px' ∷ xs
+(px ∷ xs) All[ there i ]≔ px' = px ∷ (xs All[ i ]≔ px')
 
 -- prefix predicate for lists
 infix 4 _⊑_
@@ -51,10 +70,45 @@ xs ⊒ ys = ys ⊑ xs
 ∷ʳ-⊒ x [] = []
 ∷ʳ-⊒ x (x₁ ∷ Σ₁) = x₁ ∷ (∷ʳ-⊒ x Σ₁)
 
+-- indexes into a prefix point to the same element in extensions
+xs⊒ys[i] : ∀ {a} {A : Set a} {xs : List A} {ys : List A} {i y} →
+           xs [ i ]= y → (p : ys ⊒ xs) → ys [ i ]= y
+xs⊒ys[i] here (x ∷ q) = here
+xs⊒ys[i] (there p) (x ∷ q) = there (xs⊒ys[i] p q)
+
+-- prefix is preserved by map
+⊑-map : ∀ {a b} {A : Set a} {B : Set b} {xs ys : List A} {f : A → B} →
+        xs ⊑ ys → map f xs ⊑ map f ys
+⊑-map [] = []
+⊑-map {f = f} (x ∷ p) = f x ∷ (⊑-map p)
+
 pointwise-length : ∀ {a b ℓ A B P l m} → Rel {a} {b} {ℓ} {A} {B} P l m → length l ≡ length m
 pointwise-length [] = refl
 pointwise-length (x∼y ∷ p) = cong suc (pointwise-length p)
 
-[-]=-length : ∀ {a} {A : Set a} {L : List A} {i x} → L [ i ]= x → i < length L
-[-]=-length here = s≤s z≤n
-[-]=-length (there p) = s≤s ([-]=-length p)
+[]=-length : ∀ {a} {A : Set a} {L : List A} {i x} → L [ i ]= x → i < length L
+[]=-length here = s≤s z≤n
+[]=-length (there p) = s≤s ([]=-length p)
+
+∷ʳ[length] : ∀ {a} {A : Set a} (l : List A) {x} → (l ∷ʳ x) [ length l ]= x
+∷ʳ[length] [] = here
+∷ʳ[length] (x ∷ Σ) = there (∷ʳ[length] Σ)
+
+all-∷ʳ : ∀ {a p} {A : Set a} {l : List A} {x} {P : A → Set p} → All P l → P x → All P (l ∷ʳ x)
+all-∷ʳ [] q = q ∷ []
+all-∷ʳ (px ∷ p) q = px ∷ (all-∷ʳ p q)
+
+pointwise-∷ʳ : ∀ {a b ℓ A B P l m x y} → Rel {a} {b} {ℓ} {A} {B} P l m → P x y →
+               Rel {a} {b} {ℓ} {A} {B} P (l ∷ʳ x) (m ∷ʳ y)
+pointwise-∷ʳ [] q = q ∷ []
+pointwise-∷ʳ (x∼y ∷ p) q = x∼y ∷ (pointwise-∷ʳ p q)
+
+postulate
+  pointwise-[]≔ : ∀ {a b ℓ A B P l m i x y} →
+                  Rel {a} {b} {ℓ} {A} {B} P l m → (p : l [ i ]= x) → (q : i < length m) → P x y →
+                  Rel {a} {b} {ℓ} {A} {B} P l (m [ fromℕ≤ q ]≔ y)
+{-}
+pointwise-[]≔ [] () r
+pointwise-[]≔ (x∼y ∷ r) here (s≤s z≤n) z = z ∷ r
+pointwise-[]≔ (x∼y ∷ r) (there p) (s≤s q) z = subst (λ x → Rel _ _ x) {!!} (x∼y ∷ pointwise-[]≔ r p q z) 
+-}
