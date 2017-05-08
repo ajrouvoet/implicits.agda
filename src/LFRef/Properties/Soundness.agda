@@ -3,7 +3,7 @@ module LFRef.Properties.Soundness where
 open import Data.Nat
 open import Data.Sum
 open import Data.Product as Pr
-open import Data.List
+open import Data.List as List
 open import Data.Fin using (fromℕ≤; Fin)
 open import Data.Vec hiding (_∷ʳ_)
 open import Data.Star
@@ -93,24 +93,26 @@ lem₁ ok p q = {!!}
 !load-ok (x∼y ∷ p) here (s≤s z≤n) = x∼y
 !load-ok (x∼y ∷ p) (there q) (s≤s l) = !load-ok p q l
 
-⊒-preserves-tele : ∀ {n m Γ Σ Σ' 𝕊} {ts : List (Term n)} {T : Tele n m}→ Σ' ⊒ Σ →
-                   𝕊 , Σ , Γ ⊢ ts ∶ⁿ T →
-                   𝕊 , Σ' , Γ ⊢ ts ∶ⁿ T
-⊒-preserves-tele ext p = {!!}
+mutual
+  ⊒-preserves-tm : ∀ {n Γ Σ Σ' A 𝕊} {t : Term n} → Σ' ⊒ Σ → 𝕊 , Σ , Γ ⊢ t ∶ A → 𝕊 , Σ' , Γ ⊢ t ∶ A
+  ⊒-preserves-tm ext unit = unit
+  ⊒-preserves-tm ext (var x) = var x
+  ⊒-preserves-tm ext (con x p q) = con x (⊒-preserves-tele ext p) q
+  ⊒-preserves-tm ext (loc x) = loc (xs⊒ys[i] x ext)
 
-⊒-preserves-tm : ∀ {n Γ Σ Σ' A 𝕊} {t : Term n} → Σ' ⊒ Σ → 𝕊 , Σ , Γ ⊢ t ∶ A → 𝕊 , Σ' , Γ ⊢ t ∶ A
-⊒-preserves-tm ext unit = unit
-⊒-preserves-tm ext (var x) = var x
-⊒-preserves-tm ext (con x p q) = con x (⊒-preserves-tele ext p) q
-⊒-preserves-tm ext (loc x) = loc (xs⊒ys[i] x ext)
+  ⊒-preserves-tele : ∀ {n m Γ Σ Σ' 𝕊} {ts : List (Term n)} {T : Tele n m} → Σ' ⊒ Σ →
+                    𝕊 , Σ , Γ ⊢ ts ∶ⁿ T →
+                    𝕊 , Σ' , Γ ⊢ ts ∶ⁿ T
+  ⊒-preserves-tele ext ε = ε
+  ⊒-preserves-tele ext (x ⟶ p) = ⊒-preserves-tm ext x ⟶ (⊒-preserves-tele ext p)
 
 ⊒-preserves : ∀ {n Γ Σ Σ' A 𝕊} {e : Exp n} → Σ' ⊒ Σ → 𝕊 , Σ , Γ ⊢ₑ e ∶ A → 𝕊 , Σ' , Γ ⊢ₑ e ∶ A
 ⊒-preserves ext (tm x) = tm (⊒-preserves-tm ext x)
-⊒-preserves ext ((x ·★ p) q) = {!!}
-⊒-preserves ext (lett p p₁) = {!!}
-⊒-preserves ext (ref p) = {!!}
-⊒-preserves ext (! p) = {!!}
-⊒-preserves ext (p ≔ p₁) = {!!}
+⊒-preserves ext ((x ·★ p) q) = (x ·★ (⊒-preserves-tele ext p)) q
+⊒-preserves ext (lett p q) = lett (⊒-preserves ext p) (⊒-preserves (⊑-map ext) q)
+⊒-preserves ext (ref p) = ref (⊒-preserves ext p)
+⊒-preserves ext (! p) = ! (⊒-preserves ext p)
+⊒-preserves ext (p ≔ q) = ⊒-preserves ext p ≔ ⊒-preserves ext q
 
 ≻-preserves : ∀ {n Γ 𝕊 Σ A} {e : Exp n} {e' μ' μ} →
               𝕊 , Γ ⊢ok →
@@ -133,14 +135,15 @@ lem₁ ok p q = {!!}
 ≻-preserves {Σ = Σ} ok (ref {A = A} (tm x)) q (ref-val v) = let ext = (∷ʳ-⊒ A Σ) in
   Σ ∷ʳ A ,
   (tm (loc (P.subst (λ i → _ L.[ i ]= _) (pointwise-length q) (∷ʳ[length] Σ)))) ,
-  ext , pointwise-∷ʳ (PRel.map (⊒-preserves-tm ext) q) (⊒-preserves-tm ext x)
+  ext ,
+  pointwise-∷ʳ (PRel.map (⊒-preserves-tm ext) q) (⊒-preserves-tm ext x)
 
 ≻-preserves ok (ref p) q (ref-clos step) = {!!}
 
 ≻-preserves {Σ = Σ₁} ok (! tm (loc x)) q (!-val p) = Σ₁ , tm (!load-ok q x p) , ⊑-refl , q
 ≻-preserves ok (! p) q (!-clos step) = {!!}
 
-≻-preserves {σ = σ₁} ok (_≔_ {a = a} (tm (loc x)) (tm y)) q (≔-val p v) =
-  σ₁ , tm unit , ⊑-refl , pointwise-[]≔ q x p y
+≻-preserves {Σ = Σ₁} ok (_≔_ (tm (loc x)) (tm y)) q (≔-val p v) =
+  Σ₁ , tm unit , ⊑-refl , pointwise-[]≔ q x p y
 ≻-preserves ok (p ≔ p₁) q (≔-clos₁ step) = {!!}
 ≻-preserves ok (p ≔ p₁) q (≔-clos₂ step) = {!!}
