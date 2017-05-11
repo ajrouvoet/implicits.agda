@@ -16,8 +16,8 @@ Ctx : (n : ℕ) → Set
 Ctx n = Vec (Type n) n
 
 -- store typings
-World : ℕ → Set
-World n = List (Type n)
+World : Set
+World = List (Type 0)
 
 weaken₁-tp : ∀ {n} → Type n → Type (suc n)
 weaken₁-tp tp = tp tp/ wk
@@ -28,14 +28,12 @@ a :+: Γ = (weaken₁-tp a) ∷ (Vec.map (flip _tp/_ wk) Γ)
 weaken+-tm : ∀ {m} n → Term m → Term (n + m)
 weaken+-tm n t = t / (wk⋆ n)
 
-weaken+-tp : ∀ {m} n → Type m → Type (n + m)
-weaken+-tp n t = t tp/ (wk⋆ n)
+weaken+-tp : ∀ n → Type 0 → Type n
+weaken+-tp zero t = t
+weaken+-tp (suc n) t = subst Type (+-right-identity (suc n)) (t tp/ (wk⋆ (suc n)))
 
 weaken+-tele : ∀ {m n} k → Tele n m → Tele (n + k) m
 weaken+-tele k T = subst (flip Tele _) (+-comm k _) (T tele/ (wk⋆ k))
-
-weaken₁-Σ : ∀ {n} → World n → World (suc n)
-weaken₁-Σ Σ = map (flip _tp/_ wk) Σ
 
 -- telescopes as context transformers
 _⊢⟦_⟧ : ∀ {n m} → Ctx n → Tele n m → Ctx (n + m)
@@ -43,10 +41,10 @@ _⊢⟦_⟧ : ∀ {n m} → Ctx n → Tele n m → Ctx (n + m)
 _⊢⟦_⟧ {n} Γ (_⟶_ {m = m} x T) = subst Ctx (sym $ +-suc n m) ((x :+: Γ) ⊢⟦ T ⟧)
 
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
-data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig) → World n → Ctx n → Tele n m → Set
-data _,_,_⊢_::_ : ∀ {n m} (𝕊 : Sig) → World n → Ctx n → Type n → Tele n m → Set
-data _,_,_⊢_∶_ : ∀ {n} (𝕊 : Sig) → World n → Ctx n → Term n → Type n → Set
-data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig) → World n → Ctx n → Exp n → Type n → Set
+data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig) → World → Ctx n → Tele n m → Set
+data _,_,_⊢_::_ : ∀ {n m} (𝕊 : Sig) → World → Ctx n → Type n → Tele n m → Set
+data _,_,_⊢_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → Term n → Type n → Set
+data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → Exp n → Type n → Set
 
 _⊢_fnOk : Sig → Fun → Set
 _⊢_fnOk 𝕊 φ = 𝕊 , [] , ([] ⊢⟦ Fun.args φ ⟧) ⊢ₑ (Fun.body φ) ∶ (Fun.returntype φ)
@@ -61,10 +59,10 @@ data _,_,_⊢_teleok where
 
   _⟶_ : ∀ {n m 𝕊 Σ Γ} {A : Type n} {K : Tele (suc n) m}→
         𝕊 , Σ , Γ ⊢ A :: ε →
-        𝕊 , weaken₁-Σ Σ , (A :+: Γ) ⊢ K teleok →
+        𝕊 , Σ , (A :+: Γ) ⊢ K teleok →
         𝕊 , Σ , Γ ⊢ (A ⟶ K) teleok
 
-data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig) (Σ : World n) (Γ : Ctx n) :
+data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig) (Σ : World) (Γ : Ctx n) :
      ∀ {m} → List (Term n) → Tele n m → Set where
 
   ε : 𝕊 , Σ , Γ ⊢ [] ∶ⁿ ε
@@ -131,7 +129,7 @@ data _,_,_⊢_∶_ where
   loc : ∀ {n 𝕊 Σ} {Γ : Ctx n} {i S} →
         Σ L.[ i ]= S →
         ---------------------
-        𝕊 , Σ , Γ ⊢ loc i ∶ Ref S
+        𝕊 , Σ , Γ ⊢ loc i ∶ Ref (weaken+-tp n S)
 
 data _,_,_⊢ₑ_∶_ where
 
@@ -149,7 +147,7 @@ data _,_,_⊢ₑ_∶_ where
 
   lett : ∀ {n x c A B 𝕊 Σ} {Γ : Ctx n} →
          𝕊 , Σ , Γ ⊢ₑ x ∶ A →
-         𝕊 , (weaken₁-Σ Σ) , (A :+: Γ) ⊢ₑ c ∶ weaken₁-tp B →
+         𝕊 , (Σ) , (A :+: Γ) ⊢ₑ c ∶ weaken₁-tp B →
          ---------------------------------------------------
          𝕊 , Σ , Γ ⊢ₑ lett x c ∶ B
 
@@ -172,5 +170,5 @@ data _,_,_⊢ₑ_∶_ where
 
 -- store welltypedness relation
 -- as a pointwise lifting of the welltyped relation on closed expressions between a world and a store
-_,_,_⊢_ : ∀ {n} → Sig → World n → Ctx n → Store n → Set
-𝕊 , Σ , Γ ⊢ μ = Rel (λ A x → 𝕊 , Σ , Γ ⊢ (proj₁ x) ∶ A) Σ μ
+_,_⊢_ : Sig → World → Store → Set
+_,_⊢_ 𝕊 Σ μ = Rel (λ A x → 𝕊 , Σ , [] ⊢ (proj₁ x) ∶ A) Σ μ

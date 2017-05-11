@@ -15,3 +15,7 @@ m+1+n≡1+m+n (suc m) n = cong suc (m+1+n≡1+m+n m n)
 <-+ {suc m} (s≤s m<m') x = s≤s (<-+ m<m' x)
 <-+ {zero} {suc n} {zero} z≤n (s≤s n<n') = s≤s n<n'
 <-+ {zero} {suc n} {suc m'} z≤n (s≤s n<n') = s≤s (<-+ {m' = m'} z≤n (≤-step n<n'))
+
+<-unique : ∀ {i u} (p q : i < u) → p ≡ q
+<-unique (s≤s z≤n) (s≤s z≤n) = refl
+<-unique (s≤s (s≤s p)) (s≤s (s≤s q)) = sym (cong s≤s (<-unique (s≤s q) (s≤s p)))

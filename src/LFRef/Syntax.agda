@@ -30,13 +30,13 @@ data Exp : ℕ → Set where
   !_ : ∀ {n} → Exp n → Exp n
   _≔_ : ∀ {n} → Exp n → Exp n → Exp n
 
-data Val : ∀ {n} → Term n → Set where
-  loc : ∀ {n i} → Val (loc {n} i)
-  unit : ∀ {n} → Val (unit {n})
-  con : ∀ {n k ts} → Val (con {n} k ts)
+data Val : Term 0 → Set where
+  loc : ∀ {i} → Val (loc i)
+  unit : Val unit
+  con : ∀ {k ts} → Val (con k ts)
 
-data ExpVal : ∀ {n} → Exp n → Set where
-  tm : ∀ {n t} → ExpVal (tm {n} t)
+data ExpVal : Exp zero → Set where
+  tm : ∀ {t} → Val t → ExpVal (tm t)
 
 -- telescoped contexts/arguments
 data Tele : (n m : ℕ) → Set where
@@ -49,8 +49,8 @@ data Type where
   Ref : ∀ {n} → (A : Type n) → Type n
   Unit : ∀ {n} → Type n
 
-Store : ℕ → Set
-Store n = List (∃ (Val {n}))
+Store : Set
+Store = List (∃ Val)
 
 record ConType : Set where
   field

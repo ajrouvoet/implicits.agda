@@ -13,15 +13,15 @@ open import LFRef.Syntax hiding (subst)
 open import LFRef.Welltyped
 
 -- machine configuration: expression to reduce and a store
-Config : ℕ → Set
-Config n = Exp n × Store n
+Config : Set
+Config = Exp 0 × Store
 
-!load : ∀ {n i} → (μ : Store n) → i < length μ → Term n
+!load : ∀ {i} → (μ : Store) → i < length μ → Term 0
 !load {i = i} [] ()
 !load {i = zero} (x ∷ μ) (s≤s p) = proj₁ x
 !load {i = suc i} (x ∷ μ) (s≤s p) = !load μ p
 
-!store : ∀ {n i e} → (μ : Store n) → i < length μ → Val {n} e → Store n
+!store : ∀ {i e} → (μ : Store) → i < length μ → Val e → Store
 !store [] () v
 !store {i = zero} (x ∷ μ) (s≤s p) v = (, v) ∷ μ
 !store {i = suc i} (x ∷ μ) (s≤s p) v = (, v) ∷ (!store μ p v)
@@ -31,7 +31,7 @@ Config n = Exp n × Store n
 
 -- small steps for expressions
 infix 1 _⊢_≻_
-data _⊢_≻_ {n} (𝕊 : Sig) : (t t' : Config n) → Set where
+data _⊢_≻_ (𝕊 : Sig) : (t t' : Config) → Set where
 
   -- reductions
   lett-β  : ∀ {t e μ} →
@@ -45,7 +45,7 @@ data _⊢_≻_ {n} (𝕊 : Sig) : (t t' : Config n) → Set where
              𝕊 ⊢ fn ·★ ts , μ ≻ (!call (Fun.body φ) ts p) , μ
 
   ref-val : ∀ {t μ} →
-            (v : Val {n} t) →
+            (v : Val t) →
             ----------------------------------------------------
             𝕊 ⊢ ref (tm t) , μ ≻ (tm (loc (length μ))) , (μ ∷ʳ (, v))
 
@@ -82,15 +82,12 @@ data _⊢_≻_ {n} (𝕊 : Sig) : (t t' : Config n) → Set where
              𝕊 ⊢ x ≔ e , μ ≻ x' ≔ e , μ'
 
   ≔-clos₂  : ∀ {x e e' μ μ'} →
+             ExpVal x →
              𝕊 ⊢ e , μ ≻ e' , μ' →
              --------------------------
              𝕊 ⊢ x ≔ e , μ ≻ x ≔ e' , μ'
 
--- Church-Rosser
--- diamond : ∀ {n} {u u' u'' : Term n} → u ≻ u' → u ≻ u'' → ∃ λ v → (u' ≻ v × u'' ≻ v)
--- church-rosser : ∀ {n} {u u' u'' : Term n} → u ≻⋆ u' → u ≻⋆ u'' → ∃ λ v → (u' ≻⋆ v × u'' ≻⋆ v)
-
 -- reflexive-transitive closure of ≻
 open import Data.Star
-_⊢_≻⋆_ : ∀ {n} → (Sig) → (c c' : Config n) → Set
+_⊢_≻⋆_ : (Sig) → (c c' : Config) → Set
 𝕊 ⊢ c ≻⋆ c' = Star (_⊢_≻_ 𝕊) c c'
