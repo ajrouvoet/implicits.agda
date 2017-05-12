@@ -38,6 +38,7 @@ progress p (lett (lett wtx wtx₁) e) | inj₁ ()
 progress p (lett (ref wtx) e) | inj₁ ()
 progress p (lett (! wtx) e) | inj₁ ()
 progress p (lett (wtx ≔ wtx₁) e) | inj₁ ()
+
 progress p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos step))
 
 progress p (ref e) with progress p e
@@ -81,9 +82,12 @@ postulate
           (q : length ts ≡ (Fun.m φ)) →
           𝕊 , Σ , Γ ⊢ₑ (!call (Fun.body φ) ts q) ∶ ((Fun.returntype φ) fun[ ts / q ])
 
+-- loading from a welltyped store results in a welltyped term
 !load-ok : ∀ {Σ Σ' A μ i 𝕊} →
+            -- store-welltypedness type (strengthened for induction)
             Rel (λ A x → 𝕊 , Σ , [] ⊢ (proj₁ x) ∶ A) Σ' μ →
-            Σ' L.[ i ]= A → (l : i < length μ) → 𝕊 , Σ , [] ⊢ (!load μ l) ∶ A
+            Σ' L.[ i ]= A → (l : i < length μ) →
+            𝕊 , Σ , [] ⊢ (!load μ l) ∶ A
 !load-ok [] ()
 !load-ok (x∼y ∷ p) here (s≤s z≤n) = x∼y
 !load-ok (x∼y ∷ p) (there q) (s≤s l) = !load-ok p q l
@@ -101,6 +105,7 @@ mutual
   ⊒-preserves-tele ext ε = ε
   ⊒-preserves-tele ext (x ⟶ p) = ⊒-preserves-tm ext x ⟶ (⊒-preserves-tele ext p)
 
+-- welltypedness is preseved under store extensions
 ⊒-preserves : ∀ {n Γ Σ Σ' A 𝕊} {e : Exp n} → Σ' ⊒ Σ → 𝕊 , Σ , Γ ⊢ₑ e ∶ A → 𝕊 , Σ' , Γ ⊢ₑ e ∶ A
 ⊒-preserves ext (tm x) = tm (⊒-preserves-tm ext x)
 ⊒-preserves ext ((x ·★ p) q) = (x ·★ (⊒-preserves-tele ext p)) q
@@ -109,11 +114,12 @@ mutual
 ⊒-preserves ext (! p) = ! (⊒-preserves ext p)
 ⊒-preserves ext (p ≔ q) = ⊒-preserves ext p ≔ ⊒-preserves ext q
 
-closure-cong : ∀ {Σ μ 𝕊 A B} {e : Exp 0} (c : Exp 0 → Exp 0) →
+-- helper for lifting preserving reductions into their closure
+clos-cong : ∀ {Σ μ 𝕊 A B} {e : Exp 0} (c : Exp 0 → Exp 0) →
                 (f : ∀ {Σ'} (ext : Σ' ⊒ Σ) → 𝕊 , Σ' , [] ⊢ₑ e ∶ A → 𝕊 , Σ' , [] ⊢ₑ c e ∶ B) →
                 (∃ λ Σ' → 𝕊 , Σ' , [] ⊢ₑ e ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' ⊢ μ) →
                 ∃ λ Σ' → 𝕊 , Σ' , [] ⊢ₑ c e ∶ B × Σ' ⊒ Σ × 𝕊 , Σ' ⊢ μ
-closure-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
+clos-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
 
 ≻-preserves : ∀ {𝕊 Σ A} {e : Exp 0} {e' μ' μ} →
               𝕊 , [] ⊢ok →
@@ -122,37 +128,48 @@ closure-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
               𝕊 ⊢ e , μ ≻ e' , μ' →
               -------------------------------------------------------
               ∃ λ Σ' → 𝕊 , Σ' , [] ⊢ₑ e' ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' ⊢ μ'
+
+-- variables
 ≻-preserves ok (tm x) q ()
 
+-- function application
 ≻-preserves {Σ = Σ} ok (_·★_ fn ts refl) q (funapp-β x refl) with
   []=-functional _ _  fn x | all-lookup fn (_,_⊢ok.funs-ok ok)
 ... | refl | fn-ok = Σ , (lem₁ fn-ok ts refl) , ⊑-refl , q
 
+-- let binding
 ≻-preserves {Σ = Σ} ok (lett (tm x) p) q lett-β = Σ , lem₂ p x , ⊑-refl , q
 ≻-preserves ok (lett p p₁) q (lett-clos step) with ≻-preserves ok p q step
-≻-preserves ok (lett p p₁) q (lett-clos step) | Σ₂ , wte' , Σ₂⊒Σ₁ , q' =
-  Σ₂ , (lett wte' ((⊒-preserves Σ₂⊒Σ₁ p₁)) , Σ₂⊒Σ₁ , q')
+... | Σ₂ , wte' , Σ₂⊒Σ₁ , q' =
+  Σ₂ , lett wte' ((⊒-preserves Σ₂⊒Σ₁ p₁)) , Σ₂⊒Σ₁ , q'
 
+-- new references
 ≻-preserves {Σ = Σ} ok (ref {A = A} (tm x)) q (ref-val v) = let ext = (∷ʳ-⊒ A Σ) in
   Σ ∷ʳ A ,
   (tm (loc (P.subst (λ i → _ L.[ i ]= _) (pointwise-length q) (∷ʳ[length] Σ A)))) ,
   ext ,
   pointwise-∷ʳ (PRel.map (⊒-preserves-tm ext) q) (⊒-preserves-tm ext x)
+≻-preserves ok (ref p) q (ref-clos step) =
+  clos-cong
+    ref (const ref)
+    (≻-preserves ok p q step)
 
-≻-preserves ok (ref p) q (ref-clos step) = closure-cong ref (const ref) (≻-preserves ok p q step)
+-- dereferencing
+≻-preserves {Σ = Σ₁} ok (! tm (loc x)) q (!-val p)
+  = Σ₁ , tm (!load-ok q x p) , ⊑-refl , q
+≻-preserves ok (! p) q (!-clos step) =
+  clos-cong
+    !_ (const !_)
+    (≻-preserves ok p q step)
 
-≻-preserves {Σ = Σ₁} ok (! tm (loc x)) q (!-val p) = Σ₁ , tm (!load-ok q x p) , ⊑-refl , q
-≻-preserves ok (! p) q (!-clos step) = closure-cong !_ (const !_) (≻-preserves ok p q step)
-
+-- assignment
 ≻-preserves {Σ = Σ₁} ok (_≔_ (tm (loc x)) (tm y)) q (≔-val p v) =
   Σ₁ , tm unit , ⊑-refl , pointwise-[]≔ q x p y
 ≻-preserves ok (p ≔ p₁) q (≔-clos₁ step) =
-  closure-cong
-    (λ p' → p' ≔ _)
-    (λ ext p' → p' ≔ ⊒-preserves ext p₁)
+  clos-cong
+    (λ p' → p' ≔ _) (λ ext p' → p' ≔ ⊒-preserves ext p₁)
     (≻-preserves ok p q step)
 ≻-preserves ok (p ≔ p₁) q (≔-clos₂ v step) =
-  closure-cong
-    (λ p' → _ ≔ p')
-    (λ ext p' → ⊒-preserves ext p ≔ p')
+  clos-cong
+    (λ p' → _ ≔ p') (λ ext p' → ⊒-preserves ext p ≔ p')
     (≻-preserves ok p₁ q step)

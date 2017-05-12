@@ -2,7 +2,7 @@ module Prelude where
 
 open import Data.Nat public
 open import Data.Nat.Properties.Simple public
-open import Data.Fin using (Fin; #_) public
+open import Data.Fin using (Fin; #_; suc; zero) public
 
 open import Data.Unit using (tt; ⊤) public
 open import Data.Empty public

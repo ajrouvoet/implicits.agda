@@ -1,4 +1,4 @@
-module STLCRef.Everything where
+module STLCRef.Readme where
 
 open import STLCRef.Syntax
 open import STLCRef.Welltyped

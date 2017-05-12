@@ -11,7 +11,7 @@ open import Extensions.List
 
 open import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary.Core using (REL; Reflexive)
-open import Relation.Binary.List.Pointwise hiding (refl)
+open import Relation.Binary.List.Pointwise as PRel hiding (refl)
 
 open import STLCRef.Syntax hiding (id)
 open import STLCRef.Welltyped
@@ -50,7 +50,7 @@ progress p (ref wt) | inj₂ (_ , _ , wt≻wt') = inj₂ (_ , _ , Ref wt≻wt')
 progress p (! wt) with progress p wt
 progress p (! wt) | inj₁ v with ref-value-lemma wt v
 progress p (! loc q) | inj₁ (loc .i) | (i , refl) =
-  inj₂ (_ , (_ , (DerefLoc (P.subst (_<_ _) (pointwise-length p) ([-]=-length q)))))
+  inj₂ (_ , (_ , (DerefLoc (P.subst (_<_ _) (pointwise-length p) ([]=-length q)))))
 progress p (! wt) | inj₂ (_ , _ , wt≻wt') = inj₂ (_ , (_ , (Deref wt≻wt')))
 
 progress p (wt ≔ x) with progress p wt | progress p x
@@ -58,7 +58,7 @@ progress p (wt ≔ x) | _ | inj₂ (_ , _ , x≻x') = inj₂ (_ , (_ , (Assign�
 progress p (wt ≔ x) | inj₂ (_ , _ , wt≻wt') | _ = inj₂ (_ , _ , Assign₁ wt≻wt')
 progress p (wt ≔ x) | inj₁ v | inj₁ w with ref-value-lemma wt v
 progress p (loc q ≔ x) | inj₁ (loc .i) | inj₁ w | (i , refl) =
-  inj₂ (_ , (_ , Assign (P.subst (_<_ _) (pointwise-length p) ([-]=-length q)) w))
+  inj₂ (_ , (_ , Assign (P.subst (_<_ _) (pointwise-length p) ([]=-length q)) w))
 
 postulate
   sub-preserves : ∀ {n Γ Σ A B x} {e : Exp (suc n)} →
@@ -96,13 +96,15 @@ postulate
 ≻-preserves (ƛ wt) p ()
 
 ≻-preserves {Σ = Σ} (ƛ wt · wt₁) p AppAbs = Σ , sub-preserves wt wt₁ , ⊑-refl , p
-≻-preserves {Σ = Σ} (ref {x = x} {A} wt) p (RefVal v) =
+≻-preserves {Σ = Σ} (ref {x = x} {A} wt) p (RefVal v) = let ext = ∷ʳ-⊒ A Σ in
   Σ ∷ʳ A ,
-    loc (P.subst (λ i → _ ⊢loc i ∶ _) (pointwise-length p) (∷ʳ[length] Σ)) ,
-    ∷ʳ-⊒ A Σ ,
-    {!!}
-≻-preserves {Σ = Σ₁} (! loc x) p (DerefLoc l) = Σ₁ , !!-loc p x l , ⊑-refl , p
-≻-preserves {Σ = Σ₁} (loc x ≔ y) p (Assign l v) = Σ₁ , unit , ⊑-refl , {!!}
+    loc (P.subst (λ i → _ ⊢loc i ∶ _) (pointwise-length p) (∷ʳ[length] Σ A)) ,
+    ext ,
+    pointwise-∷ʳ (PRel.map (⊒-preserves ext) p) (⊒-preserves ext wt)
+≻-preserves {Σ = Σ₁} (! loc x) p (DerefLoc l) =
+  Σ₁ , !!-loc p x l , ⊑-refl , p
+≻-preserves {Σ = Σ₁} (loc x ≔ y) p (Assign l v) =
+  Σ₁ , unit , ⊑-refl , pointwise-[]≔ p x l y
 
 -- contextual closure
 ≻-preserves {Σ = Σ} (wt-f · wt-x) p (Appₗ r) =
@@ -140,15 +142,18 @@ preservation wt ok (x ◅ r) with ≻-preserves wt ok x
 ... | Σ₂ , wt' , Σ₂⊒Σ , μ₂ok with preservation wt' μ₂ok r
 ... | Σ₃ , wt'' , Σ₃⊒Σ₂ , μ₃ = Σ₃ , wt'' , ⊑-trans Σ₂⊒Σ Σ₃⊒Σ₂ , μ₃
 
-{-# NON_TERMINATING #-}
-safety : ∀ {e : Exp zero} {Σ A μ} →
+-- fueled evaluation
+open import Data.Maybe
+eval : ∀ {e : Exp zero} {Σ A μ} ℕ →
          [] , Σ ⊢ e ∶ A →
          [] , Σ ⊢ μ →
          ---------------------------------------
-         ∃ λ Σ' → ∃ λ e' → ∃ λ μ' →
-            (e , μ ≻* e' , μ') × Val e' × ([] , Σ' ⊢ e' ∶ A)
-safety p q with progress q p
-safety p q | inj₁ x = _ , _ , _ , ε , x , p
-safety p q | inj₂ (e' , μ' , step) with ≻-preserves p q step
-... | (Σ₂ , wte' , ext , μ'-ok) with safety wte' μ'-ok
-... | (Σ₃ , e'' , μ'' , steps , v , wte'') = Σ₃ , e'' , μ'' , step ◅ steps , v , wte''
+         Maybe (∃ λ Σ' → ∃ λ e' → ∃ λ μ' →
+            (e , μ ≻* e' , μ') × Val e' × ([] , Σ' ⊢ e' ∶ A))
+eval 0 _ _ = nothing
+eval (suc n) p q with progress q p
+eval (suc n) p q | inj₁ x = just (_ , _ , _ , ε , x , p)
+eval (suc n) p q | inj₂ (e' , μ' , step) with ≻-preserves p q step
+... | (Σ₂ , wte' , ext , μ'-ok) with eval n wte' μ'-ok
+... | nothing = nothing
+... | just (Σ₃ , e'' , μ'' , steps , v , wte'') = just (Σ₃ , e'' , μ'' , step ◅ steps , v , wte'')
