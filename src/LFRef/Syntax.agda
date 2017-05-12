@@ -14,7 +14,7 @@ data Term where
   unit : ∀ {n} → Term n
 
   -- constructor application
-  con : ∀ {n} → ℕ → List (Term n) → Term n
+  con : ∀ {n} → (fn : ℕ) → (ts : List (Term n)) → Term n
 
 infixl 30 _·★_
 data Exp : ℕ → Set where
