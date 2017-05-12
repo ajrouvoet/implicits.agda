@@ -94,6 +94,11 @@ xs⊒ys[i] : ∀ {a n m} {A : Set a} {xs : Vec A n} {ys : Vec A m} {i y} →
 xs⊒ys[i] here (x ∷ q) = here
 xs⊒ys[i] (there p) (x ∷ q) = there (xs⊒ys[i] p q)
 
+∷ʳ[length] : ∀ {a n} {A : Set a} (l : Vec A n) x → ∃ λ i → (l ∷ʳ x) [ i ]= x
+∷ʳ[length] [] _ = , here
+∷ʳ[length] (x ∷ Σ) y with ∷ʳ[length] Σ y
+∷ʳ[length] (x ∷ Σ₁) y | i , p = (suc i) , there p
+
 -- Moar All properties
 
 open import Data.Vec.All
@@ -109,3 +114,7 @@ _All[_]≔_ : ∀ {a p} {A : Set a} {P : A → Set p} {k} {xs : Vec A k} {i x} �
 [] All[ () ]≔ px
 (px ∷ xs) All[ here ]≔ px' = px' ∷ xs
 (px ∷ xs) All[ there i ]≔ px' = px ∷ (xs All[ i ]≔ px')
+
+_all-∷ʳ_ : ∀ {a n p} {A : Set a} {l : Vec A n} {x} {P : A → Set p} → All P l → P x → All P (l ∷ʳ x)
+_all-∷ʳ_ [] q = q ∷ []
+_all-∷ʳ_ (px ∷ p) q = px ∷ (p all-∷ʳ q)

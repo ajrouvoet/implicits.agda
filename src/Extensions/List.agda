@@ -3,7 +3,7 @@ module Extensions.List where
 open import Prelude
 
 open import Data.List
-open import Data.Fin using (fromℕ≤)
+open import Data.Fin using (fromℕ≤; zero; suc)
 open import Data.List.All hiding (lookup; map)
 open import Data.Maybe hiding (All; map)
 open import Relation.Nullary
@@ -20,13 +20,18 @@ data _[_]=_ {a} {A : Set a} : List A → ℕ → A → Set where
 []=-functional .(_ ∷ _) .0 here here = refl
 []=-functional .(_ ∷ _) .(suc _) (there p) (there q) = []=-functional _ _ p q
 
-lookup : ∀ {a} {A : Set a} → (i : ℕ) → (l : List A) → Dec (∃ λ x → l [ i ]= x)
-lookup _ [] = no (λ{ (_ , ())})
-lookup zero (x ∷ l) = yes (x , here)
-lookup (suc i) (_ ∷ l) = map′
+lookup : ∀ {a} {A : Set a} → (l : List A) → Fin (length l) → A
+lookup [] ()
+lookup (x ∷ l) zero = x
+lookup (x ∷ l) (suc p) = lookup l p
+
+dec-lookup : ∀ {a} {A : Set a} → (i : ℕ) → (l : List A) → Dec (∃ λ x → l [ i ]= x)
+dec-lookup _ [] = no (λ{ (_ , ())})
+dec-lookup zero (x ∷ l) = yes (x , here)
+dec-lookup (suc i) (_ ∷ l) = map′
   (λ{ (x , p) → x , there p})
   (λ{ (x , there p) → x , p})
-  (lookup i l)
+  (dec-lookup i l)
 
 all-lookup : ∀ {a} {A : Set a} {l : List A} {i x p P} → l [ i ]= x → All {p = p} P l → P x
 all-lookup here (px ∷ l) = px
@@ -90,9 +95,9 @@ pointwise-length (x∼y ∷ p) = cong suc (pointwise-length p)
 []=-length here = s≤s z≤n
 []=-length (there p) = s≤s ([]=-length p)
 
-∷ʳ[length] : ∀ {a} {A : Set a} (l : List A) {x} → (l ∷ʳ x) [ length l ]= x
-∷ʳ[length] [] = here
-∷ʳ[length] (x ∷ Σ) = there (∷ʳ[length] Σ)
+∷ʳ[length] : ∀ {a} {A : Set a} (l : List A) x → (l ∷ʳ x) [ length l ]= x
+∷ʳ[length] [] y = here
+∷ʳ[length] (x ∷ Σ) y = there (∷ʳ[length] Σ y)
 
 all-∷ʳ : ∀ {a p} {A : Set a} {l : List A} {x} {P : A → Set p} → All P l → P x → All P (l ∷ʳ x)
 all-∷ʳ [] q = q ∷ []

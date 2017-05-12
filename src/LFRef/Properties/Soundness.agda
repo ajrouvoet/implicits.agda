@@ -66,7 +66,7 @@ progress p (tm () ≔ e) | inj₁ (tm con) | (inj₁ (tm x₁))
 progress p (tm (loc x) ≔ e) | inj₁ (tm loc) | (inj₁ (tm v)) =
   inj₂ (, (, ≔-val (P.subst (_<_ _) (pointwise-length p) ([]=-length x)) v))
 progress p (l ≔ e) | inj₂ (_ , _ , step) | _ = inj₂ (, (, ≔-clos₁ step))
-progress p (l ≔ e) | _ | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ step))
+progress p (l ≔ e) | inj₁ v | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ v step))
 
 postulate
 
@@ -75,12 +75,11 @@ postulate
            𝕊 , Σ , Γ ⊢ t ∶ a →
            𝕊 , Σ , Γ ⊢ₑ (e exp/ (sub t)) ∶ b
 
-lem₁ : ∀ {n 𝕊 Σ φ ts} {Γ : Ctx n} →
-        𝕊 ⊢ φ fnOk →
-        (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ weaken+-tele n (Fun.args φ)) →
-        (q : length ts ≡ (Fun.m φ)) →
-        𝕊 , Σ , Γ ⊢ₑ (!call (Fun.body φ) ts q) ∶ ((Fun.returntype φ) fun[ ts / q ])
-lem₁ ok p q = {!!}
+  lem₁ : ∀ {n 𝕊 Σ φ ts} {Γ : Ctx n} →
+          𝕊 ⊢ φ fnOk →
+          (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ weaken+-tele n (Fun.args φ)) →
+          (q : length ts ≡ (Fun.m φ)) →
+          𝕊 , Σ , Γ ⊢ₑ (!call (Fun.body φ) ts q) ∶ ((Fun.returntype φ) fun[ ts / q ])
 
 !load-ok : ∀ {Σ Σ' A μ i 𝕊} →
             Rel (λ A x → 𝕊 , Σ , [] ⊢ (proj₁ x) ∶ A) Σ' μ →
@@ -110,6 +109,12 @@ mutual
 ⊒-preserves ext (! p) = ! (⊒-preserves ext p)
 ⊒-preserves ext (p ≔ q) = ⊒-preserves ext p ≔ ⊒-preserves ext q
 
+closure-cong : ∀ {Σ μ 𝕊 A B} {e : Exp 0} (c : Exp 0 → Exp 0) →
+                (f : ∀ {Σ'} (ext : Σ' ⊒ Σ) → 𝕊 , Σ' , [] ⊢ₑ e ∶ A → 𝕊 , Σ' , [] ⊢ₑ c e ∶ B) →
+                (∃ λ Σ' → 𝕊 , Σ' , [] ⊢ₑ e ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' ⊢ μ) →
+                ∃ λ Σ' → 𝕊 , Σ' , [] ⊢ₑ c e ∶ B × Σ' ⊒ Σ × 𝕊 , Σ' ⊢ μ
+closure-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
+
 ≻-preserves : ∀ {𝕊 Σ A} {e : Exp 0} {e' μ' μ} →
               𝕊 , [] ⊢ok →
               𝕊 , Σ , [] ⊢ₑ e ∶ A →
@@ -130,16 +135,24 @@ mutual
 
 ≻-preserves {Σ = Σ} ok (ref {A = A} (tm x)) q (ref-val v) = let ext = (∷ʳ-⊒ A Σ) in
   Σ ∷ʳ A ,
-  (tm (loc (P.subst (λ i → _ L.[ i ]= _) (pointwise-length q) (∷ʳ[length] Σ)))) ,
+  (tm (loc (P.subst (λ i → _ L.[ i ]= _) (pointwise-length q) (∷ʳ[length] Σ A)))) ,
   ext ,
   pointwise-∷ʳ (PRel.map (⊒-preserves-tm ext) q) (⊒-preserves-tm ext x)
 
-≻-preserves ok (ref p) q (ref-clos step) = {!!}
+≻-preserves ok (ref p) q (ref-clos step) = closure-cong ref (const ref) (≻-preserves ok p q step)
 
 ≻-preserves {Σ = Σ₁} ok (! tm (loc x)) q (!-val p) = Σ₁ , tm (!load-ok q x p) , ⊑-refl , q
-≻-preserves ok (! p) q (!-clos step) = {!!}
+≻-preserves ok (! p) q (!-clos step) = closure-cong !_ (const !_) (≻-preserves ok p q step)
 
 ≻-preserves {Σ = Σ₁} ok (_≔_ (tm (loc x)) (tm y)) q (≔-val p v) =
   Σ₁ , tm unit , ⊑-refl , pointwise-[]≔ q x p y
-≻-preserves ok (p ≔ p₁) q (≔-clos₁ step) = {!!}
-≻-preserves ok (p ≔ p₁) q (≔-clos₂ step) = {!!}
+≻-preserves ok (p ≔ p₁) q (≔-clos₁ step) =
+  closure-cong
+    (λ p' → p' ≔ _)
+    (λ ext p' → p' ≔ ⊒-preserves ext p₁)
+    (≻-preserves ok p q step)
+≻-preserves ok (p ≔ p₁) q (≔-clos₂ v step) =
+  closure-cong
+    (λ p' → _ ≔ p')
+    (λ ext p' → ⊒-preserves ext p ≔ p')
+    (≻-preserves ok p₁ q step)
