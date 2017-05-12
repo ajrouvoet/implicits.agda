@@ -5,7 +5,7 @@ AGDA_OPTS = -i ./src/ -i ./lib/agda-stdlib/src/
 AGDA = agda $(AGDA_OPTS)
 AGDA_DOC = agda $(AGDA_OPTS) --html --html-dir=./doc/html/
 
-EVERYTHING = $(SRC)/Everything.agda
+EVERYTHING = $(SRC)/Readme.agda
 
 all: $(EVERYTHING)i
 
