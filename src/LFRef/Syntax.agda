@@ -25,10 +25,13 @@ data Exp : ℕ → Set where
   _·★_ : ∀ {n} → (fn : ℕ) → (as : List (Term n)) → Exp n
 
   -- heap manipulation
-  lett : ∀ {n} → (x : Exp n) → (ty : Type n) → (e : Exp (suc n)) → Exp n
   ref : ∀ {n} → Exp n → Exp n
   !_ : ∀ {n} → Exp n → Exp n
   _≔_ : ∀ {n} → Exp n → Exp n → Exp n
+
+data SeqExp : ℕ → Set where
+  lett : ∀ {n} → (x : Exp n) → (e : SeqExp (suc n)) → SeqExp n
+  ret  : ∀ {n} → Exp n → SeqExp n
 
 data Val : Term 0 → Set where
   loc : ∀ {i} → Val (loc i)
@@ -111,10 +114,13 @@ module App {T} (l : Lift T Term) where
       map/ : List (Term n) → List (Term n')
       map/ [] = []
       map/ (x ∷ ts₁) = x / s ∷ map/ ts₁
-  lett x ty e exp/ s = lett (x exp/ s) (ty tp/ s) (e exp/ (s ↑))
   ref x exp/ s = ref (x exp/ s)
   (! x) exp/ s = ! (x exp/ s)
   (y ≔ x) exp/ s = (y exp/ s) ≔ (x exp/ s)
+
+  _seq/_ : ∀ {n n'} → SeqExp n → Sub T n n' → SeqExp n'
+  lett x e seq/ s = lett (x exp/ s) (e seq/ (s ↑))
+  ret e seq/ s = ret (e exp/ s)
 
   open Application (record { _/_ = _/_ }) using (_/✶_)
 
@@ -123,4 +129,4 @@ tmSubst = record { var = var; app = App._/_ }
 
 open TermSubst tmSubst hiding (var) public
 
-open App termLift using (_exp/_; _tp/_; _tele/_) public
+open App termLift using (_exp/_; _tp/_; _tele/_; _seq/_) public

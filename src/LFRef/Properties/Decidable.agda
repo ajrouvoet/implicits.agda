@@ -1,13 +1,13 @@
 module LFRef.Properties.Decidable where
 
-open import Prelude hiding (sym)
+open import Prelude
 open import Relation.Unary
 open import Relation.Nullary.Decidable as DecM
 open import Data.Fin.Properties as FinP using ()
 open import Data.List
 open import Data.Vec
 open import Data.Vec.Properties
-open import Function.Inverse
+open import Function.Inverse hiding (_∘_; sym)
 open import Extensions.List as List↑ using ()
 open import Extensions.Vec as Vec↑ using ()
 open import Relation.Binary.List.Pointwise using (decidable-≡)
@@ -65,15 +65,30 @@ module DecidableEquality where
   Unit ty≟ Unit = yes refl
 
 module UniqueTypings where
-  unique-tm-type : ∀ {n a b} 𝕊 Σ Γ (t : Term n) → 𝕊 , Σ , Γ ⊢ t ∶ a → 𝕊 , Σ , Γ ⊢ t ∶ b → a ≡ b
-  unique-tm-type 𝕊 Σ Γ .unit unit unit = refl
-  unique-tm-type 𝕊 Σ Γ .(var _) (var x) (var x') with Vec↑.[]=-functional Γ _ x x'
+  unique-tm-type : ∀ {n a b 𝕊 Σ Γ} {t : Term n} → 𝕊 , Σ , Γ ⊢ t ∶ a → 𝕊 , Σ , Γ ⊢ t ∶ b → a ≡ b
+  unique-tm-type unit unit = refl
+  unique-tm-type (var x) (var x') with Vec↑.[]=-functional _ _ x x'
   ... | refl = refl
-  unique-tm-type 𝕊 Σ Γ .(loc _) (loc x) (loc x') with List↑.[]=-functional Σ _ x x'
+  unique-tm-type (loc x) (loc x') with List↑.[]=-functional _ _ x x'
   ... | refl = refl
-  unique-tm-type 𝕊 Σ Γ .(con _ _) (con c ts refl) (con c' ts' refl)
+  unique-tm-type (con c ts refl) (con c' ts' refl)
     with List↑.[]=-functional _ _ c c'
   ... | refl = refl
+
+  unique-type : ∀ {n a b 𝕊 Σ Γ} {e : Exp n} → 𝕊 , Σ , Γ ⊢ₑ e ∶ a → 𝕊 , Σ , Γ ⊢ₑ e ∶ b → a ≡ b
+  unique-type (tm x) (tm y) = unique-tm-type x y
+  unique-type (fn ·★ ts) (fn' ·★ ts') with List↑.[]=-functional _ _ fn fn' |
+    tele-fit-length ts | tele-fit-length ts'
+  ... | refl | refl | refl = refl
+  unique-type (ref p) (ref q) = cong Ref (unique-type p q)
+  unique-type (! p) (! q) with unique-type p q
+  ... | refl = refl
+  unique-type (p ≔ q) (p' ≔ q') = refl
+
+  elim-mistype : ∀ {n a b 𝕊 Σ Γ} {e : Exp n} →
+                   𝕊 , Σ , Γ ⊢ₑ e ∶ a → 𝕊 , Σ , Γ ⊢ₑ e ∶ b → ¬ (a ≢ b)
+  elim-mistype p q with unique-type p q
+  ... | refl = λ neq → neq refl
 
 module DecidableTypability where
   open UniqueTypings
@@ -106,7 +121,7 @@ module DecidableTypability where
     ... | no nwt = no (λ wta → nwt (, wta))
     ... | yes (a' , wta') with a ty≟ a'
     ... | yes refl = yes wta'
-    ... | no neq = no (λ wta → neq (unique-tm-type 𝕊 Σ Γ _ wta wta'))
+    ... | no neq = no (λ wta → neq (unique-tm-type wta wta'))
 
     typecheck-tele : ∀ {n m } 𝕊 Σ Γ (ts : List (Term n)) → (T : Tele n m) → Dec (𝕊 , Σ , Γ ⊢ ts ∶ⁿ T)
     typecheck-tele 𝕊 Σ Γ [] ε = yes ε
@@ -119,58 +134,60 @@ module DecidableTypability where
     ... | yes ts∶T = yes (x∶ty ⟶ ts∶T)
     ... | no ¬ts∶T = no (λ{ (_ ⟶ ts∶T) → ¬ts∶T ts∶T })
 
-  {-}
   type : ∀ {n} 𝕊 Σ Γ (e : Exp n) → Dec (∃ λ a → 𝕊 , Σ , Γ ⊢ₑ e ∶ a)
   type 𝕊 Σ Γ (tm t) = DecM.map′
-    (λ x → _ , (tm (proj₂ x)))
+    (λ{ (_ , x ) → , (tm x)})
     (λ{ (_ , tm x) → , x})
     (type-tm 𝕊 Σ Γ t)
-  type 𝕊 Σ Γ (fn ·★ as) = {!!}
-  -- this case is problematic; we have to figure out if
-  -- the type returned from the body is the weakening of some other type.
-  -- which is not (easily) decidable
-  type 𝕊 Σ Γ (lett e₁ e₂) with type 𝕊 Σ Γ e₁
-  ... | no nwte₁ = {!!}
-  ... | yes (ty , wte₁) with type 𝕊 Σ (ty :+: Γ) e₂
-  ... | no nwte₂ = {!!}
-  ... | yes (ty' , wte₂) = yes (ty' , (lett wte₁ wte₂))
-  type 𝕊 Σ Γ (ref e) = {!!}
-  type 𝕊 Σ Γ (! e) = {!!}
-  type 𝕊 Σ Γ (e ≔ e₁) = {!!}
-  -}
-
-  typecheck : ∀ {n} 𝕊 Σ Γ (e : Exp n) a → Dec (𝕊 , Σ , Γ ⊢ₑ e ∶ a)
-  typecheck 𝕊 Σ Γ (tm t) a = DecM.map′
-    (λ x → (tm x))
-    (λ{ (tm x) → x})
-    (typecheck-tm 𝕊 Σ Γ t a)
-  typecheck {n} 𝕊 Σ Γ (fn ·★ ts) a with List↑.dec-lookup fn (Sig.funs 𝕊)
-  ... | no ¬fn! = no (λ { (fn! ·★ _) → ¬fn! (, fn!) })
+  type {n} 𝕊 Σ Γ (fn ·★ ts) with List↑.dec-lookup fn (Sig.funs 𝕊)
+  ... | no ¬fn! = no (λ { (_ , (fn! ·★ _)) → ¬fn! (, fn!) })
   ... | yes (φ , fn!) with typecheck-tele 𝕊 Σ Γ ts (weaken+-tele _ (Fun.args φ))
   ... | no ¬ts∶T = no lem
     where
-      lem : ¬ 𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ a
-      lem (fn!' ·★ ts∶T) with List↑.[]=-functional _ _ fn! fn!'
+      lem : ¬ ∃ λ a → 𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ a
+      lem (_ , (fn!' ·★ ts∶T)) with List↑.[]=-functional _ _ fn! fn!'
       ... | refl = ¬ts∶T ts∶T
-  ... | yes ts∶T with ((Fun.returntype φ) fun[ ts / (tele-fit-length ts∶T) ]) ty≟ a
-  ... | yes refl = yes (subst (λ x → _ , _ , _ ⊢ₑ _ ∶ x) refl (fn! ·★ ts∶T))
+  ... | yes ts∶T = yes (, fn! ·★ ts∶T)
+  type 𝕊 Σ Γ (ref e) with (type 𝕊 Σ Γ e)
+  ... | no ¬wte = no (λ{ (.(Ref _) , ref wte) → ¬wte (, wte)})
+  ... | yes (a , wte) = yes (, ref wte)
+  type 𝕊 Σ Γ (! e) with (type 𝕊 Σ Γ e)
+  ... | no ¬wte = no ((λ{ (x , (! wte)) → ¬wte (, wte) }))
+  type 𝕊 Σ Γ (! e) | yes (x [ ts ] , wte) =
+    no λ{ (_ , ! wte') → elim-mistype wte  wte' (λ ()) }
+  type 𝕊 Σ Γ (! e) | yes (Unit , wte) =
+    no λ{ (_ , ! wte' ) → elim-mistype wte wte' (λ ()) }
+  type 𝕊 Σ Γ (! e) | yes (Ref a , wte) = yes (_ , (! wte))
+  type 𝕊 Σ Γ (l ≔ r) with type 𝕊 Σ Γ l | type 𝕊 Σ Γ r
+  ... | no ¬wtl | _ = no (λ{ (_ , wtl ≔ _ ) → ¬wtl (, wtl) })
+  ... | _ | no ¬wtr = no (λ{ (_ , _ ≔ wtr ) → ¬wtr (, wtr) })
+  ... | yes (x [ ts ] , wtl) | (yes (b , wtr)) =
+    no (λ{ (_ , wtl' ≔ wtr) → elim-mistype wtl wtl' (λ ())})
+  ... | yes (Unit , wtl) | (yes (b , wtr)) =
+    no (λ{ (_ , wtl' ≔ wtr) → elim-mistype wtl wtl' (λ ())})
+  ... | yes (Ref a , wtl) | yes (b , wtr) with a ty≟ b
+  ... | yes refl = yes (, wtl ≔ wtr)
   ... | no neq = no lem
     where
-      lem : ¬ 𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ a
-      lem (fn!' ·★ ts∶T') with tele-fit-length ts∶T | tele-fit-length ts∶T' |
-        List↑.[]=-functional _ _ fn! fn!'
-      ... | refl | refl | refl = neq refl
-  typecheck 𝕊 Σ Γ (lett e₁ a e₂) b with typecheck 𝕊 Σ Γ e₁ a
-  ... | no nwte₁ = no (λ{ (lett wta _) → nwte₁ wta })
-  ... | yes wte₁ with typecheck 𝕊 Σ (a :+: Γ) e₂ (weaken₁-tp b)
-  ... | no nwte₂ = no (λ{ (lett _ wtb) → nwte₂ wtb})
-  ... | yes wte₂ = yes (lett wte₁ wte₂)
-  typecheck 𝕊 Σ Γ (ref e) (Ref a) = DecM.map′
-    ref (λ{ (ref wte) → wte })
-    (typecheck 𝕊 Σ Γ e a)
-  typecheck 𝕊 Σ Γ (ref e) (x [ ts ]) = no (λ ())
-  typecheck 𝕊 Σ Γ (ref e) Unit = no (λ ())
-  typecheck 𝕊 Σ Γ (! e) a = DecM.map′
-    !_ (λ{ (! wte) → wte })
-    (typecheck 𝕊 Σ Γ e (Ref a))
-  typecheck 𝕊 Σ Γ (l ≔ r) = {!!}
+      lem : ¬ ∃ λ a → 𝕊 , Σ , Γ ⊢ₑ (l ≔ r) ∶ a
+      lem (.Unit , (wtl' ≔ wtr')) with unique-type wtl wtl'
+      ... | refl = elim-mistype wtr wtr' (neq ∘ sym)
+
+  typecheck : ∀ {n} 𝕊 Σ Γ (e : Exp n) a → Dec (𝕊 , Σ , Γ ⊢ₑ e ∶ a)
+  typecheck 𝕊 Σ Γ e a with type 𝕊 Σ Γ e
+  ... | no ¬wte = no (λ wte → ¬wte (, wte))
+  ... | yes (a' , wte) with a' ty≟ a
+  ... | yes refl = yes wte
+  ... | no neq = no (λ{ wte' → elim-mistype wte wte' neq })
+
+  typecheck-seq : ∀ {n} 𝕊 Σ Γ (e : SeqExp n) a → Dec (𝕊 , Σ , Γ ⊢ₛ e ∶ a)
+  typecheck-seq 𝕊 Σ Γ (lett e c) a with type 𝕊 Σ Γ e
+  ... | no ¬wte = no (λ{ (lett wte _ ) → ¬wte (, wte)})
+  ... | yes (b , wte) with typecheck-seq 𝕊 Σ (b :+: Γ) c (weaken₁-tp a)
+  ... | yes wtc = yes (lett wte wtc)
+  ... | no ¬wtc = no lem
+    where
+      lem : ¬ 𝕊 , Σ , Γ ⊢ₛ lett e c ∶ a
+      lem (lett wte' wtc) with unique-type wte wte'
+      ... | refl = ¬wtc wtc
+  typecheck-seq 𝕊 Σ Γ (ret e) a = DecM.map′ ret (λ{ (ret wte) → wte }) (typecheck 𝕊 Σ Γ e a)

@@ -33,11 +33,6 @@ Config = Exp 0 × Store
 infix 1 _⊢_≻_
 data _⊢_≻_ (𝕊 : Sig) : (t t' : Config) → Set where
 
-  -- reductions
-  lett-β  : ∀ {t e μ} →
-            ----------------------------------------------
-            𝕊 ⊢ (lett (tm t) e) , μ ≻ (e exp/ (sub t)) , μ
-
   funapp-β : ∀ {fn ts μ φ} →
              (Sig.funs 𝕊) L.[ fn ]= φ →
              (p : length ts ≡ Fun.m φ) →
@@ -60,11 +55,6 @@ data _⊢_≻_ (𝕊 : Sig) : (t t' : Config) → Set where
           -----------------------------------------
           𝕊 ⊢ ! (tm (loc i)) , μ ≻ tm (!load μ p) , μ
 
-  -- contextual closure
-  lett-clos : ∀ {x e x' μ μ'} →
-              𝕊 ⊢ x , μ ≻ x' , μ' →
-              -------------------------------------
-              𝕊 ⊢ (lett x e) , μ ≻ (lett x' e) , μ'
 
   ref-clos : ∀ {e e' μ μ'} →
              𝕊 ⊢ e , μ ≻ e' , μ' →
@@ -86,6 +76,25 @@ data _⊢_≻_ (𝕊 : Sig) : (t t' : Config) → Set where
              𝕊 ⊢ e , μ ≻ e' , μ' →
              --------------------------
              𝕊 ⊢ x ≔ e , μ ≻ x ≔ e' , μ'
+
+infix 1 _⊢_≻ₛ_
+data _⊢_≻ₛ_ (𝕊 : Sig) : (t t' : SeqExp 0 × Store) → Set where
+
+  -- reductions
+  lett-β  : ∀ {t e μ} →
+            ----------------------------------------------
+            𝕊 ⊢ (lett (tm t) e) , μ ≻ₛ (e seq/ (sub t)) , μ
+
+  -- contextual closure
+  ret-clos  : ∀ {e μ e' μ'} →
+              𝕊 ⊢ e , μ ≻ e' , μ' →
+              -------------------------------------
+              𝕊 ⊢ (ret e) , μ ≻ₛ (ret e') , μ'
+
+  lett-clos : ∀ {x e x' μ μ'} →
+              𝕊 ⊢ x , μ ≻ x' , μ' →
+              -------------------------------------
+              𝕊 ⊢ (lett x e) , μ ≻ₛ (lett x' e) , μ'
 
 -- reflexive-transitive closure of ≻
 open import Data.Star
