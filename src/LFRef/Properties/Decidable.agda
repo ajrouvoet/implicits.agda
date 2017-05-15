@@ -77,9 +77,8 @@ module UniqueTypings where
 
   unique-type : ∀ {n a b 𝕊 Σ Γ} {e : Exp n} → 𝕊 , Σ , Γ ⊢ₑ e ∶ a → 𝕊 , Σ , Γ ⊢ₑ e ∶ b → a ≡ b
   unique-type (tm x) (tm y) = unique-tm-type x y
-  unique-type (fn ·★ ts) (fn' ·★ ts') with List↑.[]=-functional _ _ fn fn' |
-    tele-fit-length ts | tele-fit-length ts'
-  ... | refl | refl | refl = refl
+  unique-type (fn ·★[ refl ] ts) (fn' ·★[ refl ] ts') with List↑.[]=-functional _ _ fn fn'
+  ... | refl = refl
   unique-type (ref p) (ref q) = cong Ref (unique-type p q)
   unique-type (! p) (! q) with unique-type p q
   ... | refl = refl
@@ -140,14 +139,14 @@ module DecidableTypability where
     (λ{ (_ , tm x) → , x})
     (type-tm 𝕊 Σ Γ t)
   type {n} 𝕊 Σ Γ (fn ·★ ts) with List↑.dec-lookup fn (Sig.funs 𝕊)
-  ... | no ¬fn! = no (λ { (_ , (fn! ·★ _)) → ¬fn! (, fn!) })
+  ... | no ¬fn! = no (λ { (_ , (fn! ·★[ q ] _)) → ¬fn! (, fn!) })
   ... | yes (φ , fn!) with typecheck-tele 𝕊 Σ Γ ts (weaken+-tele _ (Fun.args φ))
   ... | no ¬ts∶T = no lem
     where
       lem : ¬ ∃ λ a → 𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ a
-      lem (_ , (fn!' ·★ ts∶T)) with List↑.[]=-functional _ _ fn! fn!'
+      lem (_ , (fn!' ·★[ q ] ts∶T)) with List↑.[]=-functional _ _ fn! fn!'
       ... | refl = ¬ts∶T ts∶T
-  ... | yes ts∶T = yes (, fn! ·★ ts∶T)
+  ... | yes ts∶T = yes (, fn! ·★[ tele-fit-length ts∶T ] ts∶T)
   type 𝕊 Σ Γ (ref e) with (type 𝕊 Σ Γ e)
   ... | no ¬wte = no (λ{ (.(Ref _) , ref wte) → ¬wte (, wte)})
   ... | yes (a , wte) = yes (, ref wte)

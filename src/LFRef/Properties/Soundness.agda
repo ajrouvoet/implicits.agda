@@ -17,6 +17,7 @@ open import Relation.Binary.List.Pointwise as PRel hiding (refl)
 open import LFRef.Syntax
 open import LFRef.Welltyped
 open import LFRef.Eval
+open import LFRef.Properties.Decidable
 
 progress : ∀ {𝕊 Σ A} {e : Exp 0} {μ} →
            𝕊 , Σ ⊢ μ →
@@ -29,22 +30,11 @@ progress p (tm unit) = inj₁ (tm unit)
 progress p (tm (var ()))
 progress p (tm (loc x)) = inj₁ (tm loc)
 
-progress p (_·★_ fn ts q) = inj₂ (, (, funapp-β fn (tele-fit-length ts)))
-
-progress p (lett x e) with progress p x
-progress p (lett (tm x) e) | inj₁ (tm _) = inj₂ (, (, lett-β))
-progress p (lett (_·★_ _ _ _) e) | inj₁ ()
-progress p (lett (lett wtx wtx₁) e) | inj₁ ()
-progress p (lett (ref wtx) e) | inj₁ ()
-progress p (lett (! wtx) e) | inj₁ ()
-progress p (lett (wtx ≔ wtx₁) e) | inj₁ ()
-
-progress p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos step))
+progress p (fn ·★[ q ] ts) = inj₂ (, (, funapp-β fn (tele-fit-length ts)))
 
 progress p (ref e) with progress p e
 progress p (ref {_} {tm _} (tm _)) | inj₁ (tm v) = inj₂ (, (, ref-val v))
 progress p (ref {_} {_ ·★ _} e) | inj₁ ()
-progress p (ref {_} {lett x x₁} e) | inj₁ ()
 progress p (ref {_} {ref x} e) | inj₁ ()
 progress p (ref {_} { ! x } e) | inj₁ ()
 progress p (ref {_} {x ≔ x₁} e) | inj₁ ()
@@ -55,7 +45,6 @@ progress p (!_ {_} {tm .(loc _)} (tm (loc x))) | inj₁ (tm _) =
   inj₂ (, (, !-val (P.subst (_<_ _) (pointwise-length p) ([]=-length x))))
 progress p (!_ {_} {tm (var ())} e) | _
 progress p (!_ {_} {_ ·★ _} e) | inj₁ ()
-progress p (!_ {_} {lett x x₁} e) | inj₁ ()
 progress p (!_ {_} {ref x} e) | inj₁ ()
 progress p (!_ {_} { ! x } e) | inj₁ ()
 progress p (!_ {_} {x ≔ x₁} e) | inj₁ ()
@@ -68,6 +57,18 @@ progress p (tm (loc x) ≔ e) | inj₁ (tm loc) | (inj₁ (tm v)) =
   inj₂ (, (, ≔-val (P.subst (_<_ _) (pointwise-length p) ([]=-length x)) v))
 progress p (l ≔ e) | inj₂ (_ , _ , step) | _ = inj₂ (, (, ≔-clos₁ step))
 progress p (l ≔ e) | inj₁ v | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ v step))
+
+{-}
+progress p (lett x e) with progress p x
+progress p (lett (tm x) e) | inj₁ (tm _) = inj₂ (, (, lett-β))
+progress p (lett (_·★_ _ _ _) e) | inj₁ ()
+progress p (lett (lett wtx wtx₁) e) | inj₁ ()
+progress p (lett (ref wtx) e) | inj₁ ()
+progress p (lett (! wtx) e) | inj₁ ()
+progress p (lett (wtx ≔ wtx₁) e) | inj₁ ()
+
+progress p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos step))
+-}
 
 postulate
 
@@ -108,8 +109,9 @@ mutual
 -- welltypedness is preseved under store extensions
 ⊒-preserves : ∀ {n Γ Σ Σ' A 𝕊} {e : Exp n} → Σ' ⊒ Σ → 𝕊 , Σ , Γ ⊢ₑ e ∶ A → 𝕊 , Σ' , Γ ⊢ₑ e ∶ A
 ⊒-preserves ext (tm x) = tm (⊒-preserves-tm ext x)
-⊒-preserves ext ((x ·★ p) q) = (x ·★ (⊒-preserves-tele ext p)) q
-⊒-preserves ext (lett p q) = lett (⊒-preserves ext p) (⊒-preserves ext q)
+⊒-preserves ext (x ·★[ refl ] p) with ⊒-preserves-tele ext p
+... | p' = x ·★[ refl ] p'
+
 ⊒-preserves ext (ref p) = ref (⊒-preserves ext p)
 ⊒-preserves ext (! p) = ! (⊒-preserves ext p)
 ⊒-preserves ext (p ≔ q) = ⊒-preserves ext p ≔ ⊒-preserves ext q
@@ -133,15 +135,9 @@ clos-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
 ≻-preserves ok (tm x) q ()
 
 -- function application
-≻-preserves {Σ = Σ} ok (_·★_ fn ts refl) q (funapp-β x refl) with
+≻-preserves {Σ = Σ} ok (fn ·★[ refl ] ts) q (funapp-β x refl) with
   []=-functional _ _  fn x | all-lookup fn (_,_⊢ok.funs-ok ok)
 ... | refl | fn-ok = Σ , (lem₁ fn-ok ts refl) , ⊑-refl , q
-
--- let binding
-≻-preserves {Σ = Σ} ok (lett (tm x) p) q lett-β = Σ , lem₂ p x , ⊑-refl , q
-≻-preserves ok (lett p p₁) q (lett-clos step) with ≻-preserves ok p q step
-... | Σ₂ , wte' , Σ₂⊒Σ₁ , q' =
-  Σ₂ , lett wte' ((⊒-preserves Σ₂⊒Σ₁ p₁)) , Σ₂⊒Σ₁ , q'
 
 -- new references
 ≻-preserves {Σ = Σ} ok (ref {A = A} (tm x)) q (ref-val v) = let ext = (∷ʳ-⊒ A Σ) in
@@ -173,3 +169,12 @@ clos-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
   clos-cong
     (λ p' → _ ≔ p') (λ ext p' → ⊒-preserves ext p ≔ p')
     (≻-preserves ok p₁ q step)
+
+{-}
+
+-- let binding
+≻-preserves {Σ = Σ} ok (lett (tm x) p) q lett-β = Σ , lem₂ p x , ⊑-refl , q
+≻-preserves ok (lett p p₁) q (lett-clos step) with ≻-preserves ok p q step
+... | Σ₂ , wte' , Σ₂⊒Σ₁ , q' =
+  Σ₂ , lett wte' ((⊒-preserves Σ₂⊒Σ₁ p₁)) , Σ₂⊒Σ₁ , q'
+-}
