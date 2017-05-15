@@ -58,17 +58,18 @@ progress p (tm (loc x) ≔ e) | inj₁ (tm loc) | (inj₁ (tm v)) =
 progress p (l ≔ e) | inj₂ (_ , _ , step) | _ = inj₂ (, (, ≔-clos₁ step))
 progress p (l ≔ e) | inj₁ v | (inj₂ (_ , _ , step)) = inj₂ (, (, ≔-clos₂ v step))
 
-{-}
-progress p (lett x e) with progress p x
-progress p (lett (tm x) e) | inj₁ (tm _) = inj₂ (, (, lett-β))
-progress p (lett (_·★_ _ _ _) e) | inj₁ ()
-progress p (lett (lett wtx wtx₁) e) | inj₁ ()
-progress p (lett (ref wtx) e) | inj₁ ()
-progress p (lett (! wtx) e) | inj₁ ()
-progress p (lett (wtx ≔ wtx₁) e) | inj₁ ()
+progress-seq : ∀ {𝕊 Σ A} {e : SeqExp 0} {μ} →
+                𝕊 , Σ ⊢ μ →
+                𝕊 , Σ , [] ⊢ₛ e ∶ A →
+                --------------------------------------
+                SeqExpVal e ⊎ ∃₂ λ e' μ' → (𝕊 ⊢ e , μ ≻ₛ e' , μ')
 
-progress p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos step))
--}
+progress-seq p (ret e) with progress p e
+... | inj₁ (tm v) = inj₁ (ret-tm v)
+... | inj₂ (e' , μ' , step) = inj₂ (, , ret-clos step)
+progress-seq p (lett x e) with progress p x
+progress-seq p (lett x e) | inj₁ (tm v) = inj₂ (, (, lett-β))
+progress-seq p (lett x e) | inj₂ (x' , μ' , step) = inj₂ (, (, lett-clos step))
 
 postulate
 
@@ -76,6 +77,11 @@ postulate
            𝕊 , Σ , (a :+: Γ) ⊢ₑ e ∶ weaken₁-tp b →
            𝕊 , Σ , Γ ⊢ t ∶ a →
            𝕊 , Σ , Γ ⊢ₑ (e exp/ (sub t)) ∶ b
+
+  lem₃ : ∀ {n 𝕊 Σ e a b t} {Γ : Ctx n} →
+           𝕊 , Σ , (a :+: Γ) ⊢ₛ e ∶ weaken₁-tp b →
+           𝕊 , Σ , Γ ⊢ t ∶ a →
+           𝕊 , Σ , Γ ⊢ₛ (e seq/ (sub t)) ∶ b
 
   lem₁ : ∀ {n 𝕊 Σ φ ts} {Γ : Ctx n} →
           𝕊 ⊢ φ fnOk →
@@ -115,6 +121,10 @@ mutual
 ⊒-preserves ext (ref p) = ref (⊒-preserves ext p)
 ⊒-preserves ext (! p) = ! (⊒-preserves ext p)
 ⊒-preserves ext (p ≔ q) = ⊒-preserves ext p ≔ ⊒-preserves ext q
+
+⊒-preserves-seq : ∀ {n Γ Σ Σ' A 𝕊} {e : SeqExp n} → Σ' ⊒ Σ → 𝕊 , Σ , Γ ⊢ₛ e ∶ A → 𝕊 , Σ' , Γ ⊢ₛ e ∶ A
+⊒-preserves-seq ext (ret e) = ret (⊒-preserves ext e)
+⊒-preserves-seq ext (lett e c) = lett (⊒-preserves ext e) (⊒-preserves-seq ext c)
 
 -- helper for lifting preserving reductions into their closure
 clos-cong : ∀ {Σ μ 𝕊 A B} {e : Exp 0} (c : Exp 0 → Exp 0) →
@@ -170,11 +180,20 @@ clos-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
     (λ p' → _ ≔ p') (λ ext p' → ⊒-preserves ext p ≔ p')
     (≻-preserves ok p₁ q step)
 
-{-}
-
 -- let binding
-≻-preserves {Σ = Σ} ok (lett (tm x) p) q lett-β = Σ , lem₂ p x , ⊑-refl , q
-≻-preserves ok (lett p p₁) q (lett-clos step) with ≻-preserves ok p q step
-... | Σ₂ , wte' , Σ₂⊒Σ₁ , q' =
-  Σ₂ , lett wte' ((⊒-preserves Σ₂⊒Σ₁ p₁)) , Σ₂⊒Σ₁ , q'
--}
+≻ₛ-preserves : ∀ {𝕊 Σ A} {e : SeqExp 0} {e' μ' μ} →
+              𝕊 , [] ⊢ok →
+              𝕊 , Σ , [] ⊢ₛ e ∶ A →
+              𝕊 , Σ ⊢ μ →
+              𝕊 ⊢ e , μ ≻ₛ e' , μ' →
+              -------------------------------------------------------
+              ∃ λ Σ' → 𝕊 , Σ' , [] ⊢ₛ e' ∶ A × Σ' ⊒ Σ × 𝕊 , Σ' ⊢ μ'
+≻ₛ-preserves {Σ = Σ} ok (lett (tm x) p) q lett-β = Σ , lem₃ p x , ⊑-refl , q
+≻ₛ-preserves ok (lett p p₁) q (lett-clos step) with ≻-preserves ok p q step
+... | Σ₂ , wte' , Σ₂⊒Σ₁ , q' = Σ₂ , lett wte' ((⊒-preserves-seq Σ₂⊒Σ₁ p₁)) , Σ₂⊒Σ₁ , q'
+≻ₛ-preserves ok (ret e) q (ret-clos step) with ≻-preserves ok e q step
+... | Σ₂ , wte' , Σ₂⊒Σ₁ , q' = Σ₂ , ret wte' , Σ₂⊒Σ₁ , q'
+
+module SafeEval where
+
+  open import Category.Monad.Partiality

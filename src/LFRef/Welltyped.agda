@@ -35,24 +35,10 @@ weaken+-tp (suc n) t = subst Type (+-right-identity (suc n)) (t tp/ (wk⋆ (suc 
 weaken+-tele : ∀ {m n} k → Tele n m → Tele (n + k) m
 weaken+-tele k T = subst (flip Tele _) (+-comm k _) (T tele/ (wk⋆ k))
 
--- telescopes as context transformers
-_⊢⟦_⟧ : ∀ {n m} → Ctx n → Tele n m → Ctx (n + m)
-Γ ⊢⟦ ε ⟧ = subst Ctx (sym $ +-right-identity _) Γ
-_⊢⟦_⟧ {n} Γ (_⟶_ {m = m} x T) = subst Ctx (sym $ +-suc n m) ((x :+: Γ) ⊢⟦ T ⟧)
-
 -- mutually inductive welltypedness judgments for kinds/types and terms respectively
 data _,_,_⊢_teleok : ∀ {n m} → (𝕊 : Sig) → World → Ctx n → Tele n m → Set
 data _,_,_⊢_::_ : ∀ {n m} (𝕊 : Sig) → World → Ctx n → Type n → Tele n m → Set
 data _,_,_⊢_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → Term n → Type n → Set
-data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → Exp n → Type n → Set
-
-_⊢_fnOk : Sig → Fun → Set
-_⊢_fnOk 𝕊 φ = 𝕊 , [] , ([] ⊢⟦ Fun.args φ ⟧) ⊢ₑ (Fun.body φ) ∶ (Fun.returntype φ)
-
--- valid signature contexts
-record _,_⊢ok {n} (𝕊 : Sig) (Γ : Ctx n) : Set where
-  field
-    funs-ok : All (λ x → 𝕊 ⊢ x fnOk) (Sig.funs 𝕊)
 
 data _,_,_⊢_teleok where
   ε : ∀ {n 𝕊 Σ} {Γ : Ctx n} → 𝕊 , Σ , Γ ⊢ ε teleok
@@ -71,11 +57,6 @@ data _,_,_⊢_∶ⁿ_ {n} (𝕊 : Sig) (Σ : World) (Γ : Ctx n) :
         𝕊 , Σ , Γ ⊢ t ∶ A →
         𝕊 , Σ , Γ ⊢ ts ∶ⁿ (B tele/ (sub t)) →
         𝕊 , Σ , Γ ⊢ (t ∷ ts) ∶ⁿ (A ⟶ B)
-
-tele-fit-length : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → length ts ≡ m
-tele-fit-length ε = refl
-tele-fit-length (x ⟶ p) with tele-fit-length p
-tele-fit-length (x ⟶ p) | refl = refl
 
 -- specialize the returntype from a constructor from it's welltyped arguments
 _con[_/_] : ∀ {n} → (C : ConType) → (ts : List (Term n)) → length ts ≡ (ConType.m C) → Type n
@@ -131,7 +112,7 @@ data _,_,_⊢_∶_ where
         ---------------------
         𝕊 , Σ , Γ ⊢ loc i ∶ Ref (weaken+-tp n S)
 
-data _,_,_⊢ₑ_∶_ where
+data _,_,_⊢ₑ_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → Exp n → Type n → Set where
 
   tm   : ∀ {n t} {Γ : Ctx n} {𝕊 Σ A} →
          𝕊 , Σ , Γ ⊢ t ∶ A →
@@ -162,7 +143,6 @@ data _,_,_⊢ₑ_∶_ where
         --------------------------
         𝕊 , Σ , Γ ⊢ₑ (i ≔ x) ∶ Unit
 
-
 data _,_,_⊢ₛ_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → SeqExp n → Type n → Set where
 
   ret  : ∀ {n x A 𝕊 Σ} {Γ : Ctx n} →
@@ -176,7 +156,26 @@ data _,_,_⊢ₛ_∶_ : ∀ {n} (𝕊 : Sig) → World → Ctx n → SeqExp n �
          ---------------------------------------r
          𝕊 , Σ , Γ ⊢ₛ lett x c ∶ B
 
+-- telescopes as context transformers
+_⊢⟦_⟧ : ∀ {n m} → Ctx n → Tele n m → Ctx (n + m)
+Γ ⊢⟦ ε ⟧ = subst Ctx (sym $ +-right-identity _) Γ
+_⊢⟦_⟧ {n} Γ (_⟶_ {m = m} x T) = subst Ctx (sym $ +-suc n m) ((x :+: Γ) ⊢⟦ T ⟧)
+
+_⊢_fnOk : Sig → Fun → Set
+_⊢_fnOk 𝕊 φ = 𝕊 , [] , ([] ⊢⟦ Fun.args φ ⟧) ⊢ₑ (Fun.body φ) ∶ (Fun.returntype φ)
+
+-- valid signature contexts
+record _,_⊢ok {n} (𝕊 : Sig) (Γ : Ctx n) : Set where
+  field
+    funs-ok : All (λ x → 𝕊 ⊢ x fnOk) (Sig.funs 𝕊)
+
 -- store welltypedness relation
 -- as a pointwise lifting of the welltyped relation on closed expressions between a world and a store
 _,_⊢_ : Sig → World → Store → Set
 _,_⊢_ 𝕊 Σ μ = Rel (λ A x → 𝕊 , Σ , [] ⊢ (proj₁ x) ∶ A) Σ μ
+
+-- a useful lemma about telescoped terms
+tele-fit-length : ∀ {n m 𝕊 Σ Γ ts} {T : Tele n m} → 𝕊 , Σ , Γ ⊢ ts ∶ⁿ T → length ts ≡ m
+tele-fit-length ε = refl
+tele-fit-length (x ⟶ p) with tele-fit-length p
+tele-fit-length (x ⟶ p) | refl = refl

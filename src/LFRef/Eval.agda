@@ -98,5 +98,6 @@ data _⊢_≻ₛ_ (𝕊 : Sig) : (t t' : SeqExp 0 × Store) → Set where
 
 -- reflexive-transitive closure of ≻
 open import Data.Star
-_⊢_≻⋆_ : (Sig) → (c c' : Config) → Set
-𝕊 ⊢ c ≻⋆ c' = Star (_⊢_≻_ 𝕊) c c'
+infix 1 _⊢_≻⋆_
+_⊢_≻⋆_ : (Sig) → (c c' : SeqExp 0 × Store) → Set
+𝕊 ⊢ c ≻⋆ c' = Star (_⊢_≻ₛ_ 𝕊) c c'

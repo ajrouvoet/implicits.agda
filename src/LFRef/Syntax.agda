@@ -41,6 +41,9 @@ data Val : Term 0 → Set where
 data ExpVal : Exp zero → Set where
   tm : ∀ {t} → Val t → ExpVal (tm t)
 
+data SeqExpVal : SeqExp zero → Set where
+  ret-tm : ∀ {t} → Val t → SeqExpVal (ret (tm t))
+
 -- telescoped contexts/arguments
 data Tele : (n m : ℕ) → Set where
   ε : ∀ {n} → Tele n 0
