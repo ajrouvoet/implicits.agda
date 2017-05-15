@@ -141,9 +141,8 @@ data _,_,_⊢ₑ_∶_ where
   _·★_ : ∀ {n fn ts 𝕊 Σ φ} {Γ : Ctx n} →
          (Sig.funs 𝕊) L.[ fn ]= φ →
          (p : 𝕊 , Σ , Γ ⊢ ts ∶ⁿ weaken+-tele n (Fun.args φ)) →
-         (q : length ts ≡ (Fun.m φ)) →
          -----------------------------------------------------
-         𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ ((Fun.returntype φ) fun[ ts / q ])
+         𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ ((Fun.returntype φ) fun[ ts / (tele-fit-length p) ])
 
   lett : ∀ {n x c A B 𝕊 Σ} {Γ : Ctx n} →
          𝕊 , Σ , Γ ⊢ₑ x ∶ A →

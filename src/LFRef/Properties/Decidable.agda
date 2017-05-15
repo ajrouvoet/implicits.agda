@@ -11,6 +11,7 @@ open import Function.Inverse
 open import Extensions.List as List↑ using ()
 open import Extensions.Vec as Vec↑ using ()
 open import Relation.Binary.List.Pointwise using (decidable-≡)
+open import Relation.Binary.HeterogeneousEquality as Het using ()
 
 open import LFRef.Syntax hiding (subst)
 open import LFRef.Welltyped
@@ -91,7 +92,11 @@ module DecidableTypability where
     type-tm 𝕊 Σ Γ (con c ts) with (List↑.dec-lookup c (Sig.constructors 𝕊))
     ... | no ¬p = no (λ{ (._ , con p _ _) → ¬p (, p)})
     ... | yes (p , z) with typecheck-tele 𝕊 Σ Γ ts (weaken+-tele _ (ConType.args p))
-    ... | no ¬q = no (λ{ (._ , con p' q _) → ¬q {!!} })
+    ... | no ¬q = no lem
+      where
+        lem : ¬ ∃ λ ty → 𝕊 , Σ , Γ ⊢ (con c ts) ∶ ty
+        lem (._ , con x q p) with List↑.[]=-functional _ _ z x
+        ... | refl = ¬q q
     ... | yes q = yes (, con z q (tele-fit-length q))
 
     -- deciding whether a term matches a given type follows from
@@ -139,7 +144,22 @@ module DecidableTypability where
     (λ x → (tm x))
     (λ{ (tm x) → x})
     (typecheck-tm 𝕊 Σ Γ t a)
-  typecheck 𝕊 Σ Γ (fn ·★ as) = {!!}
+  typecheck {n} 𝕊 Σ Γ (fn ·★ ts) a with List↑.dec-lookup fn (Sig.funs 𝕊)
+  ... | no ¬fn! = no (λ { (fn! ·★ _) → ¬fn! (, fn!) })
+  ... | yes (φ , fn!) with typecheck-tele 𝕊 Σ Γ ts (weaken+-tele _ (Fun.args φ))
+  ... | no ¬ts∶T = no lem
+    where
+      lem : ¬ 𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ a
+      lem (fn!' ·★ ts∶T) with List↑.[]=-functional _ _ fn! fn!'
+      ... | refl = ¬ts∶T ts∶T
+  ... | yes ts∶T with ((Fun.returntype φ) fun[ ts / (tele-fit-length ts∶T) ]) ty≟ a
+  ... | yes refl = yes (subst (λ x → _ , _ , _ ⊢ₑ _ ∶ x) refl (fn! ·★ ts∶T))
+  ... | no neq = no lem
+    where
+      lem : ¬ 𝕊 , Σ , Γ ⊢ₑ (fn ·★ ts) ∶ a
+      lem (fn!' ·★ ts∶T') with tele-fit-length ts∶T | tele-fit-length ts∶T' |
+        List↑.[]=-functional _ _ fn! fn!'
+      ... | refl | refl | refl = neq refl
   typecheck 𝕊 Σ Γ (lett e₁ a e₂) b with typecheck 𝕊 Σ Γ e₁ a
   ... | no nwte₁ = no (λ{ (lett wta _) → nwte₁ wta })
   ... | yes wte₁ with typecheck 𝕊 Σ (a :+: Γ) e₂ (weaken₁-tp b)
