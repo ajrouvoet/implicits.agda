@@ -3,10 +3,10 @@ module LFRef.Properties.Soundness where
 open import Data.Nat
 open import Data.Sum
 open import Data.Product as Pr
-open import Data.List as List
+open import Data.List as List hiding (monad)
 open import Data.Fin using (fromℕ≤; Fin)
-open import Data.Vec hiding (_∷ʳ_)
-open import Data.Star
+open import Data.Vec hiding (_∷ʳ_; _>>=_)
+open import Data.Star hiding (_>>=_)
 open import Function
 open import Extensions.List as L
 
@@ -197,3 +197,29 @@ clos-cong _ f (Σ , wte , ext , μ-wt) = Σ , f ext wte , ext , μ-wt
 module SafeEval where
 
   open import Category.Monad.Partiality
+  open import Category.Monad
+  open import Coinduction
+  open import Level as Lev
+
+  open RawMonad {f = Lev.zero} monad
+
+  -- typesafe evaluation in the partiality/delay-monad;
+  -- or "soundness" modulo non-trivial divergence
+  eval : ∀ {𝕊 Σ a μ} {e : SeqExp 0} →
+        𝕊 , [] ⊢ok →
+        𝕊 , Σ , [] ⊢ₛ e ∶ a →
+        𝕊 , Σ ⊢ μ →
+       ----------------------------------------------------------------
+         (∃ λ v → ∃ λ μ' → ∃ λ Σ' →
+           (SeqExpVal v) × (𝕊 ⊢ e , μ ≻⋆ v , μ') × (𝕊 , Σ' , [] ⊢ₛ v ∶ a) × (𝕊 , Σ' ⊢ μ')) ⊥
+  eval 𝕊-ok wte μ-ok with progress-seq μ-ok wte
+  eval 𝕊-ok wte μ-ok | inj₁ v = now (_ , _ , _ , v , ε , wte , μ-ok)
+  eval 𝕊-ok wte μ-ok | inj₂ (e' , μ' , step) with ≻ₛ-preserves 𝕊-ok wte μ-ok step
+  ... | (Σ' , wte' , ext , μ'-ok) with later (♯ (eval 𝕊-ok wte' μ'-ok))
+  ... | (now (v' , μ'' , Σ'' , val , steps , wte'' , μ''-ok)) =
+    now (v' , (μ'' , (Σ'' , val , ((steps ▻ step) , (wte'' , μ''-ok)))))
+  ... | (later x) = later (♯ (♭ x >>=
+      λ{ (v' , μ'' , Σ'' , val , steps , wte'' , μ''-ok) →
+        now (v' , μ'' , Σ'' , val , steps ▻ step , wte'' , μ''-ok)
+      }
+    ))
