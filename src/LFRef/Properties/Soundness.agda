@@ -206,20 +206,30 @@ module SafeEval where
   -- typesafe evaluation in the partiality/delay-monad;
   -- or "soundness" modulo non-trivial divergence
   eval : ∀ {𝕊 Σ a μ} {e : SeqExp 0} →
-        𝕊 , [] ⊢ok →
-        𝕊 , Σ , [] ⊢ₛ e ∶ a →
-        𝕊 , Σ ⊢ μ →
-       ----------------------------------------------------------------
-         (∃ λ v → ∃ λ μ' → ∃ λ Σ' →
-           (SeqExpVal v) × (𝕊 ⊢ e , μ ≻⋆ v , μ') × (𝕊 , Σ' , [] ⊢ₛ v ∶ a) × (𝕊 , Σ' ⊢ μ')) ⊥
+        𝕊 , [] ⊢ok → -- given an ok signature context,
+        𝕊 , Σ , [] ⊢ₛ e ∶ a → -- a welltyped closed expression,
+        𝕊 , Σ ⊢ μ → -- and a welltyped store
+       ---------------------------------------------------------------------------------------
+        -- eval will either diverge or provide evidence of a term v, store μ' and storetype Σ'
+        (∃ λ v → ∃ λ μ' → ∃ λ Σ' →
+          -- such that v is a value,
+          (SeqExpVal v) ×
+          -- ...there is a sequence of small steps from e to v
+          (𝕊 ⊢ e , μ ≻⋆ v , μ') ×
+          -- ...v has the same type as e
+          (𝕊 , Σ' , [] ⊢ₛ v ∶ a) ×
+          -- ...μ' is typed by Σ'
+          (𝕊 , Σ' ⊢ μ') ×
+          -- ...and finally, Σ' is an extension of Σ
+          (Σ' ⊒ Σ)) ⊥
+
   eval 𝕊-ok wte μ-ok with progress-seq μ-ok wte
-  eval 𝕊-ok wte μ-ok | inj₁ v = now (_ , _ , _ , v , ε , wte , μ-ok)
+  eval 𝕊-ok wte μ-ok | inj₁ v = now (_ , _ , _ , v , ε , wte , μ-ok , ⊑-refl)
   eval 𝕊-ok wte μ-ok | inj₂ (e' , μ' , step) with ≻ₛ-preserves 𝕊-ok wte μ-ok step
-  ... | (Σ' , wte' , ext , μ'-ok) with later (♯ (eval 𝕊-ok wte' μ'-ok))
-  ... | (now (v' , μ'' , Σ'' , val , steps , wte'' , μ''-ok)) =
-    now (v' , (μ'' , (Σ'' , val , ((steps ▻ step) , (wte'' , μ''-ok)))))
+  ... | (Σ' , wte' , ext₁ , μ'-ok) with later (♯ (eval 𝕊-ok wte' μ'-ok))
+  ... | (now (v' , μ'' , Σ'' , val , steps , wte'' , μ''-ok , ext₂)) =
+    now (v' , (μ'' , (Σ'' , val , ((steps ▻ step) , (wte'' , μ''-ok , ⊑-trans ext₁ ext₂)))))
   ... | (later x) = later (♯ (♭ x >>=
-      λ{ (v' , μ'' , Σ'' , val , steps , wte'' , μ''-ok) →
-        now (v' , μ'' , Σ'' , val , steps ▻ step , wte'' , μ''-ok)
-      }
-    ))
+    λ{ (v' , μ'' , Σ'' , val , steps , wte'' , μ''-ok , ext₂) →
+      now (v' , μ'' , Σ'' , val , steps ▻ step , wte'' , μ''-ok , ⊑-trans ext₁ ext₂)
+    }))
