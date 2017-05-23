@@ -20,6 +20,20 @@ data _[_]=_ {a} {A : Set a} : List A → ℕ → A → Set where
 []=-functional .(_ ∷ _) .0 here here = refl
 []=-functional .(_ ∷ _) .(suc _) (there p) (there q) = []=-functional _ _ p q
 
+[]=-map : ∀ {a b}{A : Set a}{B : Set b}{l : List A}{i x}{f : A → B} →
+            l [ i ]= x → (map f l) [ i ]= (f x)
+[]=-map here = here
+[]=-map (there p) = there ([]=-map p)
+
+maybe-lookup : ∀ {a}{A : Set a} → ℕ → List A → Maybe A
+maybe-lookup n [] = nothing
+maybe-lookup zero (x ∷ μ) = just x
+maybe-lookup (suc n) (x ∷ μ) = maybe-lookup n μ
+
+maybe-lookup-safe : ∀ {a}{A : Set a}{l : List A} {i x} → l [ i ]= x → maybe-lookup i l ≡ just x
+maybe-lookup-safe here = refl
+maybe-lookup-safe (there p) = maybe-lookup-safe p
+
 lookup : ∀ {a} {A : Set a} → (l : List A) → Fin (length l) → A
 lookup [] ()
 lookup (x ∷ l) zero = x
@@ -87,33 +101,47 @@ xs⊒ys[i] (there p) (x ∷ q) = there (xs⊒ys[i] p q)
 ⊑-map [] = []
 ⊑-map {f = f} (x ∷ p) = f x ∷ (⊑-map p)
 
-pointwise-length : ∀ {a b ℓ A B P l m} → Rel {a} {b} {ℓ} {A} {B} P l m → length l ≡ length m
-pointwise-length [] = refl
-pointwise-length (x∼y ∷ p) = cong suc (pointwise-length p)
+module Pointwise where
+  pointwise-length : ∀ {a b ℓ A B P l m} → Rel {a} {b} {ℓ} {A} {B} P l m → length l ≡ length m
+  pointwise-length [] = refl
+  pointwise-length (x∼y ∷ p) = cong suc (pointwise-length p)
 
-[]=-length : ∀ {a} {A : Set a} {L : List A} {i x} → L [ i ]= x → i < length L
-[]=-length here = s≤s z≤n
-[]=-length (there p) = s≤s ([]=-length p)
+  []=-length : ∀ {a} {A : Set a} {L : List A} {i x} → L [ i ]= x → i < length L
+  []=-length here = s≤s z≤n
+  []=-length (there p) = s≤s ([]=-length p)
 
-∷ʳ[length] : ∀ {a} {A : Set a} (l : List A) x → (l ∷ʳ x) [ length l ]= x
-∷ʳ[length] [] y = here
-∷ʳ[length] (x ∷ Σ) y = there (∷ʳ[length] Σ y)
+  ∷ʳ[length] : ∀ {a} {A : Set a} (l : List A) x → (l ∷ʳ x) [ length l ]= x
+  ∷ʳ[length] [] y = here
+  ∷ʳ[length] (x ∷ Σ) y = there (∷ʳ[length] Σ y)
 
-all-∷ʳ : ∀ {a p} {A : Set a} {l : List A} {x} {P : A → Set p} → All P l → P x → All P (l ∷ʳ x)
-all-∷ʳ [] q = q ∷ []
-all-∷ʳ (px ∷ p) q = px ∷ (all-∷ʳ p q)
+  all-∷ʳ : ∀ {a p} {A : Set a} {l : List A} {x} {P : A → Set p} → All P l → P x → All P (l ∷ʳ x)
+  all-∷ʳ [] q = q ∷ []
+  all-∷ʳ (px ∷ p) q = px ∷ (all-∷ʳ p q)
 
-pointwise-∷ʳ : ∀ {a b ℓ A B P l m x y} → Rel {a} {b} {ℓ} {A} {B} P l m → P x y →
-               Rel {a} {b} {ℓ} {A} {B} P (l ∷ʳ x) (m ∷ʳ y)
-pointwise-∷ʳ [] q = q ∷ []
-pointwise-∷ʳ (x∼y ∷ p) q = x∼y ∷ (pointwise-∷ʳ p q)
+  pointwise-∷ʳ : ∀ {a b ℓ A B P l m x y} → Rel {a} {b} {ℓ} {A} {B} P l m → P x y →
+                Rel {a} {b} {ℓ} {A} {B} P (l ∷ʳ x) (m ∷ʳ y)
+  pointwise-∷ʳ [] q = q ∷ []
+  pointwise-∷ʳ (x∼y ∷ p) q = x∼y ∷ (pointwise-∷ʳ p q)
 
-postulate
-  pointwise-[]≔ : ∀ {a b ℓ A B P l m i x y} →
-                  Rel {a} {b} {ℓ} {A} {B} P l m → (p : l [ i ]= x) → (q : i < length m) → P x y →
-                  Rel {a} {b} {ℓ} {A} {B} P l (m [ fromℕ≤ q ]≔ y)
-{-}
-pointwise-[]≔ [] () r
-pointwise-[]≔ (x∼y ∷ r) here (s≤s z≤n) z = z ∷ r
-pointwise-[]≔ (x∼y ∷ r) (there p) (s≤s q) z = subst (λ x → Rel _ _ x) {!!} (x∼y ∷ pointwise-[]≔ r p q z) 
--}
+  pointwise-lookup : ∀ {a b ℓ A B P l m i x} → Rel {a} {b} {ℓ} {A} {B} P l m →
+                     l [ i ]= x → ∃ λ y → P x y
+  pointwise-lookup (x∼y ∷ r) here = , x∼y
+  pointwise-lookup (x∼y ∷ r) (there p) = pointwise-lookup r p
+
+  pointwise-maybe-lookup : ∀ {a b ℓ A B P l m i x} → Rel {a} {b} {ℓ} {A} {B} P l m →
+                     l [ i ]= x → ∃ λ y → maybe-lookup i m ≡ just y × P x y
+  pointwise-maybe-lookup [] ()
+  pointwise-maybe-lookup (x∼y ∷ r) here = , refl , x∼y
+  pointwise-maybe-lookup (x∼y ∷ r) (there p) = pointwise-maybe-lookup r p
+
+  postulate
+    pointwise-[]≔ : ∀ {a b ℓ A B P l m i x y} →
+                    Rel {a} {b} {ℓ} {A} {B} P l m → (p : l [ i ]= x) → (q : i < length m) → P x y →
+                    Rel {a} {b} {ℓ} {A} {B} P l (m [ fromℕ≤ q ]≔ y)
+  {-}
+  pointwise-[]≔ [] () r
+  pointwise-[]≔ (x∼y ∷ r) here (s≤s z≤n) z = z ∷ r
+  pointwise-[]≔ (x∼y ∷ r) (there p) (s≤s q) z = subst (λ x → Rel _ _ x) {!!} (x∼y ∷ pointwise-[]≔ r p q z) 
+  -}
+
+open Pointwise public
