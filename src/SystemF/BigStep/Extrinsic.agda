@@ -9,7 +9,7 @@ open import Extensions.List
 
 open import SystemF.BigStep.Types
 
--- erased System F syntax
+-- erased (type-free) System F syntax
 infix 100 _[_]
 data Term : Set where
   unit : Term
@@ -19,6 +19,7 @@ data Term : Set where
   _[-] : Term → Term
   var : ℕ → Term
 
+-- typing context
 Ctx : ℕ → Set
 Ctx n = List (Type n)
 
@@ -26,22 +27,7 @@ infixl 30 _ctx/_
 _ctx/_ : ∀ {n m} → Ctx n → Sub Type n m → Ctx m
 Γ ctx/ ρ = map (flip _/_ ρ) Γ
 
--- weakening followed by sub disappears on contexts
-ctx/-wk-sub≡id : ∀ {n} (Γ : Ctx n) a → (Γ ctx/ wk) ctx/ (sub a) ≡ Γ
-ctx/-wk-sub≡id Γ a = begin
-  _ ≡⟨ sym (ListProp.map-compose Γ) ⟩
-  map (λ x → x / wk / (sub a)) Γ ≡⟨ ListProp.map-cong Lemmas.wk-sub-vanishes Γ ⟩
-  map Fun.id Γ ≡⟨ ListProp.map-id Γ ⟩
-  _ ∎
-
--- weakening commutes with other substitutions on contexts
-ctx/-wk-comm : ∀ {n m} (Γ : Ctx n) (ρ : Sub Type n m) → (Γ ctx/ ρ) ctx/ wk ≡ Γ ctx/ wk ctx/ (ρ ↑)
-ctx/-wk-comm Γ ρ = begin
-  _ ≡⟨ sym $ ListProp.map-compose Γ ⟩
-  map (λ x → x / ρ / wk) Γ ≡⟨ ListProp.map-cong Lemmas.wk-commutes Γ ⟩
-  map (λ x → x / wk / ρ ↑) Γ ≡⟨ ListProp.map-compose Γ ⟩
-  _ ∎
-
+-- welltyped terms
 data _⊢_∶_ {n}(Γ : Ctx n) : Term → Type n → Set where
 
   unit : -------------------
@@ -74,15 +60,6 @@ data _⊢_∶_ {n}(Γ : Ctx n) : Term → Type n → Set where
       ---------------------------
       Γ ⊢ f [-] ∶ (a / (sub b))
 
-_wt/_ : ∀ {n m}{Γ : Ctx n}{t a} → Γ ⊢ t ∶ a → (ρ : Sub Type n m) → (Γ ctx/ ρ) ⊢ t ∶ (a / ρ)
-unit wt/ ρ = unit
-ƛ a t wt/ ρ = ƛ (a / ρ) (t wt/ ρ)
-var x wt/ ρ = var ([]=-map x)
-(f · e) wt/ ρ = (f wt/ ρ) · (e wt/ ρ)
-Λ t wt/ ρ = Λ (subst (λ Γ → Γ ⊢ _ ∶ _) (sym $ ctx/-wk-comm _ ρ) (t wt/ (ρ ↑)))
-(_[_] {a = a} t b) wt/ ρ =
-  subst (λ a → _ ⊢ _ ∶ a) (sym $ Lemmas.sub-commutes a) ((t wt/ ρ) [ (b / ρ) ])
-
 -- environments
 mutual
   Env : Set
@@ -93,8 +70,11 @@ mutual
     clos : Env → (t : Term) → Val
     tclos : Env → (t : Term) → Val
 
-open import Relation.Binary.List.Pointwise hiding (refl)
+open import Relation.Binary.List.Pointwise hiding (refl; map)
 mutual
+
+  -- welltypedness relations between typing contexts and environmets
+  -- is just the pointwise extension of value-welltypedness
   _⊢_ : ∀ {n} → Ctx n → Env → Set
   Γ ⊢ E = Rel (λ{ a v → ⊢̬ v ∶ a}) Γ E
 
@@ -115,11 +95,36 @@ mutual
             ---------------------
             ⊢̬ tclos E t ∶ ∀' a
 
+module UglyBits where
+
+  -- weakening followed by sub disappears on contexts
+  ctx/-wk-sub≡id : ∀ {n} (Γ : Ctx n) a → (Γ ctx/ wk) ctx/ (sub a) ≡ Γ
+  ctx/-wk-sub≡id Γ a = begin
+    _ ≡⟨ sym (ListProp.map-compose Γ) ⟩
+    map (λ x → x / wk / (sub a)) Γ ≡⟨ ListProp.map-cong Lemmas.wk-sub-vanishes Γ ⟩
+    map Fun.id Γ ≡⟨ ListProp.map-id Γ ⟩
+    _ ∎
+
+  -- weakening commutes with other substitutions on contexts
+  ctx/-wk-comm : ∀ {n m} (Γ : Ctx n) (ρ : Sub Type n m) → (Γ ctx/ ρ) ctx/ wk ≡ Γ ctx/ wk ctx/ (ρ ↑)
+  ctx/-wk-comm Γ ρ = begin
+    _ ≡⟨ sym $ ListProp.map-compose Γ ⟩
+    map (λ x → x / ρ / wk) Γ ≡⟨ ListProp.map-cong Lemmas.wk-commutes Γ ⟩
+    map (λ x → x / wk / ρ ↑) Γ ≡⟨ ListProp.map-compose Γ ⟩
+    _ ∎
+
+  _wt/_ : ∀ {n m}{Γ : Ctx n}{t a} → Γ ⊢ t ∶ a → (ρ : Sub Type n m) → (Γ ctx/ ρ) ⊢ t ∶ (a / ρ)
+  unit wt/ ρ = unit
+  ƛ a t wt/ ρ = ƛ (a / ρ) (t wt/ ρ)
+  var x wt/ ρ = var ([]=-map x)
+  (f · e) wt/ ρ = (f wt/ ρ) · (e wt/ ρ)
+  Λ t wt/ ρ = Λ (subst (λ Γ → Γ ⊢ _ ∶ _) (sym $ ctx/-wk-comm _ ρ) (t wt/ (ρ ↑)))
+  (_[_] {a = a} t b) wt/ ρ =
+    subst (λ a → _ ⊢ _ ∶ a) (sym $ Lemmas.sub-commutes a) ((t wt/ ρ) [ (b / ρ) ])
+
 module StepIndexed where
 
-  -- semantics in double-layered maybe monad;
-  -- distinguishing semantic errors from timeouts
-
+  open UglyBits
   open import Level as Lev using ()
   open import Data.Maybe
   open import Category.Monad
@@ -128,7 +133,8 @@ module StepIndexed where
   -- quadratic return through the layered monad
   pattern just² x = just (just x)
 
-  -- substitution free semantics for SystemF
+  -- substitution-free semantics in double-layered maybe monad;
+  -- distinguishing semantic errors from timeouts
   _⊢_⇓_ : ∀ (μ : Env) → Term → ℕ → Maybe (Maybe Val)
   μ ⊢ x ⇓ zero = nothing
   μ ⊢ unit ⇓ (suc n) = just² unit
