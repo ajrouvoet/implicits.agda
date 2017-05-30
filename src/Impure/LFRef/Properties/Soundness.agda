@@ -1,4 +1,4 @@
-module LFRef.Properties.Soundness where
+module Impure.LFRef.Properties.Soundness where
 
 open import Data.Nat
 open import Data.Sum
@@ -14,10 +14,10 @@ open import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary.Core using (REL; Reflexive)
 open import Relation.Binary.List.Pointwise as PRel hiding (refl)
 
-open import LFRef.Syntax
-open import LFRef.Welltyped
-open import LFRef.Eval
-open import LFRef.Properties.Decidable
+open import Impure.LFRef.Syntax
+open import Impure.LFRef.Welltyped
+open import Impure.LFRef.Eval
+open import Impure.LFRef.Properties.Decidable
 
 progress : ∀ {𝕊 Σ A} {e : Exp 0} {μ} →
            𝕊 , Σ ⊢ μ →

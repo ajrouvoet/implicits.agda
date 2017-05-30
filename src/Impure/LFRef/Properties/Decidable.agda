@@ -1,4 +1,4 @@
-module LFRef.Properties.Decidable where
+module Impure.LFRef.Properties.Decidable where
 
 open import Prelude
 open import Relation.Unary
@@ -13,8 +13,8 @@ open import Extensions.Vec as Vec↑ using ()
 open import Relation.Binary.List.Pointwise using (decidable-≡)
 open import Relation.Binary.HeterogeneousEquality as Het using ()
 
-open import LFRef.Syntax hiding (subst)
-open import LFRef.Welltyped
+open import Impure.LFRef.Syntax hiding (subst)
+open import Impure.LFRef.Welltyped
 
 module DecidableEquality where
   -- termination checker has trouble with mapping

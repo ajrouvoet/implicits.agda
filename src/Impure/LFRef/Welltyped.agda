@@ -1,4 +1,4 @@
-module LFRef.Welltyped where
+module Impure.LFRef.Welltyped where
 
 open import Prelude
 
@@ -9,7 +9,7 @@ open import Data.Star hiding (_▻▻_; map)
 open import Data.Sum hiding (map)
 open import Extensions.List as L using ()
 
-open import LFRef.Syntax hiding (subst)
+open import Impure.LFRef.Syntax hiding (subst)
 open import Relation.Binary.List.Pointwise using (Rel)
 
 Ctx : (n : ℕ) → Set

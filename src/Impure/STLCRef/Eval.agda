@@ -1,4 +1,4 @@
-module STLCRef.Eval where
+module Impure.STLCRef.Eval where
 
 open import Prelude
 
@@ -9,8 +9,8 @@ open import Data.Nat
 open import Data.Fin hiding (_<_)
 open import Extensions.List as L
 
-open import STLCRef.Syntax
-open import STLCRef.Welltyped
+open import Impure.STLCRef.Syntax
+open import Impure.STLCRef.Welltyped
 
 _!!_ : ∀ {n i} → (μ : Store n) → i < length μ → ∃ (Val {n})
 _!!_ {i = i} [] ()

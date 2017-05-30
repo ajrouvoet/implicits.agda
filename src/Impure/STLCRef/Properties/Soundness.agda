@@ -1,4 +1,4 @@
-module STLCRef.Properties.Soundness where
+module Impure.STLCRef.Properties.Soundness where
 
 open import Data.Nat
 open import Data.Sum
@@ -13,9 +13,9 @@ open import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary.Core using (REL; Reflexive)
 open import Relation.Binary.List.Pointwise as PRel hiding (refl)
 
-open import STLCRef.Syntax hiding (id)
-open import STLCRef.Welltyped
-open import STLCRef.Eval
+open import Impure.STLCRef.Syntax hiding (id)
+open import Impure.STLCRef.Welltyped
+open import Impure.STLCRef.Eval
 
 ref-value-lemma : ∀ {n A Γ Σ} {e : Exp n} → Γ , Σ ⊢ e ∶ Ref A → Val e → ∃ λ i → e ≡ (loc i)
 ref-value-lemma (var x) ()

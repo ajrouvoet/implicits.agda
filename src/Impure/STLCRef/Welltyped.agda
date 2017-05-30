@@ -1,4 +1,4 @@
-module STLCRef.Welltyped where
+module Impure.STLCRef.Welltyped where
 
 open import Prelude
 open import Data.Nat
@@ -7,7 +7,7 @@ open import Data.List
 open import Data.Fin hiding (_<_)
 open import Extensions.List as L using ()
 
-open import STLCRef.Syntax
+open import Impure.STLCRef.Syntax
 
 -- store typings
 World : Set

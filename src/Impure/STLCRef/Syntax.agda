@@ -1,4 +1,4 @@
-module STLCRef.Syntax where
+module Impure.STLCRef.Syntax where
 
 open import Prelude hiding (subst)
 open import Data.Vec

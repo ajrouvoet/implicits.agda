@@ -1,12 +1,12 @@
-module LFRef.Properties.Confluence where
+module Impure.LFRef.Properties.Confluence where
 
 open import Prelude
 open import Data.List
 open import Extensions.List
 open import Extensions.Nat
 
-open import LFRef.Syntax
-open import LFRef.Eval
+open import Impure.LFRef.Syntax
+open import Impure.LFRef.Eval
 
 private
   val-lemma : ∀ {t} → (v v₁ : Val t)  → v ≡ v₁

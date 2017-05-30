@@ -1,4 +1,4 @@
-module LFRef.Syntax where
+module Impure.LFRef.Syntax where
 
 open import Prelude
 open import Data.Vec hiding ([_]; map)

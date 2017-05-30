@@ -1,4 +1,4 @@
-module LFRef.Eval where
+module Impure.LFRef.Eval where
 
 open import Prelude
 open import Data.Fin using (fromℕ≤)
@@ -9,8 +9,8 @@ open import Data.Vec hiding (map; _∷ʳ_)
 open import Data.Maybe hiding (All; Any)
 open import Extensions.List as L
 
-open import LFRef.Syntax hiding (subst)
-open import LFRef.Welltyped
+open import Impure.LFRef.Syntax hiding (subst)
+open import Impure.LFRef.Welltyped
 
 -- machine configuration: expression to reduce and a store
 Config : Set
