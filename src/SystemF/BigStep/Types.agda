@@ -1,6 +1,7 @@
 module SystemF.BigStep.Types where
 
 open import Prelude
+open import Data.List as List
 
 -- types are indexed by the number of open tvars
 infixl 10 _⇒_
@@ -11,9 +12,10 @@ data Type (n : ℕ) : Set where
   ∀'   : Type (suc n) → Type n
 
 open import Data.Fin.Substitution
-open import Data.Vec
+open import Data.Vec hiding (_∈_; map)
 
 module App {T} (l : Lift T Type )where
+
   open Lift l hiding (var)
   _/_  : ∀ {m n} → Type m → Sub T m n → Type n
   Unit / s = Unit
@@ -43,6 +45,26 @@ tmSubst : TermSubst Type
 tmSubst = record { var = ν; app = App._/_ }
 
 open TermSubst tmSubst hiding (var; subst) public
+
+-- typing context
+Ctx : ℕ → Set
+Ctx n = List (Type n)
+
+_+tm_ : ∀ {n} → Ctx n → Type n → Ctx n
+Γ +tm a = a ∷ Γ
+
+Var : ∀ {n} → Ctx n → Type n → Set
+Var Γ a = a ∈ Γ
+  where
+    open import Data.List.Any
+    open Membership-≡
+
+infixl 30 _ctx/_
+_ctx/_ : ∀ {n m} → Ctx n → Sub Type n m → Ctx m
+Γ ctx/ ρ = List.map (flip _/_ ρ) Γ
+
+_+ty  : ∀ {n} → Ctx n → Ctx (suc n)
+Γ +ty = Γ ctx/ wk
 
 module Lemmas where
 
@@ -79,3 +101,24 @@ module Lemmas where
         _ ∎
 
   open TermLemmas tyLemmas public hiding (var)
+
+module CtxLemmas where
+
+  open import Data.List.Properties as ListProp using ()
+  open import Function as Fun
+
+  -- weakening followed by sub disappears on contexts
+  ctx/-wk-sub≡id : ∀ {n} (Γ : Ctx n) a → (Γ ctx/ wk) ctx/ (sub a) ≡ Γ
+  ctx/-wk-sub≡id Γ a = begin
+    _ ≡⟨ sym (ListProp.map-compose Γ) ⟩
+    map (λ x → x / wk / (sub a)) Γ ≡⟨ ListProp.map-cong Lemmas.wk-sub-vanishes Γ ⟩
+    map Fun.id Γ ≡⟨ ListProp.map-id Γ ⟩
+    _ ∎
+
+  -- weakening commutes with other substitutions on contexts
+  ctx/-wk-comm : ∀ {n m} (Γ : Ctx n) (ρ : Sub Type n m) → (Γ ctx/ ρ) ctx/ wk ≡ Γ ctx/ wk ctx/ (ρ ↑)
+  ctx/-wk-comm Γ ρ = begin
+    _ ≡⟨ sym $ ListProp.map-compose Γ ⟩
+    map (λ x → x / ρ / wk) Γ ≡⟨ ListProp.map-cong Lemmas.wk-commutes Γ ⟩
+    map (λ x → x / wk / ρ ↑) Γ ≡⟨ ListProp.map-compose Γ ⟩
+    _ ∎

@@ -5,21 +5,9 @@ open import Prelude hiding (⊥)
 open import SystemF.BigStep.Types
 
 open import Data.List hiding ([_])
+open import Data.List.Any.Membership
 open import Data.List.Any hiding (map)
 open import Data.Fin.Substitution
-open Membership-≡
-
-Ctx : ℕ → Set
-Ctx n = List (Type n)
-
-_+tm_ : ∀ {n} → Ctx n → Type n → Ctx n
-Γ +tm a = a ∷ Γ
-
-_+ty  : ∀ {n} → Ctx n → Ctx (suc n)
-Γ +ty = map weaken Γ
-
-Var : ∀ {n} → Ctx n → Type n → Set
-Var Γ a = a ∈ Γ
 
 -- intrinsically typed syntax for System F
 infix 100 _[_]
@@ -31,19 +19,17 @@ data Term {n}(Γ : Ctx n) : Type n → Set where
   _[_] : ∀ {a} → Term Γ (∀' a) → ∀ b → Term Γ (a / sub b)
   var : ∀ {a} → Var Γ a → Term Γ a
 
-_ctx/_ : ∀ {n m} → Ctx n → (ρ : Sub Type n m) → Ctx m
-Γ ctx/ ρ = map (flip _/_ ρ) Γ
-
 _tm/_ : ∀ {n m}{Γ : Ctx n}{a} → Term Γ a → (ρ : Sub Type n m) → Term (Γ ctx/ ρ) (a / ρ)
 unit tm/ ρ = unit
 ƛ a t tm/ ρ = ƛ (a / ρ) (t tm/ ρ)
-Λ t tm/ ρ = Λ {!!}
+Λ t tm/ ρ = Λ (subst (λ Γ → Term Γ _) (sym $ CtxLemmas.ctx/-wk-comm _ ρ) (t tm/ (ρ ↑)))
 (f · e) tm/ ρ = (f tm/ ρ) · (e tm/ ρ)
-(t [ b ]) tm/ ρ = {!(t tm/ ρ) [ b / ρ ]!}
-var x tm/ ρ = var {!!}
-
-postulate
-  Γ/wk-sub≡Γ : ∀ {n}{Γ : Ctx n}{a} → (Γ +ty) ctx/ sub a ≡ Γ
+(_[_] {a = a} t b) tm/ ρ =
+  subst (λ a → Term _ a) (sym $ Lemmas.sub-commutes a) ((t tm/ ρ) [ b / ρ ])
+var x tm/ ρ = var (Inverse.to map-∈↔ ⟨$⟩ (, (x , refl)))
+  where
+    open import Function.Equality
+    open import Function.Inverse
 
 module Semantics where
 
@@ -74,7 +60,9 @@ module Semantics where
         -- and proof that weakening + substitution disappears on the context.
         -- The context lemma is computationally irrelevant, but the
         -- type-in-term substitution is not as trivially irrelevant
-        (tclos C' b) → later (♯ ((subst Env (sym Γ/wk-sub≡Γ) C') ⊢ b tm/ sub ty ⇓P))
+        (tclos C' b) → later (♯ (
+         (subst Env (sym $ CtxLemmas.ctx/-wk-sub≡id _ ty) C') ⊢ b tm/ sub ty ⇓P
+        ))
       })
     C ⊢ f · e ⇓P =
       (C ⊢ f ⇓P) >>= λ{
@@ -98,4 +86,4 @@ module Example where
   id' : Term {0} [] (∀' (ν zero ⇒ ν zero))
   id' = Λ (ƛ (ν z) (var (here refl)))
 
-  id·unit-test = run ([] ⊢ ((id' [ Unit ]) · unit) ⇓) for 10 steps
+  test = run ([] ⊢ ((id' [ Unit ]) · unit) ⇓) for 10 steps
