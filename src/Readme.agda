@@ -10,9 +10,9 @@ open import Implicits.Everything
 
 -- Simply typed lambda calculus with references,
 -- accompanied by a store-passing small-step semantics
-open import STLCRef.Readme
+open import Impure.STLCRef.Readme
 
 -- First order dependently typed lambda calculus with references,
 -- accompanied by a store-passing small-step semantics
 -- and a proof that the small-step semantics is deterministic
-open import LFRef.Readme
+open import Impure.LFRef.Readme
