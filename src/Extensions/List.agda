@@ -57,6 +57,19 @@ _[_]≔_ : ∀ {a} {A : Set a} → (l : List A) → Fin (length l) → A → Lis
 (x ∷ xs) [ zero ]≔ x' = x' ∷ xs
 (x ∷ xs) [ suc i ]≔ y = xs [ i ]≔ y
 
+module _ where
+  open import Data.List.Any
+  open Membership-≡
+
+  _[_]≔'_ : ∀ {a} {A : Set a}{x} → (l : List A) → x ∈ l → A → List A
+  [] [ () ]≔' y
+  (x ∷ l) [ here px ]≔' y = y ∷ l
+  (x ∷ l) [ there px ]≔' y = x ∷ (l [ px ]≔' y)
+
+  ≔'-[]= :  ∀ {a} {A : Set a}{x}{l : List A} (p : x ∈ l) → ∀ {y} → y ∈ (l [ p ]≔' y)
+  ≔'-[]= (here px) = here refl
+  ≔'-[]= (there p) = there (≔'-[]= p)
+
 -- proof matters; update a particular witness of a property
 _All[_]≔_ : ∀ {a p} {A : Set a} {P : A → Set p} {xs : List A} {i x} →
             All P xs → xs [ i ]= x → P x → All P xs
