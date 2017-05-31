@@ -20,27 +20,26 @@ data Val {n}(N : νCtx n) : Type n → Set where
 Env N Γ = All (λ u → ∃ λ l → Val N l × N ⊢ l <: u) Γ
 
 open import Data.Star hiding (_>>=_)
-module _ where
 
-  -- All values upperbounded by some function type, themselves have a function type;
-  -- You might expect the lemma to state that the value *is* a closure; but for this you need
-  -- heterogeneous equality and (consequently?) the lemma is annoying to prove.
-  <:⇒ : ∀ {n N}{a b x : Type n} → Val N x → N ⊢ x <: a ⇒ b → ∃₂ λ a' b' → x ≡ (a' ⇒ b')
-  <:⇒ v ε = _ , _ , refl
-  <:⇒ () (ν x ◅ p)
-  <:⇒ () (Bot<: ◅ _)
-  <:⇒ v (_<:Top ◅ p) = ⊥-elim (<:-Lemmas.top-max (λ ()) p)
-  <:⇒ v (∀≤ u ◅ p) = ⊥-elim (<:-Lemmas.¬∀≤⇒ p)
-  <:⇒ v ((a ⇒ b) ◅ p) = _ , _ , refl
+-- All values upperbounded by some function type, themselves have a function type;
+-- You might expect the lemma to state that the value *is* a closure; but for this you need
+-- heterogeneous equality and (consequently?) the lemma is annoying to prove.
+<:⇒ : ∀ {n N}{a b x : Type n} → Val N x → N ⊢ x <: a ⇒ b → ∃₂ λ a' b' → x ≡ (a' ⇒ b')
+<:⇒ v ε = _ , _ , refl
+<:⇒ () (ν x ◅ p)
+<:⇒ () (Bot<: ◅ _)
+<:⇒ v (_<:Top ◅ p) = ⊥-elim (<:-Lemmas.top-max (λ ()) p)
+<:⇒ v (∀≤ u ◅ p) = ⊥-elim (<:-Lemmas.¬∀≤⇒ p)
+<:⇒ v ((a ⇒ b) ◅ p) = _ , _ , refl
 
-  -- Similar lemma for type closures
-  <:∀≤ : ∀ {n N u a}{x : Type n} → Val N x → N ⊢ x <: (∀≤ u a) → ∃₂ λ a' u' → x ≡ (∀≤ u' a')
-  <:∀≤ v ε = _ , _ , refl
-  <:∀≤ () (ν x ◅ p)
-  <:∀≤ () (Bot<: ◅ p)
-  <:∀≤ v (_<:Top ◅ p) = ⊥-elim (<:-Lemmas.top-max (λ ()) p)
-  <:∀≤ v ((_ ⇒ _) ◅ p) = ⊥-elim (<:-Lemmas.¬⇒≤∀ p)
-  <:∀≤ (tclos {a = a} u E t) (∀≤ x ◅ p) = a , u , refl
+-- Similar lemma for type closures
+<:∀≤ : ∀ {n N u a}{x : Type n} → Val N x → N ⊢ x <: (∀≤ u a) → ∃₂ λ a' u' → x ≡ (∀≤ u' a')
+<:∀≤ v ε = _ , _ , refl
+<:∀≤ () (ν x ◅ p)
+<:∀≤ () (Bot<: ◅ p)
+<:∀≤ v (_<:Top ◅ p) = ⊥-elim (<:-Lemmas.top-max (λ ()) p)
+<:∀≤ v ((_ ⇒ _) ◅ p) = ⊥-elim (<:-Lemmas.¬⇒≤∀ p)
+<:∀≤ (tclos {a = a} u E t) (∀≤ x ◅ p) = a , u , refl
 
 open import Category.Monad.Partiality
 open import Coinduction

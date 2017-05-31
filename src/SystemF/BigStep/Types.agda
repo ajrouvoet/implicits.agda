@@ -53,7 +53,7 @@ Ctx n = List (Type n)
 _+tm_ : ∀ {n} → Ctx n → Type n → Ctx n
 Γ +tm a = a ∷ Γ
 
-Var : ∀ {n} → Ctx n → Type n → Set
+Var : ∀ {n} → (Ctx n) → Type n → Set
 Var Γ a = a ∈ Γ
   where
     open import Data.List.Any

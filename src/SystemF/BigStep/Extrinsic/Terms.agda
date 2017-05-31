@@ -13,3 +13,13 @@ data Term : Set where
   _·_ : Term → Term → Term
   _[-] : Term → Term
   var : ℕ → Term
+
+-- environments
+Env : Set
+
+data Val : Set where
+  unit : Val
+  clos : Env → (t : Term) → Val
+  tclos : Env → (t : Term) → Val
+
+Env = List Val

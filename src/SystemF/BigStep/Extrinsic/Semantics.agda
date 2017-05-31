@@ -11,130 +11,43 @@ open import SystemF.BigStep.Types
 open import SystemF.BigStep.Extrinsic.Terms
 open import SystemF.BigStep.Extrinsic.Welltyped
 
--- environments
-mutual
-  Env : Set
-  Env = List Val
+open import Level as Lev using ()
+open import Data.Maybe
+open import Category.Monad
+open RawMonad (monad {f = Lev.zero})
 
-  data Val : Set where
-    unit : Val
-    clos : Env → (t : Term) → Val
-    tclos : Env → (t : Term) → Val
+-- quadratic return through the layered monad
+pattern just² x = just (just x)
 
-open import Relation.Binary.List.Pointwise hiding (refl; map)
-mutual
+-- substitution-free semantics in double-layered maybe monad;
+-- distinguishing semantic errors from timeouts
+-- (the code is spaced to be read side-by-side with the safety proof)
+_⊢_⇓_ : ∀ (μ : Env) → Term → ℕ → Maybe (Maybe Val)
+μ ⊢ x ⇓ zero = nothing
+μ ⊢ unit ⇓ (suc n) = just² unit
+μ ⊢ ƛ t ⇓ (suc n) = just² (clos μ t)
+μ ⊢ Λ t ⇓ (suc n) = just² (tclos μ t )
 
-  -- welltypedness relations between typing contexts and environmets
-  -- is just the pointwise extension of value-welltypedness
-  _⊢_ : ∀ {n} → Ctx n → Env → Set
-  Γ ⊢ E = Rel (λ{ a v → ⊢̬ v ∶ a}) Γ E
+μ ⊢ f · e ⇓ (suc n) with (μ ⊢ f ⇓ n) | μ ⊢ e ⇓ n
+-- timeout
+... | nothing | _ = nothing
+... | just _ | nothing = nothing
+-- success
+... | just² (clos μ' t) | just² v = (v ∷ μ') ⊢ t ⇓ n
+-- semantic errors & semantic error propagation
+... | _ | _ = just nothing
 
-  data ⊢̬_∶_ {n} : Val → Type n → Set where
+μ ⊢ t [-] ⇓ (suc n) with (μ ⊢ t ⇓ n)
+-- timeout
+... | nothing = nothing
+-- success
+... | just² (tclos μ' t') = μ' ⊢ t' ⇓ n
+-- semantic error (propagation)
+... | _ = just nothing
 
-    unit : -------------------
-          ⊢̬ unit ∶ Unit
+μ ⊢ var x ⇓ (suc n) = just (maybe-lookup x μ)
 
-    clos : ∀ {b t}{Γ : Ctx n}{E a} →
-            (a ∷ Γ) ⊢ t ∶ b →
-            Γ ⊢ E →
-            -------------------
-            ⊢̬ clos E t ∶ (a ⇒ b)
-
-    tclos : ∀ {a t}{Γ : Ctx n}{E} →
-            (Γ ctx/ wk) ⊢ t ∶ a →
-            Γ ⊢ E →
-            ---------------------
-            ⊢̬ tclos E t ∶ ∀' a
-
-module UglyBits where
-
-  _wt/_ : ∀ {n m}{Γ : Ctx n}{t a} → Γ ⊢ t ∶ a → (ρ : Sub Type n m) → (Γ ctx/ ρ) ⊢ t ∶ (a / ρ)
-  unit wt/ ρ = unit
-  ƛ a t wt/ ρ = ƛ (a / ρ) (t wt/ ρ)
-  var x wt/ ρ = var ([]=-map x)
-  (f · e) wt/ ρ = (f wt/ ρ) · (e wt/ ρ)
-  Λ t wt/ ρ = Λ (subst (λ Γ → Γ ⊢ _ ∶ _) (sym $ CtxLemmas.ctx/-wk-comm _ ρ) (t wt/ (ρ ↑)))
-  (_[_] {a = a} t b) wt/ ρ =
-    subst (λ a → _ ⊢ _ ∶ a) (sym $ Lemmas.sub-commutes a) ((t wt/ ρ) [ (b / ρ) ])
-
-module StepIndexed where
-
-  open UglyBits
-  open import Level as Lev using ()
-  open import Data.Maybe
-  open import Category.Monad
-  open RawMonad (monad {f = Lev.zero})
-
-  -- quadratic return through the layered monad
-  pattern just² x = just (just x)
-
-  -- substitution-free semantics in double-layered maybe monad;
-  -- distinguishing semantic errors from timeouts
-  _⊢_⇓_ : ∀ (μ : Env) → Term → ℕ → Maybe (Maybe Val)
-  μ ⊢ x ⇓ zero = nothing
-  μ ⊢ unit ⇓ (suc n) = just² unit
-  μ ⊢ ƛ t ⇓ (suc n) = just² (clos μ t)
-  μ ⊢ Λ t ⇓ (suc n) = just² (tclos μ t )
-  μ ⊢ f · e ⇓ (suc n) with (μ ⊢ f ⇓ n) | μ ⊢ e ⇓ n
-  -- timeout
-  ... | nothing | _ = nothing
-  ... | _ | nothing = nothing
-  -- success
-  ... | just² (clos μ' t) | just² v = (v ∷ μ') ⊢ t ⇓ n
-  -- semantic errors & semantic error propagation
-  ... | _ | _ = just nothing
-  μ ⊢ t [-] ⇓ (suc n) with (μ ⊢ t ⇓ n)
-  -- timeout
-  ... | nothing = nothing
-  -- success
-  ... | just² (tclos μ' t') = μ' ⊢ t' ⇓ n
-  -- semantic error (propagation)
-  ... | _ = just nothing
-  μ ⊢ var x ⇓ (suc n) = just (maybe-lookup x μ)
-
-  -- extrinsic safety
-  _⊢_⇓_ok : ∀ {n}{Γ : Ctx n}{μ : Env}{t a} →
-            Γ ⊢ μ → Γ ⊢ t ∶ a → ∀ n → All (Any (λ v → ⊢̬ v ∶ a)) (μ ⊢ t ⇓ n)
-
-  μ ⊢ x ⇓ zero ok = nothing
-
-  μ ⊢ unit ⇓ suc n ok = just² unit
-
-  μ ⊢ ƛ a x ⇓ suc n ok = just² (clos x μ)
-
-  μ ⊢ Λ x ⇓ suc n ok = just² (tclos x μ)
-
-  _⊢_⇓_ok {μ = E} μ (_·_ {f = f}{e = e} wtf wte) (suc n) with
-    E ⊢ f ⇓ n | E ⊢ e ⇓ n | μ ⊢ wtf ⇓ n ok | μ ⊢ wte ⇓ n ok
-  -- timeout
-  ... | nothing | _ | _ | _ = nothing
-  ... | just _ | nothing | _ | _ = nothing
-
-  -- success
-  ... | just² (clos μ' t) | just² v | just² (clos wtt wtμ') | just² px = (px ∷ wtμ') ⊢ wtt ⇓ n ok
-
-  -- semantic error propagation
-  ... | just nothing | _ | (just ()) | _
-  ... | _ | just nothing | _ | (just ())
-
-  -- semantic errors
-  ... | just² (tclos _ _) | _ | just² () | _
-  ... | just² unit | _ | just² () | _
-
-  _⊢_⇓_ok {μ = E} μ (_[_] {f = f} wtf b) (suc n) with E ⊢ f ⇓ n | μ ⊢ wtf ⇓ n ok
-  -- timeout
-  ... | nothing | _ = nothing
-  -- semantic errors
-  ... | just nothing | (just ())
-  ... | just² unit | just² ()
-  ... | just² (clos x t) | just² ()
-  -- success
-  ... | just² (tclos μ' t) | just² (tclos tok μ'ok) =
-    μ'ok ⊢ subst (λ Γ → Γ ⊢ _ ∶ _) (CtxLemmas.ctx/-wk-sub≡id _ b) (tok wt/ (sub b)) ⇓ n ok
-
-  μ ⊢ var x ⇓ suc n ok with pointwise-maybe-lookup μ x
-  μ ⊢ var x ⇓ suc n ok | _ , is-just , p rewrite is-just = just² p
-
+{-
 module DelayMonad where
 
   open import Coinduction
@@ -203,4 +116,5 @@ module DelayMonad where
     μ ⊢ f · e ⇓okP = {!μ ⊢ f ⇓okP!}
     μ ⊢ Λ t₁ ⇓okP = {!!}
     μ ⊢ t [ b ] ⇓okP = {!!}
+-}
 -}

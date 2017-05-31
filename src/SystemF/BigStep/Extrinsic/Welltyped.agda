@@ -38,3 +38,28 @@ data _⊢_∶_ {n}(Γ : Ctx n) : Term → Type n → Set where
       (b : Type n) →
       ---------------------------
       Γ ⊢ f [-] ∶ (a / (sub b))
+
+open import Relation.Binary.List.Pointwise hiding (refl; map) public
+
+-- welltypedness relations between typing contexts and environmets
+-- is just the pointwise extension of value-welltypedness
+_⊢_ : ∀ {n} → Ctx n → Env → Set
+
+data ⊢̬_∶_ {n} : Val → Type n → Set where
+
+  unit : -------------------
+        ⊢̬ unit ∶ Unit
+
+  clos : ∀ {b t}{Γ : Ctx n}{E a} →
+          (a ∷ Γ) ⊢ t ∶ b →
+          Γ ⊢ E →
+          -------------------
+          ⊢̬ clos E t ∶ (a ⇒ b)
+
+  tclos : ∀ {a t}{Γ : Ctx n}{E} →
+          (Γ ctx/ wk) ⊢ t ∶ a →
+          Γ ⊢ E →
+          ---------------------
+          ⊢̬ tclos E t ∶ ∀' a
+
+Γ ⊢ E = Rel (λ{ a v → ⊢̬ v ∶ a}) Γ E
