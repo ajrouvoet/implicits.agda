@@ -19,7 +19,7 @@ private
 []=-functional .(_ ∷ _) _ here here = refl
 []=-functional .(_ ∷ _) .(suc _) (there p) (there q) = []=-functional _ _ p q
 
-lookup⋆map : ∀ {a b : Set} {n} (v : Vec a n) (f : a → b) x →
+lookup⋆map : ∀ {a b} {A : Set a} {B : Set b} {n} (v : Vec A n) (f : A → B) x →
              f (lookup x v) ≡ lookup x (map f v)
 lookup⋆map [] f ()
 lookup⋆map (x ∷ xs) f zero = refl

@@ -27,6 +27,12 @@ module Declarative where
 
   <:-trans = _◅◅_
 
+  lowerbound : ∀ {n}{N : νCtx n}{a b} → N ⊢ a <: b → Type n
+  lowerbound {a = a} _ = a
+
+  upperbound : ∀ {n}{N : νCtx n}{a b} → N ⊢ a <: b → Type n
+  upperbound {b = b} _ = b
+
   module <:-Lemmas where
     top-max : ∀ {n N}{x : Type n} → x ≢ Top → ¬ (N ⊢ Top <: x)
     top-max ¬Top ε = ¬Top refl
@@ -98,3 +104,15 @@ module Algorithmic where
 
     -- exposing the structure of a type through the νCtx
     ν : ∀ {i u v} → N [ i ]= u → N ⊢ u ⇑ v → N ⊢ ν i ⇑ v
+
+  lowerbound : ∀ {n}{N : νCtx n}{a b} → N ⊢ a <: b → Type n
+  lowerbound {a = a} _ = a
+
+  upperbound : ∀ {n}{N : νCtx n}{a b} → N ⊢ a <: b → Type n
+  upperbound {b = b} _ = b
+
+  module <:-Lemmas where
+
+    ⇒-contra-dom : ∀ {n N}{a b a' b' u : Type n} → N ⊢ (a ⇒ b) <: u → N ⊢ u ⇑ (a' ⇒ b') → N ⊢ a' <: a
+    ⇒-contra-dom () (ν _ _)
+    ⇒-contra-dom (a ⇒ b) ⇒-exp = a

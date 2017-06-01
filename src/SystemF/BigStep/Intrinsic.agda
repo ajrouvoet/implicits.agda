@@ -54,6 +54,10 @@ module Semantics where
     C ⊢ unit ⇓P = now unit
     C ⊢ ƛ a t ⇓P = now (clos C t)
     C ⊢ Λ t ⇓P = now (tclos C t)
+    C ⊢ f · e ⇓P =
+      (C ⊢ f ⇓P) >>= λ{
+        (clos C' fb) → (C ⊢ e ⇓P) >>= λ v → later (♯ ((v ∷ C') ⊢ fb ⇓P))
+      }
     C ⊢ t [ ty ] ⇓P =
       (C ⊢ t ⇓P >>= λ{
         -- We have to substitute a type into the body here
@@ -64,10 +68,6 @@ module Semantics where
          (subst Env (sym $ CtxLemmas.ctx/-wk-sub≡id _ ty) C') ⊢ b tm/ sub ty ⇓P
         ))
       })
-    C ⊢ f · e ⇓P =
-      (C ⊢ f ⇓P) >>= λ{
-        (clos C' fb) → (C ⊢ e ⇓P) >>= λ v → later (♯ ((v ∷ C') ⊢ fb ⇓P))
-      }
     C ⊢ var x ⇓P = now (lookup C x)
 
   -- definitional interpreter in the partiality monad

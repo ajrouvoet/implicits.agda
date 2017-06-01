@@ -4,7 +4,7 @@ module FSub.Intrinsic.Declarative.Syntax where
 -- We're using an declarative definition of subtyping.
 
 open import Prelude
-open import Data.Vec hiding (_>>=_)
+open import Data.Vec hiding (_>>=_; [_])
 open import Extensions.Vec
 
 open import FSub.Types

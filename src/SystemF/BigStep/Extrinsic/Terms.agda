@@ -23,3 +23,10 @@ data Val : Set where
   tclos : Env → (t : Term) → Val
 
 Env = List Val
+
+-- injection of Values into Terms
+
+⟦_⟧ : Val → Term
+⟦ unit ⟧ = unit
+⟦ clos x t ⟧ = ƛ t
+⟦ tclos x t ⟧ = Λ t

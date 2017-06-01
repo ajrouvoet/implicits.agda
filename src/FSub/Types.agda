@@ -86,6 +86,9 @@ _ctx/_ : ∀ {n m} → Ctx n → Sub Type n m → Ctx m
 _+ty  : ∀ {n} → Ctx n → Ctx (suc n)
 Γ +ty = Γ ctx/ wk
 
+_νctx[/_] : νCtx 1 → Type 0 → νCtx 0
+(x ∷ N) νctx[/ a ] = Vec.map (flip _/_ (sub a)) N
+
 module Lemmas where
 
   open import Data.Fin.Substitution.Lemmas

@@ -56,6 +56,11 @@ _,_⊢_ : ∀ {n} → νCtx n → Ctx n → Env → Set
 
 data _⊢̬_∶_ {n}(N : νCtx n) : Val → Type n → Set where
 
+  -- NOTE we have chosen *not* to include subsumption in the static semantics
+  -- of values in exchange for canonical values;
+  -- This means we only have minimal typings for values and we'll often
+  -- have to work with the weaker judgement below
+
   unit : -------------------
          N ⊢̬ unit ∶ Unit
 
@@ -71,7 +76,10 @@ data _⊢̬_∶_ {n}(N : νCtx n) : Val → Type n → Set where
           ---------------------
           N ⊢̬ tclos E t ∶ ∀≤ u a
 
-N , Γ ⊢ E = Rel (λ{ a v → ∃ λ l → N ⊢̬ v ∶ l × N ⊢ l <: a}) Γ E
+data _⊢̬_<:_ {n}(N : νCtx n) : Val → Type n → Set where
+  _%_ : ∀ {v l u} → N ⊢̬ v ∶ l → N ⊢ l <: u → N ⊢̬ v <: u
+
+N , Γ ⊢ E = Rel (λ a v → N ⊢̬ v <: a) Γ E
 
 eraseᵗᵐ : ∀ {n}{N : νCtx n}{Γ t a} → N , Γ ⊢ t ∶ a → Term
 eraseᵗᵐ {t = t} _ = t

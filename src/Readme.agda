@@ -1,8 +1,12 @@
 module Readme where
 
--- SystemF with small-step semantics
--- and normal forms
+-- SystemF with small-step semantics and normal forms
+-- *and* two big-step semantics with intrinsical and extrinsical
+-- soundness respectively
 open import SystemF.Everything
+
+-- Kernel F<:
+open import FSub.Readme
 
 -- SystemF extended with functions that take implicit parameters
 -- including a reduction to SystemF
