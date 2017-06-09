@@ -3,7 +3,7 @@ module SystemF.BigStep.Extrinsic.Welltyped where
 open import Prelude
 open import SystemF.BigStep.Types
 open import SystemF.BigStep.Extrinsic.Terms
-open import Data.List
+open import Data.List hiding ([_])
 open import Extensions.List
 
 -- welltyped terms
@@ -63,3 +63,14 @@ data ⊢̬_∶_ {n} : Val → Type n → Set where
           ⊢̬ tclos E t ∶ ∀' a
 
 Γ ⊢ E = Rel (λ{ a v → ⊢̬ v ∶ a}) Γ E
+
+open import Data.Fin.Substitution
+
+_wt/_ : ∀ {n m}{Γ : Ctx n}{t a} → Γ ⊢ t ∶ a → (ρ : Sub Type n m) → (Γ ctx/ ρ) ⊢ t ∶ (a / ρ)
+unit wt/ ρ = unit
+ƛ a t wt/ ρ = ƛ (a / ρ) (t wt/ ρ)
+var x wt/ ρ = var ([]=-map x)
+(f · e) wt/ ρ = (f wt/ ρ) · (e wt/ ρ)
+Λ t wt/ ρ = Λ (subst (λ Γ → Γ ⊢ _ ∶ _) (sym $ CtxLemmas.ctx/-wk-comm _ ρ) (t wt/ (ρ ↑)))
+(_[_] {a = a} t b) wt/ ρ =
+  subst (λ a → _ ⊢ _ ∶ a) (sym $ Lemmas.sub-commutes a) ((t wt/ ρ) [ (b / ρ) ])

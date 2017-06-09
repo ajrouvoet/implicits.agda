@@ -31,22 +31,20 @@ var x tm/ ρ = var (Inverse.to map-∈↔ ⟨$⟩ (, (x , refl)))
     open import Function.Equality
     open import Function.Inverse
 
-module Semantics where
+Env : ∀ {n} → Ctx n → Set
+data Val {n} : Type n → Set where
+  unit : Val {n} Unit
+  clos  : ∀ {a b Γ} → Env Γ → Term (Γ +tm a) b → Val (a ⇒ b)
+  tclos : ∀ {a Γ} → Env Γ → Term (Γ +ty) a → Val (∀' a)
 
-  Env : ∀ {n} → Ctx n → Set
-  data Val {n} : Type n → Set where
-    unit : Val {n} Unit
-    clos  : ∀ {a b Γ} → Env Γ → Term (Γ +tm a) b → Val (a ⇒ b)
-    tclos : ∀ {a Γ} → Env Γ → Term (Γ +ty) a → Val (∀' a)
+open import Data.List.All as All hiding (map)
 
-  open import Data.List
-  open import Data.List.All as All hiding (map)
+Env Γ = All Val Γ
 
-  Env Γ = All Val Γ
+module Functional where
 
   open import Category.Monad.Partiality
   open import Coinduction
-
   private
     open Workaround
 
@@ -81,7 +79,7 @@ module Example where
   open import Data.List.Any
   open import Data.List.All
   open import Category.Monad.Partiality
-  open Semantics
+  open Functional
 
   id' : Term {0} [] (∀' (ν zero ⇒ ν zero))
   id' = Λ (ƛ (ν z) (var (here refl)))

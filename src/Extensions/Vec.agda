@@ -129,3 +129,9 @@ _All[_]≔_ : ∀ {a p} {A : Set a} {P : A → Set p} {k} {xs : Vec A k} {i x} �
 _all-∷ʳ_ : ∀ {a n p} {A : Set a} {l : Vec A n} {x} {P : A → Set p} → All P l → P x → All P (l ∷ʳ x)
 _all-∷ʳ_ [] q = q ∷ []
 _all-∷ʳ_ (px ∷ p) q = px ∷ (p all-∷ʳ q)
+
+take′ : ∀ {a n}{A : Set a} → (i : Fin (suc n)) → Vec A n → Vec A (toℕ i)
+take′ zero [] = []
+take′ (suc ()) []
+take′ zero (x ∷ v) = []
+take′ (suc i) (x ∷ v) = x ∷ (take′ i v)

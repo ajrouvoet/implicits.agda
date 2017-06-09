@@ -20,6 +20,11 @@ data _[_]=_ {a} {A : Set a} : List A → ℕ → A → Set where
 []=-functional .(_ ∷ _) .0 here here = refl
 []=-functional .(_ ∷ _) .(suc _) (there p) (there q) = []=-functional _ _ p q
 
+[]=-algorithmic : ∀ {a} {A : Set a}{l : List A}{i} →
+                  ∀ {x : A} → (p q : l [ i ]= x) → p ≡ q
+[]=-algorithmic here here = refl
+[]=-algorithmic (there p) (there q) = sym (cong there ([]=-algorithmic q p))
+
 []=-map : ∀ {a b}{A : Set a}{B : Set b}{l : List A}{i x}{f : A → B} →
             l [ i ]= x → (map f l) [ i ]= (f x)
 []=-map here = here
@@ -137,9 +142,15 @@ module Pointwise where
   pointwise-∷ʳ (x∼y ∷ p) q = x∼y ∷ (pointwise-∷ʳ p q)
 
   pointwise-lookup : ∀ {a b ℓ A B P l m i x} → Rel {a} {b} {ℓ} {A} {B} P l m →
-                     l [ i ]= x → ∃ λ y → P x y
-  pointwise-lookup (x∼y ∷ r) here = , x∼y
-  pointwise-lookup (x∼y ∷ r) (there p) = pointwise-lookup r p
+                     l [ i ]= x → ∃ λ y → m [ i ]= y × P x y
+  pointwise-lookup (x∼y ∷ r) here = , here , x∼y
+  pointwise-lookup (x∼y ∷ r) (there p) with pointwise-lookup r p
+  ... | _ , l , Pl = , there l , Pl
+
+  pointwise-lookup′ : ∀ {a b ℓ A B P l m i x y} → Rel {a} {b} {ℓ} {A} {B} P l m →
+                     l [ i ]= x → m [ i ]= y → P x y
+  pointwise-lookup′ (x∼y ∷ r) here here = x∼y
+  pointwise-lookup′ (x∼y ∷ r) (there p) (there q) = pointwise-lookup′ r p q
 
   pointwise-maybe-lookup : ∀ {a b ℓ A B P l m i x} → Rel {a} {b} {ℓ} {A} {B} P l m →
                      l [ i ]= x → ∃ λ y → maybe-lookup i m ≡ just y × P x y

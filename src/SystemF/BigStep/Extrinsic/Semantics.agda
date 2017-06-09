@@ -16,36 +16,90 @@ open import Data.Maybe
 open import Category.Monad
 open RawMonad (monad {f = Lev.zero})
 
--- quadratic return through the layered monad
-pattern just² x = just (just x)
+module Functional where
 
--- substitution-free semantics in double-layered maybe monad;
--- distinguishing semantic errors from timeouts
--- (the code is spaced to be read side-by-side with the safety proof)
-_⊢_⇓_ : ∀ (μ : Env) → Term → ℕ → Maybe (Maybe Val)
-μ ⊢ x ⇓ zero = nothing
-μ ⊢ unit ⇓ (suc n) = just² unit
-μ ⊢ ƛ t ⇓ (suc n) = just² (clos μ t)
-μ ⊢ Λ t ⇓ (suc n) = just² (tclos μ t )
+  -- quadratic return through the layered monad
+  pattern just² x = just (just x)
 
-μ ⊢ f · e ⇓ (suc n) with (μ ⊢ f ⇓ n) | μ ⊢ e ⇓ n
--- timeout
-... | nothing | _ = nothing
-... | just _ | nothing = nothing
--- success
-... | just² (clos μ' t) | just² v = (v ∷ μ') ⊢ t ⇓ n
--- semantic errors & semantic error propagation
-... | _ | _ = just nothing
+  infixl 10 _∥_
+  _∥_ : ∀ {a b}{A : Set a}{B : Set b} → Maybe (Maybe A) → (Maybe (Maybe B)) →
+        (Maybe (Maybe (A × B)))
+  just (just x) ∥ just (just y) = just² (x , y)
+  just nothing ∥ just _ = just nothing
+  just _ ∥ just nothing = just nothing
+  nothing ∥ _ = nothing
+  _ ∥ nothing = nothing
 
-μ ⊢ t [-] ⇓ (suc n) with (μ ⊢ t ⇓ n)
--- timeout
-... | nothing = nothing
--- success
-... | just² (tclos μ' t') = μ' ⊢ t' ⇓ n
--- semantic error (propagation)
-... | _ = just nothing
+  infixl 5 _>>>=_
+  _>>>=_ : ∀ {a b}{A : Set a}{B : Set b} → Maybe (Maybe A) → (A → Maybe B) → Maybe (Maybe B)
+  just (just x) >>>= f = just (f x)
+  just nothing >>>= f = just nothing
+  nothing >>>= f = nothing
 
-μ ⊢ var x ⇓ (suc n) = just (maybe-lookup x μ)
+  -- substitution-free semantics in double-layered maybe monad;
+  -- distinguishing semantic errors from timeouts
+  _⊢_⇓_ : ∀ (μ : Env) → Term → ℕ → Maybe (Maybe Val)
+  μ ⊢ x ⇓ zero = nothing
+  μ ⊢ unit ⇓ (suc n) = just² unit
+  μ ⊢ ƛ t ⇓ (suc n) = just² (clos μ t)
+  μ ⊢ Λ t ⇓ (suc n) = just² (tclos μ t )
+
+  μ ⊢ f · e ⇓ (suc n) with μ ⊢ f ⇓ n | μ ⊢ e ⇓ n
+  -- timeout
+  ... | nothing | _ = nothing
+  ... | just _ | nothing = nothing
+  -- success
+  ... | just² (clos μ' t) | just² v = (v ∷ μ') ⊢ t ⇓ n
+  -- semantic errors & semantic error propagation
+  ... | _ | _ = just nothing
+
+  {-
+    NOTE:
+    Would love to write it more monadically: 
+    (μ ⊢ f ⇓ n) ∥ μ ⊢ e ⇓ n >>>= eval
+       where
+          eval : val × val → maybe (maybe val)
+          eval (clos μ' t , v) = (v ∷ μ') ⊢ t ⇓ n
+          eval (_ , _) = just nothing
+
+    But it proves hard to observe the necessary equalities of the bind.
+    Maybe if we collapse the monad to a single level?
+  -}
+
+  μ ⊢ t [-] ⇓ (suc n) with (μ ⊢ t ⇓ n)
+  -- timeout
+  ... | nothing = nothing
+  -- success
+  ... | just² (tclos μ' t') = μ' ⊢ t' ⇓ n
+  -- semantic error (propagation)
+  ... | _ = just nothing
+
+  μ ⊢ var x ⇓ (suc n) = just (maybe-lookup x μ)
+
+module Relational where
+
+  data _⊢_⇓_ (μ : Env) : Term → Val → Set where
+
+    unit⇓ : μ ⊢ unit ⇓ unit
+
+    λ⇓  : ∀ {t} → μ ⊢ ƛ t ⇓ (clos μ t)
+
+    Λ⇓  : ∀ {t} → μ ⊢ Λ t ⇓ (tclos μ t )
+
+    app⇓ : ∀ {f e μ' v ret body} →
+              (f⇓ : μ ⊢ f ⇓ clos μ' body) →
+              (e⇓ : μ ⊢ e ⇓ v) →
+              (b⇓ : (v ∷ μ') ⊢ body ⇓ ret) →
+              μ ⊢ f · e ⇓ ret
+
+    t[]⇓ : ∀ {t μ' body ret} →
+             (f⇓ : μ ⊢ t ⇓ tclos μ' body) →
+             (r⇓ : μ' ⊢ body ⇓ ret) →
+             μ ⊢ t [-] ⇓ ret
+
+    var⇓ : ∀ {x v} →
+             μ [ x ]= v →
+             μ ⊢ var x ⇓ v
 
 {-
 module DelayMonad where
