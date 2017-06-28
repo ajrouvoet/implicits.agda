@@ -5,7 +5,7 @@ open import Data.Nat
 open import Data.Vec
 open import Data.List
 open import Data.Fin hiding (_<_)
-open import Extensions.List as L using ()
+open import Data.List.At as L using ()
 
 open import Impure.STLCRef.Syntax
 

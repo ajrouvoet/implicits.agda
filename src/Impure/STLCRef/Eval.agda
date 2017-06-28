@@ -7,7 +7,7 @@ open import Data.List
 open import Data.List.Reverse
 open import Data.Nat
 open import Data.Fin hiding (_<_)
-open import Extensions.List as L
+open import Data.List.Properties.Extra as L
 
 open import Impure.STLCRef.Syntax
 open import Impure.STLCRef.Welltyped

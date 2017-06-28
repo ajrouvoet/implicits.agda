@@ -1,5 +1,6 @@
 name: Implicits
 depend:
   standard-library
+  standard-library++
 include:
   ./src/
